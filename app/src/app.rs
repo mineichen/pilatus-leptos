@@ -1,10 +1,10 @@
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
+use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
-    components::{Route, Router, Routes},
     StaticSegment,
+    components::{Route, Router, Routes},
 };
-use thaw::{ssr::SSRMountStyleProvider, Button, ConfigProvider};
+use thaw::{Button, ConfigProvider, ssr::SSRMountStyleProvider};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -58,6 +58,7 @@ fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
+    leptos::logging::log!("READY COUNTER");
 
     view! {
         <h1>"Welcome to Leptos!"</h1>

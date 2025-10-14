@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+members = [
+    "app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[workspace.dependencies]
+axum = "0.8"
+leptos = "0.8"
+leptos_axum = "0.8"
+leptos_router = "0.8"
+leptos_meta = "0.8"
+thaw = { git = "https://github.com/thaw-ui/thaw.git" }

@@ -4,7 +4,7 @@ use leptos_router::{
     StaticSegment,
     components::{Route, Router, Routes},
 };
-use thaw::{Button, ConfigProvider, ssr::SSRMountStyleProvider};
+use thaw::{Button, ConfigProvider, Layout, LayoutHeader, LayoutSider, ssr::SSRMountStyleProvider};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -36,18 +36,30 @@ pub fn App() -> impl IntoView {
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/app.css"/>
 
+
+
         // sets the document title
         <Title text="FeederOS"/>
 
         // content for this welcome page
         <ConfigProvider>
-            <Router>
-                <main>
-                    <Routes fallback=|| "Page not found.".into_view()>
-                        <Route path=StaticSegment("") view=HomePage/>
-                    </Routes>
-                </main>
-            </Router>
+            <Layout has_sider=true>
+                <LayoutSider attr:style="background-color: #0078ff99; padding: 20px;">
+                    "Sider"
+                </LayoutSider>
+                <Layout>
+                    <LayoutHeader attr:style="background-color: #0078ffaa; padding: 20px;">
+                        <h1>"Welcome to Leptos!"</h1>
+                    </LayoutHeader>
+                    <Layout attr:style="background-color: #0078ff88; padding: 20px;">
+                        <Router>
+                            <Routes fallback=|| "Page not found.".into_view()>
+                                <Route path=StaticSegment("") view=HomePage/>
+                            </Routes>
+                        </Router>
+                    </Layout>
+                </Layout>
+            </Layout>
         </ConfigProvider>
     }
 }
@@ -61,7 +73,6 @@ fn HomePage() -> impl IntoView {
     leptos::logging::log!("READY COUNTER");
 
     view! {
-        <h1>"Welcome to Leptos!"</h1>
         <Button on_click=on_click>"Click Me: " {count}</Button>
     }
 }

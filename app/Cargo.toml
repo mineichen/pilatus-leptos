@@ -14,8 +14,6 @@ console_error_panic_hook = "0.1"
 leptos_axum = { workspace = true, optional = true }
 leptos_meta.workspace = true
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
-#tower = { version = "0.4", optional = true }
-#tower-http = { version = "0.5", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.100"
 thiserror = "1"
 http = "1"
@@ -29,8 +27,6 @@ hydrate = ["leptos/hydrate", "thaw/hydrate"]
 ssr = [
     "dep:axum",
     "dep:tokio",
-    #"dep:tower",
-    #"dep:tower-http",
     "dep:leptos_axum",
     "leptos/ssr",
     "leptos_meta/ssr",

@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
     "app",
+    "pilatus-leptos",
 ]
 
 [workspace.package]

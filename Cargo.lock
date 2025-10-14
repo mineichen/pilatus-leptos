@@ -50,6 +50,7 @@ dependencies = [
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "pilatus-leptos",
  "thaw",
  "thiserror 1.0.69",
  "tokio",
@@ -1541,6 +1542,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher",
+]
+
+[[package]]
+name = "pilatus-leptos"
+version = "0.1.0"
+dependencies = [
+ "leptos",
+ "thaw",
 ]
 
 [[package]]

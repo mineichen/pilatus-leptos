@@ -1,0 +1,8 @@
+[package]
+name = "pilatus-leptos"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+leptos.workspace = true
+thaw.workspace = true

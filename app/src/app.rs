@@ -4,7 +4,8 @@ use leptos_router::{
     StaticSegment,
     components::{Route, Router, Routes},
 };
-use thaw::{Button, ConfigProvider, Layout, LayoutHeader, LayoutSider, ssr::SSRMountStyleProvider};
+use pilatus_leptos::RecipeView;
+use thaw::{ConfigProvider, Layout, LayoutHeader, LayoutSider, ssr::SSRMountStyleProvider};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -54,25 +55,12 @@ pub fn App() -> impl IntoView {
                     <Layout attr:style="background-color: #0078ff88; padding: 20px;">
                         <Router>
                             <Routes fallback=|| "Page not found.".into_view()>
-                                <Route path=StaticSegment("") view=HomePage/>
+                                <Route path=StaticSegment("") view=RecipeView/>
                             </Routes>
                         </Router>
                     </Layout>
                 </Layout>
             </Layout>
         </ConfigProvider>
-    }
-}
-
-/// Renders the home page of your application.
-#[component]
-fn HomePage() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let count = RwSignal::new(0);
-    let on_click = move |_| *count.write() += 1;
-    leptos::logging::log!("READY COUNTER");
-
-    view! {
-        <Button on_click=on_click>"Click Me: " {count}</Button>
     }
 }

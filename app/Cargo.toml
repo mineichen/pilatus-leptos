@@ -3,22 +3,28 @@ name = "app"
 version.workspace = true
 edition.workspace = true
 
-[lib]
-crate-type = ["cdylib", "rlib"]
+#[lib]
+#crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leptos.workspace = true
+leptos = { workspace = true, features = ["csr"] }
 leptos_router.workspace = true
-axum = { workspace = true, optional = true }
 console_error_panic_hook = "0.1"
-leptos_axum = { workspace = true, optional = true }
 leptos_meta.workspace = true
-tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 wasm-bindgen = "=0.2.100"
 thiserror = "1"
 http = "1"
 thaw.workspace = true
 pilatus-leptos = { path = "../pilatus-leptos" }
+
+axum = { workspace = true, optional = true }
+leptos_axum = { workspace = true, optional = true }
+minfac = { workspace = true, optional = true }
+pilatus-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+pilatus-axum = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+
 
 [dev-dependencies]
 app = { path = ".", features = ["ssr"] }
@@ -29,19 +35,17 @@ ssr = [
     "dep:axum",
     "dep:tokio",
     "dep:leptos_axum",
+    "dep:pilatus-rt",
+    "dep:pilatus-axum",
+    "dep:pilatus-axum-rt",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
+    "minfac",
+    "pilatus-leptos/ssr",
     "thaw/ssr",
 ]
 
-# Defines a size-optimized profile for the WASM bundle in release mode
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name

@@ -6,3 +6,20 @@ edition.workspace = true
 [dependencies]
 leptos.workspace = true
 thaw.workspace = true
+pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
+gloo-net.workspace = true
+tokio = { version = "1", features = ["time"], optional = true }
+gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
+serde_json = "1"
+anyhow = "1"
+
+[dev-dependencies]
+pilatus-leptos = { path = ".", features = ["ssr"] }
+
+[features]
+hydrate = ["leptos/hydrate", "thaw/hydrate"]
+ssr = [
+    "tokio",
+    "leptos/ssr",
+    "thaw/ssr",
+]

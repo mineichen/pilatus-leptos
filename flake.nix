@@ -24,6 +24,7 @@
             pkgs.tailwindcss_4
             pkgs.cargo-leptos
             pkgs.sass
+            pkgs.wasm-pack
           ];
 
           shellHook = ''

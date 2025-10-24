@@ -2,9 +2,10 @@ use leptos::prelude::*;
 use leptos_meta::{Stylesheet, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
-    components::{Route, Router, Routes},
+    components::{ParentRoute, Route, Router, Routes},
 };
-use pilatus_leptos::RecipeView;
+use pilatus_examples_leptos::Greeter;
+use pilatus_leptos::{DeviceView, RecipeView};
 use thaw::{ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
 #[component]
@@ -30,6 +31,10 @@ pub fn App() -> impl IntoView {
                         <Router>
                             <Routes fallback=|| "Page not found.".into_view()>
                                 <Route path=StaticSegment("") view=RecipeView/>
+                                <ParentRoute path=leptos_router::path!("/device/:device_id") view=DeviceView>
+                                    <Route path=StaticSegment("greeter") view=Greeter/>
+                                </ParentRoute>
+
                             </Routes>
                         </Router>
                     </Layout>

@@ -1,5 +1,5 @@
 [package]
-name = "pilatus-leptos"
+name = "pilatus-examples-leptos"
 version.workspace = true
 edition.workspace = true
 
@@ -14,13 +14,3 @@ gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
 serde_json = "1"
 anyhow = "1"
 
-[dev-dependencies]
-pilatus-leptos = { path = ".", features = ["ssr"] }
-
-[features]
-hydrate = ["leptos/hydrate", "thaw/hydrate"]
-ssr = [
-    "tokio",
-    "leptos/ssr",
-    "thaw/ssr",
-]

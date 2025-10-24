@@ -16,6 +16,7 @@ thiserror = "1"
 http = "1"
 thaw.workspace = true
 pilatus-leptos = { path = "../pilatus-leptos" }
+pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }
 
 axum = { workspace = true, optional = true }
 leptos_axum = { workspace = true, optional = true }

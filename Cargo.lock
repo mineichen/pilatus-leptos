@@ -105,6 +105,7 @@ dependencies = [
  "minfac",
  "pilatus-axum",
  "pilatus-axum-rt",
+ "pilatus-examples-leptos",
  "pilatus-leptos",
  "pilatus-rt",
  "thaw",
@@ -2233,6 +2234,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pilatus-examples-leptos"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "gloo-net",
+ "gloo-timers",
+ "leptos",
+ "leptos_router",
+ "pilatus",
+ "serde_json",
+ "thaw",
+ "tokio",
+]
+
+[[package]]
 name = "pilatus-leptos"
 version = "0.1.0"
 dependencies = [
@@ -2240,6 +2256,7 @@ dependencies = [
  "gloo-net",
  "gloo-timers",
  "leptos",
+ "leptos_router",
  "pilatus",
  "pilatus-leptos",
  "serde_json",

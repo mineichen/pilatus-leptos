@@ -2238,6 +2238,7 @@ name = "pilatus-examples-leptos"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures-util",
  "gloo-net",
  "gloo-timers",
  "leptos",

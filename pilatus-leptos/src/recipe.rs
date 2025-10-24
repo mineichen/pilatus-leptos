@@ -1,6 +1,8 @@
+use std::{sync::Arc, time::Duration};
+
 use crate::{Point, point::PointView};
 use leptos::{prelude::*, task::spawn_local};
-use pilatus::Recipes;
+use pilatus::{Recipes, device::DeviceId};
 use thaw::Button;
 
 use crate::BusyButton;
@@ -48,11 +50,11 @@ pub fn RecipeView() -> impl IntoView {
     }
 }
 
-use leptos_router::{components::Outlet, hooks::use_params, params::Params};
+use leptos_router::{components::Outlet, hooks::use_params};
 
 #[derive(PartialEq)]
 struct DeviceParams {
-    device_id: usize,
+    device_id: DeviceId,
 }
 
 impl leptos_router::params::Params for DeviceParams {
@@ -62,10 +64,11 @@ impl leptos_router::params::Params for DeviceParams {
         Ok(DeviceParams {
             device_id: map
                 .get("device_id")
-                .and_then(|id| id.parse::<usize>().ok())
                 .ok_or(leptos_router::params::ParamsError::MissingParam(
                     "device_id".to_string(),
-                ))?,
+                ))?
+                .parse::<DeviceId>()
+                .map_err(|x| leptos_router::params::ParamsError::Params(Arc::new(x)))?,
         })
     }
 }
@@ -74,15 +77,27 @@ pub fn DeviceView() -> impl IntoView {
     let params = use_params::<DeviceParams>();
     let device_id = move || Some(params.read().as_ref().ok()?.device_id);
 
+    // Create a shared signal for child routes
+    let device_message = RwSignal::new(String::from("Hello from DeviceView!"));
+    let device_context = RwSignal::new(DeviceContext {
+        params: serde_json::Value::Null,
+    });
+    provide_context(device_message);
+
     view! {
-        "Device: " { device_id }<br/>
+        "Device: " { move || device_id().map(|x| x.to_string()) }<br/>
         <Recipes let(x)>
             <PointView point=x/>
             <Button on:click=move |_| x.write().x += 1>"Increment"</Button>
             <BusyButton/>
             <Outlet/>
+            {device_message}
         </Recipes>
     }
+}
+
+pub struct DeviceContext {
+    params: serde_json::Value,
 }
 
 #[component]
@@ -98,8 +113,15 @@ where
 
     let recipe_store = RecipeStore::new();
     let active = move || recipe_store.active();
-    let (res, _set_res) = signal(Result::<_, std::fmt::Error>::Ok(43));
     let scoped_value = RwSignal::new(Point { x: 0, y: 0 });
+    let active_devices = move || {
+        active()
+            .unwrap()
+            .devices
+            .into_iter()
+            .map(|x| x.1.device_name)
+            .collect::<Vec<_>>()
+    };
     Effect::new(move |prev| {
         let value = scoped_value.get();
         leptos::logging::log!("Value in Effect: {value:?}, prev: {prev:?}");
@@ -107,7 +129,7 @@ where
     });
     spawn_local(async move {
         for _ in 0..20 {
-            gloo_timers::future::sleep(std::time::Duration::from_millis(1000)).await;
+            gloo_timers::future::sleep(Duration::from_millis(1000)).await;
             match scoped_value.try_write() {
                 Some(mut x) => x.x += 1,
                 None => break,
@@ -128,9 +150,9 @@ where
             { move || Some(serde_json::to_string_pretty( &active().ok()?)) }
             </pre>
             "After"
-            <ErrorBoundary fallback = move|e| format!("Error: {e:?}")>
-                <div>{res}</div>
-            </ErrorBoundary>
+            // <ErrorBoundary fallback = move|e| format!("Error: {e:?}")>
+            //     <div>{res}</div>
+            // </ErrorBoundary>
             // { move|| match recipes.get().as_ref() {
             //     Some(Ok(r)) => format!("{:?}", r.active().0),
             //     Some(Err(e)) => format!("Error: {e:?}").into(),

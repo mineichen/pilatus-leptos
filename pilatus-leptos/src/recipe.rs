@@ -108,7 +108,10 @@ where
     spawn_local(async move {
         for _ in 0..20 {
             gloo_timers::future::sleep(std::time::Duration::from_millis(1000)).await;
-            scoped_value.write().x += 1;
+            match scoped_value.try_write() {
+                Some(mut x) => x.x += 1,
+                None => break,
+            };
         }
     });
     view! {

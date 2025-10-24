@@ -6,7 +6,7 @@ use leptos_router::{
 };
 use pilatus_examples_leptos::Greeter;
 use pilatus_leptos::{DeviceView, RecipeView};
-use thaw::{ConfigProvider, Layout, LayoutHeader, LayoutSider};
+use thaw::{Anchor, AnchorLink, ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -21,7 +21,10 @@ pub fn App() -> impl IntoView {
         <ConfigProvider>
             <Layout has_sider=true>
                 <LayoutSider attr:style="background-color: #0078ff99; padding: 20px;">
-                    "Sider"
+                    <Anchor>
+                        <AnchorLink title="Home" href="/" />
+                        <AnchorLink title="Device 1" href="/device/1/greeter" />
+                    </Anchor>
                 </LayoutSider>
                 <Layout>
                     <LayoutHeader attr:style="background-color: #0078ffaa; padding: 20px;">
@@ -34,7 +37,6 @@ pub fn App() -> impl IntoView {
                                 <ParentRoute path=leptos_router::path!("/device/:device_id") view=DeviceView>
                                     <Route path=StaticSegment("greeter") view=Greeter/>
                                 </ParentRoute>
-
                             </Routes>
                         </Router>
                     </Layout>

@@ -1,8 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use std::{ops::Deref, sync::Arc, time::Duration};
 
 use crate::{Point, point::PointView};
-use leptos::{prelude::*, task::spawn_local};
+use leptos::{prelude::*, tachys::reactive_graph, task::spawn_local};
 use pilatus::{Recipes, device::DeviceId};
+use serde::{Serialize, de::DeserializeOwned};
 use thaw::Button;
 
 use crate::BusyButton;
@@ -79,10 +80,18 @@ pub fn DeviceView() -> impl IntoView {
 
     // Create a shared signal for child routes
     let device_message = RwSignal::new(String::from("Hello from DeviceView!"));
-    let device_context = RwSignal::new(DeviceContext {
-        params: serde_json::Value::Null,
-    });
+    let device_context = RwSignal::new(serde_json::Value::Null);
     provide_context(device_message);
+    provide_context(DeviceContext {
+        params: MapRwSignal {
+            getter: device_context.read_only().into(),
+            setter: device_context.write_only().into(),
+        },
+    });
+
+    Effect::new(move || {
+        leptos::logging::log!("JsonChanged: {}", device_context.get());
+    });
 
     view! {
         "Device: " { move || device_id().map(|x| x.to_string()) }<br/>
@@ -96,8 +105,58 @@ pub fn DeviceView() -> impl IntoView {
     }
 }
 
+#[derive(Clone)]
 pub struct DeviceContext {
-    params: serde_json::Value,
+    params: MapRwSignal<serde_json::Value>,
+}
+
+#[derive(Clone, Copy)]
+pub struct MapRwSignal<T: Send + Sync + 'static> {
+    getter: Signal<T>,
+    setter: SignalSetter<T>,
+}
+
+//impl<T: Send + Sync + 'static> reactive_graph::traits::Get for MapRwSignal<T> {}
+
+impl<T: Send + Sync + 'static> MapRwSignal<T> {
+    pub fn map<O: Send + Sync + 'static + PartialEq>(
+        &self,
+        getter: impl Fn(&T) -> O + Copy + Send + Sync + 'static,
+        transformer: impl Fn(O) -> T + Copy + Send + Sync + 'static,
+    ) -> MapRwSignal<O>
+    where
+        T: Clone,
+    {
+        let signal = self.getter;
+        let getter = Memo::new(move |_| signal.with(getter)).into();
+
+        let writer_signal = self.setter;
+        let setter = (move |value| {
+            let new_val = transformer(value);
+            writer_signal.set(new_val);
+        })
+        .into_signal_setter();
+
+        MapRwSignal { getter, setter }
+    }
+}
+
+impl<T: Send + Sync + 'static + Clone> From<MapRwSignal<T>> for thaw_utils::Model<T> {
+    fn from(value: MapRwSignal<T>) -> Self {
+        (value.getter, value.setter).into()
+    }
+}
+
+impl DeviceContext {
+    // Todo: Remove default
+    pub fn get<T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + 'static>(
+        &self,
+    ) -> MapRwSignal<T> {
+        self.params.map(
+            |x| T::deserialize(x).unwrap_or_default(),
+            |value| serde_json::to_value(&value).unwrap(),
+        )
+    }
 }
 
 #[component]
@@ -127,15 +186,15 @@ where
         leptos::logging::log!("Value in Effect: {value:?}, prev: {prev:?}");
         value
     });
-    spawn_local(async move {
-        for _ in 0..20 {
-            gloo_timers::future::sleep(Duration::from_millis(1000)).await;
-            match scoped_value.try_write() {
-                Some(mut x) => x.x += 1,
-                None => break,
-            };
-        }
-    });
+    // spawn_local(async move {
+    //     for _ in 0..20 {
+    //         gloo_timers::future::sleep(Duration::from_millis(1000)).await;
+    //         match scoped_value.try_write() {
+    //             Some(mut x) => x.x += 1,
+    //             None => break,
+    //         };
+    //     }
+    // });
     view! {
         <Suspense
             fallback=move || view! { <p>"Loading..."</p> }
@@ -158,6 +217,7 @@ where
             //     Some(Err(e)) => format!("Error: {e:?}").into(),
             //     None => "Not loaded".to_string()
             // } }
+
             {children(scoped_value)}
         </Suspense>
     }

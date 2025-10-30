@@ -12,13 +12,19 @@ edition = "2024"
 
 [workspace.dependencies]
 axum = "0.8"
+gloo-net = "0.6"
+impex = { git = "https://github.com/mineichen/impex" }
 leptos = "0.8"
 leptos_axum = "0.8"
 leptos_router = "0.8"
 leptos_meta = "0.8"
-gloo-net = "0.6"
-thaw = { git = "https://github.com/thaw-ui/thaw.git" }
+leptos_forge_utils_leptos = "0.6"
 minfac = "0.1"
+reactive_stores = "0.3"
+serde = "1"
+serde_json = "1"
+thaw = { git = "https://github.com/thaw-ui/thaw.git" }
+thaw_utils = { git = "https://github.com/thaw-ui/thaw.git" }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]

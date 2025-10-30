@@ -1,5 +1,9 @@
 [watch]
-watch = ["../pilatus-leptos", ".", "../pilatus-examples-leptos"]
+watch = [
+    "../pilatus-leptos",
+    ".",
+    "../pilatus-examples-leptos"
+]
 
 [[proxy]]
 backend = "http://localhost:4123/api"

@@ -1,15 +1,59 @@
 use std::borrow::Cow;
 
-use futures_util::{FutureExt, TryFutureExt};
+use futures_util::TryFutureExt;
+use impex::Impex;
 use leptos::prelude::*;
-use thaw::{Button, Input};
+use pilatus_leptos::DeviceContext;
+use reactive_stores::{Field, Store};
+use thaw::{Button, Field, Input};
+
+#[derive(serde::Deserialize, serde::Serialize, PartialEq, Clone, Store, Impex)]
+#[impex(derive(PartialEq, Eq))]
+struct ParamsCopyRemoveMe {
+    lang: String,
+    sub: SubItem,
+}
+#[derive(serde::Deserialize, serde::Serialize, PartialEq, Clone, Store, Default, Impex)]
+#[impex(derive(PartialEq, Eq))]
+struct SubItem {
+    foo: i32,
+}
+
+impl Default for ParamsCopyRemoveMe {
+    fn default() -> Self {
+        Self {
+            lang: "FakeItTillYouMakeIt".into(),
+            sub: Default::default(),
+        }
+    }
+}
 
 #[component]
 pub fn Greeter() -> impl IntoView {
     let device_message = expect_context::<RwSignal<String>>();
+    let device_context = expect_context::<DeviceContext>();
+    //let params = device_context.get::<ParamsCopyRemoveMe>();
+    //let lang = params.map(|x| x.lang.to_owned(), |x, v| x.lang = v);
+    let lang = RwSignal::new("Test".to_string());
+    // let store = Store::new(ParamsCopyRemoveMe::default());
+    // let store_field: Field<ParamsCopyRemoveMe> = store.into();
+    // let sub = store.sub();
+    // let sub: Field<SubItem> = sub.into();
+    //
+
+    // Effect::new(move || {
+    //     leptos::logging::log!("Lang changed {}", store.lang().get());
+    // });
+    // Effect::new(move || {
+    //     leptos::logging::log!("Sub changed {}", &sub.get().foo);
+    // });
+    let data = device_context.get::<ParamsCopyRemoveMeImpex>();
+
+    // leptos::reactive::computed::create_slice(signal, getter, setter)
     let name = RwSignal::new(String::from(""));
 
-    let action = Action::new_local(|name: &String| {
+    let action = Action::new_local(move |name: &String| {
+        //sub.write().foo += 1;
         let name = name.clone();
         async move {
             gloo_net::http::Request::get(&format!("/api/greeter/greet/{name}"))
@@ -32,6 +76,13 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
+            <p>"Language '" {lang } "'" </p>
+            <Field
+                label = "Language"
+            >
+                <Input value=lang />
+            </Field>
+
             <Input value=name placeholder="Enter your name"/>
             <Button on:click=move |_| { action.dispatch(name.get());}>"Say Hello"</Button>
             <hr/>

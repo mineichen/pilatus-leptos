@@ -4,15 +4,19 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+anyhow = "1"
+gloo-net.workspace = true
+gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
 leptos.workspace = true
 leptos_router.workspace = true
-thaw.workspace = true
+leptos_forge_utils_leptos.workspace = true
 pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
-gloo-net.workspace = true
+# reactive_graph.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thaw.workspace = true
+thaw_utils.workspace = true
 tokio = { version = "1", features = ["time"], optional = true }
-gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
-serde_json = "1"
-anyhow = "1"
 
 [dev-dependencies]
 pilatus-leptos = { path = ".", features = ["ssr"] }

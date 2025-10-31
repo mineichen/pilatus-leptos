@@ -30,7 +30,6 @@ impl Default for ParamsCopyRemoveMe {
 
 #[component]
 pub fn Greeter() -> impl IntoView {
-    let device_message = expect_context::<RwSignal<String>>();
     let device_context = expect_context::<DeviceContext>();
     // let store = Store::new(ParamsCopyRemoveMe::default());
     // let store_field: Field<ParamsCopyRemoveMe> = store.into();
@@ -90,8 +89,6 @@ pub fn Greeter() -> impl IntoView {
                 Some(Ok(e)) => e.clone().into(),
                 _ => "Never sent yet".into()
             } } }
-            <hr/>
-            <Input value=device_message />
         </div>
     }
 }

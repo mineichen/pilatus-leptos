@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::{MapRwSignal, Point, point::PointView};
+use crate::{DeviceContext, Point, point::PointView};
 use leptos::prelude::*;
 use pilatus::{Recipes, device::DeviceId};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::de;
 use thaw::Button;
 
 use crate::BusyButton;
@@ -79,15 +79,15 @@ pub fn DeviceView() -> impl IntoView {
     let device_id = move || Some(params.read().as_ref().ok()?.device_id);
 
     // Create a shared signal for child routes
-    let device_message = RwSignal::new(String::from("Hello from DeviceView!"));
-    let device_context = MapRwSignal::new(serde_json::Value::Null);
-    provide_context(device_message);
-    provide_context(DeviceContext {
-        params: device_context,
-    });
+    let device_context = expect_context::<DeviceContext>();
+    let params = device_context.get::<serde_json::Value>();
 
+    let params = params.map(
+        |x| serde_json::to_string_pretty(&x).unwrap(),
+        |target, value| *target = serde_json::from_str(&value).unwrap(),
+    );
     Effect::new(move || {
-        leptos::logging::log!("JsonChanged: {}", device_context.get());
+        leptos::logging::log!("JsonChanged: {:?}", params.get());
     });
 
     view! {
@@ -97,25 +97,10 @@ pub fn DeviceView() -> impl IntoView {
             <Button on:click=move |_| x.write().x += 1>"Increment"</Button>
             <BusyButton/>
             <Outlet/>
-            {device_message}
+            <pre>
+                { params }
+            </pre>
         </Recipes>
-    }
-}
-
-#[derive(Clone)]
-pub struct DeviceContext {
-    params: MapRwSignal<serde_json::Value>,
-}
-
-impl DeviceContext {
-    // Todo: Remove default
-    pub fn get<T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + 'static>(
-        &self,
-    ) -> MapRwSignal<T> {
-        self.params.map(
-            |x| T::deserialize(x).unwrap_or_default(),
-            |target, value| *target = serde_json::to_value(&value).unwrap(),
-        )
     }
 }
 

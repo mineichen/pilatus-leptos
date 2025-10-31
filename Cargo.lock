@@ -1529,7 +1529,7 @@ source = "git+https://github.com/mineichen/image-buffer.git#df2c88f348b401561420
 [[package]]
 name = "impex"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#30931bf7b07ed63b74e512d54dc8336f1b5e2c5c"
+source = "git+https://github.com/mineichen/impex#db69d6dba81ca5a70f79ad999ee2120f0f2cf34c"
 dependencies = [
  "impex_derive",
  "serde",
@@ -1538,7 +1538,7 @@ dependencies = [
 [[package]]
 name = "impex_derive"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#30931bf7b07ed63b74e512d54dc8336f1b5e2c5c"
+source = "git+https://github.com/mineichen/impex#db69d6dba81ca5a70f79ad999ee2120f0f2cf34c"
 dependencies = [
  "proc-macro2",
  "quote",

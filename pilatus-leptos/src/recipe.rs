@@ -1,7 +1,7 @@
-use std::{ops::Deref, sync::Arc, time::Duration};
+use std::sync::Arc;
 
-use crate::{Point, point::PointView};
-use leptos::{prelude::*, tachys::reactive_graph, task::spawn_local};
+use crate::{MapRwSignal, Point, point::PointView};
+use leptos::prelude::*;
 use pilatus::{Recipes, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use thaw::Button;
@@ -80,13 +80,10 @@ pub fn DeviceView() -> impl IntoView {
 
     // Create a shared signal for child routes
     let device_message = RwSignal::new(String::from("Hello from DeviceView!"));
-    let device_context = RwSignal::new(serde_json::Value::Null);
+    let device_context = MapRwSignal::new(serde_json::Value::Null);
     provide_context(device_message);
     provide_context(DeviceContext {
-        params: MapRwSignal {
-            getter: device_context.read_only().into(),
-            setter: device_context.write_only().into(),
-        },
+        params: device_context,
     });
 
     Effect::new(move || {
@@ -110,43 +107,6 @@ pub struct DeviceContext {
     params: MapRwSignal<serde_json::Value>,
 }
 
-#[derive(Clone, Copy)]
-pub struct MapRwSignal<T: Send + Sync + 'static> {
-    getter: Signal<T>,
-    setter: SignalSetter<T>,
-}
-
-//impl<T: Send + Sync + 'static> reactive_graph::traits::Get for MapRwSignal<T> {}
-
-impl<T: Send + Sync + 'static> MapRwSignal<T> {
-    pub fn map<O: Send + Sync + 'static + PartialEq>(
-        &self,
-        getter: impl Fn(&T) -> O + Copy + Send + Sync + 'static,
-        transformer: impl Fn(O) -> T + Copy + Send + Sync + 'static,
-    ) -> MapRwSignal<O>
-    where
-        T: Clone,
-    {
-        let signal = self.getter;
-        let getter = Memo::new(move |_| signal.with(getter)).into();
-
-        let writer_signal = self.setter;
-        let setter = (move |value| {
-            let new_val = transformer(value);
-            writer_signal.set(new_val);
-        })
-        .into_signal_setter();
-
-        MapRwSignal { getter, setter }
-    }
-}
-
-impl<T: Send + Sync + 'static + Clone> From<MapRwSignal<T>> for thaw_utils::Model<T> {
-    fn from(value: MapRwSignal<T>) -> Self {
-        (value.getter, value.setter).into()
-    }
-}
-
 impl DeviceContext {
     // Todo: Remove default
     pub fn get<T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + 'static>(
@@ -154,7 +114,7 @@ impl DeviceContext {
     ) -> MapRwSignal<T> {
         self.params.map(
             |x| T::deserialize(x).unwrap_or_default(),
-            |value| serde_json::to_value(&value).unwrap(),
+            |target, value| *target = serde_json::to_value(&value).unwrap(),
         )
     }
 }

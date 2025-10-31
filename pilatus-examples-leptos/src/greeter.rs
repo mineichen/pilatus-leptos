@@ -4,17 +4,17 @@ use futures_util::TryFutureExt;
 use impex::Impex;
 use leptos::prelude::*;
 use pilatus_leptos::DeviceContext;
-use reactive_stores::{Field, Store};
+use reactive_stores::Store;
 use thaw::{Button, Field, Input};
 
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Clone, Store, Impex)]
-#[impex(derive(PartialEq, Eq))]
+#[impex(derive(PartialEq, Eq, Clone))]
 struct ParamsCopyRemoveMe {
     lang: String,
     sub: SubItem,
 }
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Clone, Store, Default, Impex)]
-#[impex(derive(PartialEq, Eq))]
+#[impex(derive(PartialEq, Eq, Clone))]
 struct SubItem {
     foo: i32,
 }
@@ -32,9 +32,6 @@ impl Default for ParamsCopyRemoveMe {
 pub fn Greeter() -> impl IntoView {
     let device_message = expect_context::<RwSignal<String>>();
     let device_context = expect_context::<DeviceContext>();
-    //let params = device_context.get::<ParamsCopyRemoveMe>();
-    //let lang = params.map(|x| x.lang.to_owned(), |x, v| x.lang = v);
-    let lang = RwSignal::new("Test".to_string());
     // let store = Store::new(ParamsCopyRemoveMe::default());
     // let store_field: Field<ParamsCopyRemoveMe> = store.into();
     // let sub = store.sub();
@@ -47,7 +44,8 @@ pub fn Greeter() -> impl IntoView {
     // Effect::new(move || {
     //     leptos::logging::log!("Sub changed {}", &sub.get().foo);
     // });
-    let data = device_context.get::<ParamsCopyRemoveMeImpex>();
+    let data = device_context.get::<ParamsCopyRemoveMe>();
+    let lang = data.map(|x| x.lang.clone(), |target, value| target.lang = value);
 
     // leptos::reactive::computed::create_slice(signal, getter, setter)
     let name = RwSignal::new(String::from(""));
@@ -76,7 +74,7 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
-            <p>"Language '" {lang } "'" </p>
+            <p>"Language '" {lang} "'" </p>
             <Field
                 label = "Language"
             >

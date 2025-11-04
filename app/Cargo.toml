@@ -12,9 +12,10 @@ leptos_router.workspace = true
 console_error_panic_hook = "0.1"
 leptos_meta.workspace = true
 wasm-bindgen = "=0.2.100"
-thiserror = "1"
 http = "1"
+serde_json.workspace = true
 thaw.workspace = true
+thiserror = "1"
 pilatus-leptos = { path = "../pilatus-leptos" }
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }
 

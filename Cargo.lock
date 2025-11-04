@@ -108,6 +108,7 @@ dependencies = [
  "pilatus-examples-leptos",
  "pilatus-leptos",
  "pilatus-rt",
+ "serde_json",
  "thaw",
  "thiserror 1.0.69",
  "tokio",

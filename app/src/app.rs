@@ -16,7 +16,7 @@ pub fn App() -> impl IntoView {
     view! {
         <Title text="FeederOS"/>
         <ConfigProvider>
-            <ProvideDeviceContext>
+            <ProvideDeviceContext children=move || view! {
                 <Layout has_sider=true>
                     <LayoutSider attr:style="background-color: #0078ff99; padding: 20px;">
                         <Anchor>
@@ -42,7 +42,7 @@ pub fn App() -> impl IntoView {
                         </Layout>
                     </Layout>
                 </Layout>
-            </ProvideDeviceContext>
+            } />
         </ConfigProvider>
     }
 }

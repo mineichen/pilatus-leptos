@@ -21,12 +21,6 @@ use leptos::tachys::view::add_attr::AddAnyAttr;
 
 use serde::{Serialize, Serializer};
 
-/// Trait alias for thread-safe types
-pub trait ThreadSafe: Send + Sync + 'static {}
-
-/// Blanket implementation for all types that are Send + Sync + 'static
-impl<T: Send + Sync + 'static> ThreadSafe for T {}
-
 /// Signal which allows reading and writing a value
 ///
 /// You should never, ever create an RwSignal which reads from one value and writes to the other. I consider
@@ -34,7 +28,7 @@ impl<T: Send + Sync + 'static> ThreadSafe for T {}
 #[derive(Debug)]
 pub struct MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     /// Location where the MapRwSignal was created
     defined_at: &'static Location<'static>,
@@ -46,18 +40,18 @@ where
 
 impl<T> Clone for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<T> Copy for MapRwSignal<T> where T: ThreadSafe {}
+impl<T> Copy for MapRwSignal<T> where T: Send + Sync + 'static {}
 
 impl<T> MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     /// Creates a new RwSignal with initial value `initial`
     #[track_caller]
@@ -73,7 +67,7 @@ where
 
 impl<T> MapRwSignal<T>
 where
-    T: ThreadSafe + Clone,
+    T: Send + Sync + 'static + Clone,
 {
     /// Returns a read only part of the RwSignal
     pub fn read_only(&self) -> Signal<T> {
@@ -95,14 +89,14 @@ where
         from: impl Fn(&mut T, A) + Send + Sync + 'static,
     ) -> MapRwSignal<A>
     where
-        A: ThreadSafe,
+        A: Send + Sync + 'static,
     {
         let read: Signal<T> = self.read_signal;
         let new_read: Signal<A> = Signal::derive(move || read.with(|t| towards(t)));
 
         let write: SignalSetter<T> = self.write_signal;
         let new_write = SignalSetter::map(move |a: A| {
-            let mut t = read.get();
+            let mut t = read.get_untracked();
             from(&mut t, a);
             write.set(t);
         });
@@ -117,7 +111,7 @@ where
 
 impl<T> Dispose for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     fn dispose(self) {
         self.read_signal.dispose();
@@ -126,7 +120,7 @@ where
 
 impl<T> DefinedAt for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     fn defined_at(&self) -> Option<&'static Location<'static>> {
         Some(self.defined_at)
@@ -135,18 +129,18 @@ where
 
 impl<T> PartialEq for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     fn eq(&self, other: &Self) -> bool {
         self.read_signal == other.read_signal
     }
 }
 
-impl<T> Eq for MapRwSignal<T> where T: ThreadSafe {}
+impl<T> Eq for MapRwSignal<T> where T: Send + Sync + 'static {}
 
 impl<T> ReadUntracked for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone,
+    T: Send + Sync + 'static + Clone,
 {
     type Value = <Signal<T> as ReadUntracked>::Value;
 
@@ -157,7 +151,7 @@ where
 
 impl<T> Set for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     type Value = T;
 
@@ -172,7 +166,7 @@ where
 
 impl<T> Get for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone,
+    T: Send + Sync + 'static + Clone,
 {
     type Value = T;
 
@@ -214,7 +208,7 @@ where
 
 impl<T> From<T> for MapRwSignal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     #[track_caller]
     fn from(value: T) -> Self {
@@ -224,7 +218,7 @@ where
 
 impl<T> Render for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone + Render,
+    T: Send + Sync + 'static + Clone + Render,
     <T as Render>::State: 'static,
     MapRwSignal<T>: Get<Value = T>,
 {
@@ -244,7 +238,7 @@ where
 
 impl<T> RenderHtml for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone + RenderHtml,
+    T: Send + Sync + 'static + Clone + RenderHtml,
     <T as Render>::State: 'static,
     MapRwSignal<T>: Get<Value = T>,
 {
@@ -310,7 +304,7 @@ where
 
 impl<T> AddAnyAttr for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone + RenderHtml,
+    T: Send + Sync + 'static + Clone + RenderHtml,
     <T as Render>::State: 'static,
     MapRwSignal<T>: Get<Value = T>,
 {
@@ -326,7 +320,7 @@ where
 
 impl<T> AttributeValue for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone + AttributeValue,
+    T: Send + Sync + 'static + Clone + AttributeValue,
     <T as AttributeValue>::State: 'static,
     MapRwSignal<T>: Get<Value = T>,
 {
@@ -375,7 +369,7 @@ where
 
 impl<T> Serialize for MapRwSignal<T>
 where
-    T: ThreadSafe + Serialize,
+    T: Send + Sync + 'static + Serialize,
 {
     fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
     where
@@ -387,7 +381,7 @@ where
 
 impl<T> From<MapRwSignal<T>> for Signal<T>
 where
-    T: ThreadSafe,
+    T: Send + Sync + 'static,
 {
     #[track_caller]
     fn from(val: MapRwSignal<T>) -> Self {
@@ -396,7 +390,7 @@ where
 }
 impl<T> IntoSplitSignal for MapRwSignal<T>
 where
-    T: ThreadSafe + Clone,
+    T: Send + Sync + 'static + Clone,
 {
     type Value = T;
     type Read = Signal<T>;
@@ -409,7 +403,7 @@ where
 /* Skipped, we don't use stores
 impl<Inner, Prev, T> From<Subfield<Inner, Prev, T>> for MapRwSignal<T>
 where
-    Inner: StoreField<Value = Prev> + Track + ThreadSafe + Clone,
+    Inner: StoreField<Value = Prev> + Track + Send + Sync + 'static + Clone,
     Prev: 'static,
     T: Send + Sync + Clone + 'static,
 {
@@ -440,14 +434,14 @@ where
     }
 }
 
-impl<T: ThreadSafe + Default> Default for MapRwSignal<T> {
+impl<T: Send + Sync + 'static + Default> Default for MapRwSignal<T> {
     fn default() -> Self {
         MapRwSignal::new(T::default())
     }
 }
 
 // Thaw Model support
-impl<T: ThreadSafe + Clone> From<MapRwSignal<T>> for thaw_utils::Model<T> {
+impl<T: Send + Sync + 'static + Clone> From<MapRwSignal<T>> for thaw_utils::Model<T> {
     fn from(value: MapRwSignal<T>) -> Self {
         (value.read_signal, value.write_signal).into()
     }

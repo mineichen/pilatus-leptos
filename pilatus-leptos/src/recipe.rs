@@ -54,8 +54,8 @@ pub fn RecipeView() -> impl IntoView {
 use leptos_router::{components::Outlet, hooks::use_params};
 
 #[derive(PartialEq)]
-struct DeviceParams {
-    device_id: DeviceId,
+pub struct DeviceParams {
+    pub device_id: DeviceId,
 }
 
 impl leptos_router::params::Params for DeviceParams {
@@ -80,7 +80,7 @@ pub fn DeviceView() -> impl IntoView {
 
     // Create a shared signal for child routes
     let device_context = expect_context::<DeviceContext>();
-    let params = device_context.get::<serde_json::Value>();
+    let params = device_context.get_untyped(Signal::derive(move || device_id().unwrap()));
 
     let params = params.map(
         |x| serde_json::to_string_pretty(&x).unwrap(),

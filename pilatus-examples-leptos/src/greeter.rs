@@ -1,15 +1,17 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Deref};
 
 use futures_util::TryFutureExt;
-use impex::Impex;
+use impex::{DefaultWrapperSettings, Impex};
 use leptos::prelude::*;
-use pilatus_leptos::DeviceContext;
+use leptos_router::hooks::use_params;
+use pilatus_leptos::{DeviceContext, DeviceParams, MapRwSignal};
 use reactive_stores::Store;
 use thaw::{Button, Field, Input};
 
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Clone, Store, Impex)]
 #[impex(derive(PartialEq, Eq, Clone))]
-struct ParamsCopyRemoveMe {
+#[serde(default)]
+pub(crate) struct ParamsCopyRemoveMe {
     lang: String,
     sub: SubItem,
 }
@@ -43,8 +45,15 @@ pub fn Greeter() -> impl IntoView {
     // Effect::new(move || {
     //     leptos::logging::log!("Sub changed {}", &sub.get().foo);
     // });
-    let data = device_context.get::<ParamsCopyRemoveMe>();
-    let lang = data.map(|x| x.lang.clone(), |target, value| target.lang = value);
+    let params = use_params::<DeviceParams>();
+    let device_id = move || Some(params.read().as_ref().ok()?.device_id);
+    let data =
+        device_context.get::<ParamsCopyRemoveMeImpex>(Signal::derive(move || device_id().unwrap()));
+    // let data = MapRwSignal::new(ParamsCopyRemoveMeImpex::<DefaultWrapperSettings>::default());
+    let lang = data.map(
+        |x| x.lang.deref().clone(),
+        |target, value| target.lang.set_explicit(value),
+    );
 
     // leptos::reactive::computed::create_slice(signal, getter, setter)
     let name = RwSignal::new(String::from(""));
@@ -73,7 +82,7 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
-            <p>"Language '" {lang} "'" </p>
+            <p>"Language '" {move || lang.get().to_string()} "'" </p>
             <Field
                 label = "Language"
             >

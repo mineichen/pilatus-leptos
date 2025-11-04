@@ -1,23 +1,9 @@
 use std::sync::Arc;
 
-use crate::{DeviceContext, Point, point::PointView};
+use crate::DeviceContext;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params;
-use pilatus::{Recipes, device::DeviceId};
-use thaw::Button;
-
-use crate::BusyButton;
-
-#[component]
-pub fn HomeView() -> impl IntoView {
-    let point = RwSignal::new(Point { x: 0, y: 42 });
-    view! {
-        <h1>"Home"</h1>
-        <PointView point=point />
-        <Button on:click=move |_| point.write().x += 1>"Increment"</Button>
-        <BusyButton/>
-    }
-}
+use pilatus::device::DeviceId;
 
 use leptos_router::components::Outlet;
 

@@ -2,12 +2,14 @@ use std::{
     collections::HashMap,
     ops::Deref,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use crate::MapRwSignal;
 use leptos::{either::Either, prelude::*};
 use pilatus::{UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
+use serde_json::Value;
 
 #[derive(Clone)]
 pub struct DeviceContext(Arc<Mutex<DeviceContextState>>);
@@ -35,6 +37,8 @@ pub struct DeviceContextState {
     // pub untyped: HashMap<DeviceId, Untyped>,
     // pub managed_signals: HashMap<(DeviceId, TypeId), Box<dyn std::any::Any + Send + Sync>>,
     root: MapRwSignal<Option<pilatus::Recipes>>,
+    unsaved_changes_reader: ReadSignal<HashMap<DeviceId, Value>>,
+    unsaved_changes_writer: WriteSignal<HashMap<DeviceId, Value>>,
 }
 
 impl DeviceContext {
@@ -45,6 +49,7 @@ impl DeviceContext {
 
 impl DeviceContextState {
     fn new() -> Self {
+        let (unsaved_changes_reader, unsaved_changes_writer) = signal(Default::default());
         Self {
             // deserializers: device_types
             //     .into_iter()
@@ -52,6 +57,8 @@ impl DeviceContextState {
             //     .collect(),
             //untyped: HashMap::new(),
             root: MapRwSignal::new(None),
+            unsaved_changes_reader,
+            unsaved_changes_writer,
         }
     }
 }
@@ -59,9 +66,11 @@ impl DeviceContextState {
 impl DeviceContext {
     /// Get a typed signal from the JSON params
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
-        self.0.lock().unwrap().root.map(
+        let lock = self.0.lock().unwrap();
+        let setter = lock.unsaved_changes_writer;
+        lock.root.map(
             move |x| {
-                leptos::logging::log!("Create device JSON-Value");
+                //leptos::logging::log!("Create device JSON-Value");
                 x.as_ref()
                     .expect("Recipes has to be downloaded at this point")
                     .active()
@@ -74,7 +83,6 @@ impl DeviceContext {
                     .clone()
             },
             move |target, x| {
-                leptos::logging::log!("Sett device JSON-VALUE");
                 let recipes = target
                     .as_mut()
                     .expect("Recipes has to be downloaded at this point");
@@ -87,7 +95,10 @@ impl DeviceContext {
                     .unwrap_or_else(|| panic!("Unknown DeviceId {device_id} in active recipe"));
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
-                leptos::logging::log!("JSON-VALUE is set");
+                setter.update(move |u| {
+                    u.insert(device_id, x);
+                });
+                //leptos::logging::log!("JSON-VALUE is set");
             },
         )
     }
@@ -117,7 +128,14 @@ impl DeviceContext {
 #[component]
 pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
     let device_context = DeviceContext::new();
-    let root = device_context.0.lock().unwrap().root;
+    let (root, ch_reader, ch_writer) = {
+        let lock = device_context.0.lock().unwrap();
+        (
+            lock.root,
+            lock.unsaved_changes_reader,
+            lock.unsaved_changes_writer,
+        )
+    };
     provide_context(device_context);
 
     // Fetch recipes from the API
@@ -140,8 +158,38 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         }
     });
 
+    let action = Action::new_local(move |_| async move {
+        loop {
+            let mut next = None;
+            ch_writer.update(|x| {
+                next = x.extract_if(|_, _| true).next();
+            });
+            let Some((device_id, value)) = next else {
+                break;
+            };
+            leptos::logging::log!("Sending update now ({device_id:?}): {value:?}");
+            gloo_timers::future::sleep(Duration::from_secs(1)).await;
+        }
+        anyhow::Ok("Foo")
+    });
     let show_children = Memo::new(move |_| root.get().is_some());
     let mut children = Some(children);
+
+    Effect::new(
+        move |_| match (ch_reader.try_read(), action.pending().get_untracked()) {
+            (Some(x), false) if x.len() > 0 => {
+                leptos::logging::log!("Dispatch save from effect");
+                action.dispatch(());
+            }
+            (_, true) => {
+                leptos::logging::log!("Dispatch not needed: Running already",);
+            }
+            (Some(x), _) if x.len() == 0 => {
+                leptos::logging::log!("Dispatch not needed: Empty list")
+            }
+            x => leptos::logging::log!("Dispatch not needed: {x:?}"),
+        },
+    );
 
     view! {
         {move || {

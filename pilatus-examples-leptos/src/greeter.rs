@@ -33,23 +33,10 @@ impl Default for ParamsCopyRemoveMe {
 #[component]
 pub fn Greeter() -> impl IntoView {
     let device_context = expect_context::<DeviceContext>();
-    // let store = Store::new(ParamsCopyRemoveMe::default());
-    // let store_field: Field<ParamsCopyRemoveMe> = store.into();
-    // let sub = store.sub();
-    // let sub: Field<SubItem> = sub.into();
-    //
-
-    // Effect::new(move || {
-    //     leptos::logging::log!("Lang changed {}", store.lang().get());
-    // });
-    // Effect::new(move || {
-    //     leptos::logging::log!("Sub changed {}", &sub.get().foo);
-    // });
     let params = use_params::<DeviceParams>();
     let device_id = move || Some(params.read().as_ref().ok()?.device_id);
     let data =
         device_context.get::<ParamsCopyRemoveMeImpex>(Signal::derive(move || device_id().unwrap()));
-    // let data = MapRwSignal::new(ParamsCopyRemoveMeImpex::<DefaultWrapperSettings>::default());
     let lang = data.map(
         |x| x.lang.deref().clone(),
         |target, value| target.lang.set_explicit(value),

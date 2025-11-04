@@ -41,10 +41,6 @@ impl DeviceContext {
     fn new() -> Self {
         Self(Arc::new(Mutex::new(DeviceContextState::new())))
     }
-
-    pub fn update_root(&self, recipes: pilatus::Recipes) {
-        self.0.lock().unwrap().update_root(recipes);
-    }
 }
 
 impl DeviceContextState {
@@ -58,15 +54,6 @@ impl DeviceContextState {
             root: MapRwSignal::new(None),
         }
     }
-
-    pub fn update_root(&self, recipes: pilatus::Recipes) {
-        self.root.set(Some(recipes));
-    }
-}
-
-struct Untyped {
-    value: serde_json::Value,
-    device_type: String,
 }
 
 impl DeviceContext {
@@ -124,18 +111,6 @@ impl DeviceContext {
                 *target = serde_json::to_value(&x).expect("Serialization always works");
             },
         )
-
-        // let updater = |value: serde_json::Value| {
-        // let signal = self.typed_signals.get(&device_id).map(|x| x.signal.clone()).unwrap_or_else(|| {
-        // let device = self
-        //     .untyped
-        //     .get(&device_id)
-        //     .map(|x| T::deserialize(x).unwrap_or_default())
-        //     .unwrap_or_default();
-        // self.params.map(
-        //     |x| T::deserialize(x).unwrap_or_default(),
-        //     |target, value| *target = serde_json::to_value(&value).unwrap(),
-        // )
     }
 }
 
@@ -143,7 +118,7 @@ impl DeviceContext {
 pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
     let device_context = DeviceContext::new();
     let root = device_context.0.lock().unwrap().root;
-    provide_context(device_context.clone());
+    provide_context(device_context);
 
     // Fetch recipes from the API
     let recipes_resource = LocalResource::new(|| async {
@@ -159,11 +134,9 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
             .map(|state| state.recipes)
     });
 
-    // Update root when recipes are loaded
-    let device_context_for_effect = device_context.clone();
     Effect::new(move || {
         if let Some(Ok(recipes)) = recipes_resource.get() {
-            device_context_for_effect.update_root(recipes);
+            root.set(Some(recipes));
         }
     });
 

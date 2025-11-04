@@ -8,46 +8,14 @@ use thaw::Button;
 
 use crate::BusyButton;
 
-#[derive(Copy, Clone)]
-struct RecipeStore {
-    recipes: LocalResource<Result<Recipes, String>>,
-}
-
-impl RecipeStore {
-    pub fn new() -> Self {
-        Self {
-            recipes: LocalResource::new(|| async {
-                Ok(gloo_net::http::Request::get("/api/recipe/get_all")
-                    .header("content-type", "application/json")
-                    .send()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .json::<pilatus::device::ActiveState>()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .recipes)
-            }),
-        }
-    }
-    pub fn active(&self) -> Result<pilatus::Recipe, String> {
-        Ok(self
-            .recipes
-            .get()
-            .ok_or_else(|| "No recipes".to_string())??
-            .active()
-            .1
-            .clone())
-    }
-}
-
 #[component]
-pub fn RecipeView() -> impl IntoView {
+pub fn HomeView() -> impl IntoView {
+    let point = RwSignal::new(Point { x: 0, y: 42 });
     view! {
-        <Recipes let(x)>
-            <PointView point=x/>
-            <Button on:click=move |_| x.write().x += 1>"Increment"</Button>
-            <BusyButton/>
-        </Recipes>
+        <h1>"Home"</h1>
+        <PointView point=point />
+        <Button on:click=move |_| point.write().x += 1>"Increment"</Button>
+        <BusyButton/>
     }
 }
 
@@ -99,78 +67,9 @@ pub fn DeviceView() -> impl IntoView {
 
     view! {
         "Device: " { move || device_id.get().to_string() }<br/>
-        <Recipes let(x)>
-            <PointView point=x/>
-            <Button on:click=move |_| x.write().x += 1>"Increment"</Button>
-            <BusyButton/>
-            <Outlet/>
-            <pre>
-                { move || device_params.get() }
-            </pre>
-        </Recipes>
-    }
-}
-
-#[component]
-pub fn Recipes<F, IV>(children: F) -> impl IntoView
-where
-    F: Fn(RwSignal<Point>) -> IV + 'static + Send,
-    IV: IntoView + 'static,
-{
-    // Creates a reactive value to update the button
-    let count = RwSignal::new(0);
-    let on_click = move |_| *count.write() += 1;
-    leptos::logging::log!("READY COUNTER");
-
-    let recipe_store = RecipeStore::new();
-    let active = move || recipe_store.active();
-    let scoped_value = RwSignal::new(Point { x: 0, y: 0 });
-    let active_devices = move || {
-        active()
-            .unwrap()
-            .devices
-            .into_iter()
-            .map(|x| x.1.device_name)
-            .collect::<Vec<_>>()
-    };
-    Effect::new(move |prev| {
-        let value = scoped_value.get();
-        leptos::logging::log!("Value in Effect: {value:?}, prev: {prev:?}");
-        value
-    });
-    // spawn_local(async move {
-    //     for _ in 0..20 {
-    //         gloo_timers::future::sleep(Duration::from_millis(1000)).await;
-    //         match scoped_value.try_write() {
-    //             Some(mut x) => x.x += 1,
-    //             None => break,
-    //         };
-    //     }
-    // });
-    view! {
-        <Suspense
-            fallback=move || view! { <p>"Loading..."</p> }
-        >
-            // {move|| {
-            //     Some(format!("Foo: {}", active.ok()?.created))
-            // }}
-
-
-            <Button on_click=on_click>"Number of Recipes?: " { count }</Button>
-            <pre>
-            { move || Some(serde_json::to_string_pretty( &active().ok()?)) }
-            </pre>
-            "After"
-            // <ErrorBoundary fallback = move|e| format!("Error: {e:?}")>
-            //     <div>{res}</div>
-            // </ErrorBoundary>
-            // { move|| match recipes.get().as_ref() {
-            //     Some(Ok(r)) => format!("{:?}", r.active().0),
-            //     Some(Err(e)) => format!("Error: {e:?}").into(),
-            //     None => "Not loaded".to_string()
-            // } }
-
-            {children(scoped_value)}
-        </Suspense>
+        <Outlet/>
+        <pre>
+            { move || device_params.get() }
+        </pre>
     }
 }

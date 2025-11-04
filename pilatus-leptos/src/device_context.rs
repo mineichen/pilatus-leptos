@@ -91,7 +91,7 @@ impl DeviceContext {
                 let recipes = target
                     .as_mut()
                     .expect("Recipes has to be downloaded at this point");
-                let device_id = device_id.get();
+                let device_id = device_id.get_untracked();
                 let (_active_id, active) = recipes.get_active();
 
                 let device = active
@@ -140,11 +140,7 @@ impl DeviceContext {
 }
 
 #[component]
-pub fn ProvideDeviceContext<F, V>(children: F) -> impl IntoView
-where
-    F: Fn() -> V + Send + Sync + 'static,
-    V: IntoView + 'static,
-{
+pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
     let device_context = DeviceContext::new();
     let root = device_context.0.lock().unwrap().root;
     provide_context(device_context.clone());
@@ -171,10 +167,13 @@ where
         }
     });
 
+    let show_children = Memo::new(move |_| root.get().is_some());
+    let mut children = Some(children);
+
     view! {
         {move || {
-            if root.get().is_some() {
-                Either::Left(children())
+            if show_children.get() {
+                Either::Left(children.take().expect("Only extracted max once")())
             } else {
                 Either::Right(view! { "Loading..." })
             }

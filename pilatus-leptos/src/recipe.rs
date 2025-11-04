@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::{DeviceContext, Point, point::PointView};
 use leptos::prelude::*;
+use leptos_router::hooks::use_params;
 use pilatus::{Recipes, device::DeviceId};
-use serde::de;
 use thaw::Button;
 
 use crate::BusyButton;
@@ -51,7 +51,7 @@ pub fn RecipeView() -> impl IntoView {
     }
 }
 
-use leptos_router::{components::Outlet, hooks::use_params};
+use leptos_router::components::Outlet;
 
 #[derive(PartialEq)]
 pub struct DeviceParams {
@@ -76,29 +76,36 @@ impl leptos_router::params::Params for DeviceParams {
 #[component]
 pub fn DeviceView() -> impl IntoView {
     let params = use_params::<DeviceParams>();
-    let device_id = move || Some(params.read().as_ref().ok()?.device_id);
+    let device_id = Signal::derive(move || {
+        params
+            .read()
+            .as_ref()
+            .ok()
+            .map(|p| p.device_id)
+            .expect("Device ID must be present")
+    });
 
     // Create a shared signal for child routes
     let device_context = expect_context::<DeviceContext>();
-    let params = device_context.get_untyped(Signal::derive(move || device_id().unwrap()));
+    let device_params = device_context.get_untyped(device_id);
 
-    let params = params.map(
+    let device_params = device_params.map(
         |x| serde_json::to_string_pretty(&x).unwrap(),
         |target, value| *target = serde_json::from_str(&value).unwrap(),
     );
     Effect::new(move || {
-        leptos::logging::log!("JsonChanged: {:?}", params.get());
+        leptos::logging::log!("JsonChanged: {:?}", device_params.get());
     });
 
     view! {
-        "Device: " { move || device_id().map(|x| x.to_string()) }<br/>
+        "Device: " { move || device_id.get().to_string() }<br/>
         <Recipes let(x)>
             <PointView point=x/>
             <Button on:click=move |_| x.write().x += 1>"Increment"</Button>
             <BusyButton/>
             <Outlet/>
             <pre>
-                { params }
+                { move || device_params.get() }
             </pre>
         </Recipes>
     }

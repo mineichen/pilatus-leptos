@@ -49,6 +49,9 @@ pub fn Greeter() -> impl IntoView {
         //sub.write().foo += 1;
         let name = name.clone();
         async move {
+            if name.is_empty() {
+                return Err("Name mustn't be empty".into());
+            }
             gloo_net::http::Request::get(&format!("/api/greeter/greet/{name}"))
                 .send()
                 .map_err(|e| e.to_string())
@@ -69,7 +72,7 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
-            <p>"Language '" {move || lang.get().to_string()} "'" </p>
+            <p>"Language '" {lang} "'" </p>
             <Field
                 label = "Language"
             >
@@ -77,7 +80,7 @@ pub fn Greeter() -> impl IntoView {
             </Field>
 
             <Input value=name placeholder="Enter your name"/>
-            <Button on:click=move |_| { action.dispatch(name.get());}>"Say Hello"</Button>
+            <Button on:click=move |_| { action.dispatch(name.get_untracked());}>"Say Hello"</Button>
             <hr/>
 
             { move|| if action.pending().get() { Cow::Borrowed( "Pending") } else { match  action.value().read().as_ref() {

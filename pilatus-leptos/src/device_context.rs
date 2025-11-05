@@ -7,7 +7,7 @@ use std::{
 
 use crate::MapRwSignal;
 use leptos::{either::Either, prelude::*};
-use pilatus::{UntypedDeviceParamsWithVariables, device::DeviceId};
+use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
@@ -37,8 +37,8 @@ pub struct DeviceContextState {
     // pub untyped: HashMap<DeviceId, Untyped>,
     // pub managed_signals: HashMap<(DeviceId, TypeId), Box<dyn std::any::Any + Send + Sync>>,
     root: MapRwSignal<Option<pilatus::Recipes>>,
-    unsaved_changes_reader: ReadSignal<HashMap<DeviceId, Value>>,
-    unsaved_changes_writer: WriteSignal<HashMap<DeviceId, Value>>,
+    unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
+    unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
 }
 
 impl DeviceContext {
@@ -87,7 +87,7 @@ impl DeviceContext {
                     .as_mut()
                     .expect("Recipes has to be downloaded at this point");
                 let device_id = device_id.get_untracked();
-                let (_active_id, active) = recipes.get_active();
+                let (active_id, active) = recipes.get_active();
 
                 let device = active
                     .devices
@@ -96,7 +96,7 @@ impl DeviceContext {
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
                 setter.update(move |u| {
-                    u.insert(device_id, x);
+                    u.insert(device_id, (active_id, x));
                 });
                 //leptos::logging::log!("JSON-VALUE is set");
             },
@@ -164,11 +164,38 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
             ch_writer.update(|x| {
                 next = x.extract_if(|_, _| true).next();
             });
-            let Some((device_id, value)) = next else {
+            let Some((device_id, (recipe_id, value))) = next else {
                 break;
             };
-            leptos::logging::log!("Sending update now ({device_id:?}): {value:?}");
-            gloo_timers::future::sleep(Duration::from_secs(1)).await;
+
+            gloo_timers::future::sleep(Duration::from_millis(250)).await;
+            if ch_reader.read_untracked().get(&device_id).is_some() {
+                leptos::logging::log!("Device : {device_id:?} has newer pending changes");
+            } else {
+                leptos::logging::log!("Sending update now ({device_id:?}): {value:?}");
+                let url = format!("/api/recipe/{recipe_id}/device/{device_id}/params");
+
+                let r = async move {
+                    gloo_net::http::Request::put(&url)
+                        .header("content-type", "application/json")
+                        .body(
+                            serde_json::json!( {
+                                "parameters": value,
+                                "variables": {}
+                            })
+                            .to_string(),
+                        )?
+                        .send()
+                        .await
+                }
+                .await;
+                match r {
+                    Ok(r) => {
+                        leptos::logging::log!("Save was successful");
+                    }
+                    Err(e) => leptos::logging::error!("Store failed: {e:?}"),
+                }
+            }
         }
         anyhow::Ok("Foo")
     });
@@ -193,7 +220,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
 
     view! {
         {move || {
-            if show_children.get() {
+            if *show_children.read() {
                 Either::Left(children.take().expect("Only extracted max once")())
             } else {
                 Either::Right(view! { "Loading..." })

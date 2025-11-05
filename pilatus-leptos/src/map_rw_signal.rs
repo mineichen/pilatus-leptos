@@ -89,10 +89,41 @@ where
         from: impl Fn(&mut T, A) + Send + Sync + 'static,
     ) -> MapRwSignal<A>
     where
+        A: Send + Sync + 'static + PartialEq,
+    {
+        self.map_internal(from, move |read| {
+            Memo::new(move |_| read.with(|t| towards(t))).into()
+        })
+    }
+
+    #[track_caller]
+    pub fn map_uncached<A>(
+        &self,
+        towards: impl Fn(&T) -> A + Send + Sync + 'static,
+        from: impl Fn(&mut T, A) + Send + Sync + 'static,
+    ) -> MapRwSignal<A>
+    where
         A: Send + Sync + 'static,
     {
-        let read: Signal<T> = self.read_signal;
-        let new_read: Signal<A> = Signal::derive(move || read.with(|t| towards(t)));
+        self.map_internal(from, move |read| {
+            Signal::derive(move || read.with(|t| towards(t))).into()
+        })
+    }
+
+    #[track_caller]
+    fn map_internal<A>(
+        &self,
+        from: impl Fn(&mut T, A) + Send + Sync + 'static,
+        create_signal: impl FnOnce(Signal<T>) -> Signal<A> + Send + Sync + 'static,
+    ) -> MapRwSignal<A>
+    where
+        A: Send + Sync + 'static,
+    {
+        // let read: Signal<T> = self.read_signal;
+        // let memo = Memo::new(move |_| read.with(|t| towards(t)));
+        // memo.into();
+        let read = self.read_signal;
+        let new_read: Signal<A> = create_signal(read);
 
         let write: SignalSetter<T> = self.write_signal;
         let new_write = SignalSetter::map(move |a: A| {

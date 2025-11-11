@@ -1,10 +1,10 @@
+mod recipe_row;
 mod recipe_tags;
 
 use leptos::prelude::*;
 use pilatus_leptos::RecipeContext;
-use thaw::{Button, ButtonSize};
 
-use self::recipe_tags::RecipeTags;
+use self::recipe_row::RecipeRow;
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {
@@ -38,98 +38,28 @@ pub fn RecipeManagement() -> impl IntoView {
                         <th style="text-align: center; padding: 12px; font-weight: 600;">"Actions"</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <For
-                        each=recipe_ids
-                        key=|recipe_id| recipe_id.clone()
-                        children=move |recipe_id| {
-                            // Create a stable Memo for this specific recipe
-                            // This Memo will persist across For loop re-renders and track changes to the recipe
-                            let recipe_memo = Memo::new({
-                                let recipes = recipes.clone();
-                                let recipe_id = recipe_id.clone();
-                                move |_| {
-                                    recipes
-                                    .get()
-                                    .iter()
-                                    .find(|info| info.id == recipe_id)
-                                    .unwrap()
-                                    .clone()
+                    <tbody>
+                        <For
+                            each=recipe_ids
+                            key=|recipe_id| recipe_id.clone()
+                            children=move |recipe_id| {
+                                let recipe = Memo::new({
+                                    let recipes = recipes.clone();
+                                    let recipe_id = recipe_id.clone();
+                                    move |_| {
+                                        recipes
+                                            .get()
+                                            .iter()
+                                            .find(|info| info.id == recipe_id)
+                                            .unwrap()
+                                            .clone()
+                                    }
+                                });
+                                view! {
+                                    <RecipeRow recipe=recipe/>
                                 }
-                            });
-                            let is_active = Signal::derive(move || recipe_memo.with(|x| x.is_active));
-                            let recipe_id = move || recipe_memo.read().id.clone();
-
-                            view! {
-                                <tr style="border-bottom: 1px solid #e0e0e0;">
-                                    <td style="padding: 12px;">
-                                        <span style="font-weight: 500;">
-                                            {move || recipe_memo.read().id.to_string()}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 12px;">
-                                        <RecipeTags recipe_memo=recipe_memo />
-                                    </td>
-                                    <td style="padding: 12px;">
-                                        <span style="color: #666;">
-                                            {move || {
-                                                recipe_memo
-                                                    .read()
-                                                    .recipe
-                                                    .created
-                                                    .format("%Y-%m-%d %H:%M")
-                                                    .to_string()
-                                            }}
-
-                                        </span>
-                                    </td>
-                                    <td style="padding: 12px;">
-                                        {is_active.get()
-                                            .then_some(|| {
-                                                view! {
-                                                    <span style="color: #10b981; font-weight: 600;">"● Active"</span>
-                                                }
-                                            })}
-                                        {(!is_active.get())
-                                            .then_some(|| {
-                                                view! {
-                                                    <span style="color: #6b7280; font-weight: 500;">"○ Inactive"</span>
-                                                }
-                                            })}
-
-                                    </td>
-                                    <td style="padding: 12px;">
-                                        <div style="display: flex; gap: 8px; justify-content: center;">
-                                            <Button
-                                                size=ButtonSize::Small
-                                                disabled=is_active
-                                                on:click=move |_| {
-                                                    leptos::logging::log!(
-                                                        "Activate recipe (id: {:?})", recipe_id(),
-
-                                                    );
-                                                }
-                                            >
-                                                "Activate"
-                                            </Button>
-                                            <Button
-                                                size=ButtonSize::Small
-                                                disabled=is_active
-                                                on:click=move |_| {
-                                                    leptos::logging::log!(
-                                                        "Delete recipe: (id: {:?})", recipe_id(),
-                                                    );
-                                                }
-                                            >
-                                                "Delete"
-                                            </Button>
-
-                                        </div>
-                                    </td>
-                                </tr>
                             }
-                    }
-                />
+                        />
                     </tbody>
                 </table>
             </div>

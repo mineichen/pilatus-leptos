@@ -1,17 +1,9 @@
-use crate::RecipeContext;
+use crate::{DeviceInfos, RecipeContext};
 use leptos::prelude::*;
-use pilatus::device::DeviceId;
-
-#[derive(Clone)]
-pub struct DeviceListItem {
-    pub device_id: DeviceId,
-    pub name: pilatus::Name,
-    pub device_type: String,
-}
 
 impl RecipeContext {
-    pub fn list_devices(&self) -> Signal<Vec<DeviceListItem>> {
-        let root = self.0.root.read_only();
+    pub fn list_devices(&self) -> Signal<Vec<DeviceInfos>> {
+        let root = self.root.read_only();
         Signal::derive(move || {
             root.with(|x| {
                 x.as_ref()
@@ -20,9 +12,9 @@ impl RecipeContext {
                         active
                             .devices
                             .iter()
-                            .map(|(id, device)| DeviceListItem {
+                            .map(|(&device_id, device)| DeviceInfos {
                                 name: device.device_name.clone(),
-                                device_id: id.clone(),
+                                device_id,
                                 device_type: device.device_type.clone(),
                             })
                             .collect()

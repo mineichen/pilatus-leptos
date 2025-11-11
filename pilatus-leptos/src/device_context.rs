@@ -1,0 +1,66 @@
+use std::str::FromStr;
+
+use crate::{DeviceInfos, MapRwSignal, RecipeContext};
+use leptos::{either::Either, prelude::*};
+use leptos_router::hooks::use_params_map;
+use pilatus::device::DeviceId;
+
+use leptos_router::components::Outlet;
+use serde::{Serialize, de::DeserializeOwned};
+
+#[derive(Clone)]
+pub struct DeviceContext {
+    pub infos: Signal<DeviceInfos>,
+}
+
+impl DeviceContext {
+    pub fn get<
+        T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
+    >(
+        &self,
+    ) -> MapRwSignal<T> {
+        let recipe_context = expect_context::<RecipeContext>();
+        let infos = self.infos;
+        recipe_context.get(Signal::derive(move || infos.read().device_id))
+    }
+
+    pub fn get_untyped(&self) -> MapRwSignal<serde_json::Value> {
+        let recipe_context = expect_context::<RecipeContext>();
+        let infos = self.infos;
+        recipe_context.get_untyped(Signal::derive(move || infos.read().device_id))
+    }
+}
+#[component]
+pub fn DeviceView() -> impl IntoView {
+    let ctx = expect_context::<RecipeContext>();
+    let params = use_params_map();
+    let device_id_str = move || params.read().get("device_id");
+    let device_id = Signal::derive(move || DeviceId::from_str(&device_id_str()?).ok());
+    let device_infos = ctx.get_active_device_infos(device_id);
+
+    view! {
+        { move|| {
+
+            if let Some(infos) = device_infos.read().as_ref() {
+                let name = infos.name.to_string();
+                provide_context(DeviceContext { infos: Signal::derive(move||  device_infos.get().expect("Device infos must be present")) });
+                Either::Left(view! {
+                    <div style="padding-bottom: 20px;">
+                        <h1>{name}</h1>
+                    </div>
+                    <Outlet/>
+                })
+            } else {
+                Either::Right(view! {
+                {move|| if let Some(parsed) = device_id.get().as_ref() {
+                        format!("No device with ID {parsed} found in active recipe")
+                    } else if let Some(unknown_id) = device_id_str() {
+                        format!("Invalid device ID: {unknown_id:?}")
+                    } else {
+                        "No device ID provided".to_string()
+                    }
+                }})
+            }
+        }}
+    }
+}

@@ -1,40 +1,30 @@
-use std::{
-    collections::HashMap,
-    ops::Deref,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{collections::HashMap, ops::Deref, sync::Arc, time::Duration};
 
-use crate::{DeviceParams, MapRwSignal};
+use crate::MapRwSignal;
 use leptos::{either::Either, prelude::*};
-use pilatus::{
-    RecipeId, UntypedDeviceParamsWithVariables,
-    device::{self, DeviceId},
-};
+use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
+
+mod list;
+
+#[derive(Clone, PartialEq)]
+pub struct DeviceInfos {
+    pub device_id: DeviceId,
+    pub name: pilatus::Name,
+    pub device_type: String,
+}
 
 #[derive(Clone)]
 pub struct RecipeContext(Arc<DeviceContextState>);
 
-// type DeviceTypeDeserializer =
-//     Box<dyn Fn() -> Box<dyn std::any::Any + Send + Sync> + Send + Sync + 'static>;
-// pub struct DeviceTypeFactory {
-//     factory: DeviceTypeDeserializer,
-//     device_type: &'static str,
-// }
+impl std::ops::Deref for RecipeContext {
+    type Target = DeviceContextState;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
-// impl DeviceTypeFactory {
-//     pub fn new<T: std::any::Any + Send + Sync + DeserializeOwned + Default + Clone + 'static>(
-//         device_type: &'static str,
-//     ) -> Self {
-//         Self {
-//             factory: Box::new(move || Box::new(T::default())),
-//             device_type,
-//         }
-//     }
-// }
-mod list;
 #[derive(Clone)]
 pub struct DeviceContextState {
     root: MapRwSignal<Option<pilatus::Recipes>>,
@@ -67,19 +57,10 @@ impl DeviceContextState {
 }
 
 impl RecipeContext {
-    pub fn get_active_router_device<T>(&self) -> MapRwSignal<T>
-    where
-        T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
-    {
-        let params = leptos_router::hooks::use_params::<DeviceParams>();
-        let device_id = move || Some(params.read().as_ref().ok()?.device_id);
-        self.get::<T>(Signal::derive(move || device_id().unwrap()))
-    }
-
     /// Get a variable value by name, deserializing to the target type
     /// Panics if the variable is not found or cannot be deserialized
     pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> T {
-        self.0.variables.with(|vars| {
+        self.variables.with(|vars| {
             vars.get(name)
                 .and_then(|val| T::deserialize(val).ok())
                 .unwrap_or_else(|| {
@@ -90,7 +71,7 @@ impl RecipeContext {
 
     /// Set a variable value by name
     pub fn set_variable<T: Serialize>(&self, name: &str, value: T) {
-        self.0.variables.update(|vars| {
+        self.variables.update(|vars| {
             if let Ok(json_val) = serde_json::to_value(&value) {
                 vars.insert(name.to_string(), json_val);
             } else {
@@ -99,10 +80,31 @@ impl RecipeContext {
         });
     }
 
+    pub fn get_active_device_infos(
+        &self,
+        device_id: Signal<Option<DeviceId>>,
+    ) -> Memo<Option<DeviceInfos>> {
+        let root = self.root.read_only();
+        Memo::new(move |_old| {
+            let device_id = device_id.get()?;
+            root.read()
+                .as_ref()?
+                .active()
+                .1
+                .devices
+                .get(&device_id)
+                .map(|device| DeviceInfos {
+                    name: device.device_name.clone(),
+                    device_id,
+                    device_type: device.device_type.clone(),
+                })
+        })
+    }
+
     /// Get a typed signal from the JSON params
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
-        let setter = self.0.unsaved_changes_writer;
-        self.0.root.map(
+        let setter = self.unsaved_changes_writer;
+        self.root.map(
             move |x| {
                 //leptos::logging::log!("Create device JSON-Value");
                 x.as_ref()
@@ -225,7 +227,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                 }
                 .await;
                 match r {
-                    Ok(r) => {
+                    Ok(_r) => {
                         leptos::logging::log!("Save was successful");
                     }
                     Err(e) => leptos::logging::error!("Store failed: {e:?}"),
@@ -239,14 +241,14 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
 
     Effect::new(
         move |_| match (ch_reader.try_read(), action.pending().get_untracked()) {
-            (Some(x), false) if x.len() > 0 => {
+            (Some(x), false) if !x.is_empty() => {
                 leptos::logging::log!("Dispatch save from effect");
                 action.dispatch(());
             }
             (_, true) => {
                 leptos::logging::log!("Dispatch not needed: Running already",);
             }
-            (Some(x), _) if x.len() == 0 => {
+            (Some(x), _) if x.is_empty() => {
                 leptos::logging::log!("Dispatch not needed: Empty list")
             }
             x => leptos::logging::log!("Dispatch not needed: {x:?}"),

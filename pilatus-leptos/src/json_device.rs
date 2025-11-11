@@ -1,24 +1,12 @@
 use leptos::prelude::*;
-use leptos_router::hooks::use_params;
 use thaw::{Button, Textarea, TextareaSize};
 
-use crate::{RecipeContext, DeviceParams};
+use crate::DeviceContext;
 
 #[component]
 pub fn JsonDeviceView() -> impl IntoView {
-    let params = use_params::<DeviceParams>();
-    let device_id = Signal::derive(move || {
-        params
-            .read()
-            .as_ref()
-            .ok()
-            .map(|p| p.device_id)
-            .expect("Device ID must be present")
-    });
-
-    // Create a shared signal for child routes
-    let device_context = expect_context::<RecipeContext>();
-    let device_params = device_context.get_untyped(device_id);
+    let device_context = expect_context::<DeviceContext>();
+    let device_params = device_context.get_untyped();
 
     let device_params = device_params.map(
         |x| serde_json::to_string_pretty(&x).unwrap(),
@@ -69,30 +57,26 @@ pub fn JsonDeviceView() -> impl IntoView {
 
         <h1>"ManualTick"</h1>
         {move || {
-            if has_external_update.get() {
+            has_external_update.get().then(move|| {
                 view! {
                     <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 4px;">
                         <strong>"⚠ Update Available"</strong>
                         <p>"The device configuration has been updated externally."</p>
                         <Button on:click=on_adopt>"Adopt Changes"</Button>
                     </div>
-                }.into_any()
-            } else {
-                view! {}.into_any()
-            }
+                }
+            })
         }}
 
         {move || {
-            if let Some(error) = error_message.get() {
+            error_message.get().map(move|error| {
                 view! {
                     <div style="background-color: #f8d7da; border: 1px solid #dc3545; color: #721c24; padding: 15px; margin: 10px 0; border-radius: 4px;">
                         <strong>"❌ Error"</strong>
                         <p>{error}</p>
                     </div>
-                }.into_any()
-            } else {
-                view! {}.into_any()
-            }
+                }
+            })
         }}
 
         <div style="margin-top: 20px;">

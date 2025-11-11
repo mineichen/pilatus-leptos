@@ -82,7 +82,7 @@ impl<T> PilatusPrimitiveValue<T> {
 
     pub fn variable_name(&self) -> Option<&str> {
         match &self.value {
-            ValueKind::Variable(variable) => Some(&variable),
+            ValueKind::Variable(variable) => Some(variable),
             ValueKind::Value(_) => None,
         }
     }

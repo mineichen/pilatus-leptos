@@ -109,7 +109,7 @@ where
             ValueKind::Value(v) => v.clone(),
             ValueKind::Variable(var) => {
                 let device_ctx = expect_context::<crate::RecipeContext>();
-                device_ctx.get_variable::<T>(&**var)
+                device_ctx.get_variable::<T>(var)
             }
         })
     }
@@ -125,7 +125,7 @@ where
                 ValueKind::Variable(var) => {
                     // Try to get DeviceContext and resolve the variable
                     let device_ctx = expect_context::<crate::RecipeContext>();
-                    device_ctx.get_variable::<T>(&**var)
+                    device_ctx.get_variable::<T>(var)
                 }
             }
         })

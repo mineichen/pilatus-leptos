@@ -1,4 +1,4 @@
-use leptos::prelude::*;
+use leptos::{either::Either, prelude::*};
 use thaw::{Button, Field, Input};
 
 use crate::LeafRwSignal;
@@ -51,7 +51,7 @@ pub fn VariableInput(
 
                 {move || {
                     if is_var.get() {
-                        view! {
+                        Either::Left(view! {
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="color: #0078ff; font-weight: bold;">
                                     "🔗 " {var_name.get()}
@@ -60,9 +60,9 @@ pub fn VariableInput(
                                     "Use Local Value"
                                 </Button>
                             </div>
-                        }.into_any()
+                        })
                     } else {
-                        view! {
+                        Either::Right(view! {
                             <Button
                                 on:click=move |_| {
                                     set_show_var_dialog.set(true);
@@ -71,14 +71,14 @@ pub fn VariableInput(
                             >
                                 "🔗 Use Variable"
                             </Button>
-                        }.into_any()
+                        })
                     }
                 }}
             </div>
         </Field>
 
         {move || {
-            if show_var_dialog.get() {
+            show_var_dialog.get().then(move|| {
                 view! {
                     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
                         <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px;">
@@ -99,10 +99,8 @@ pub fn VariableInput(
                             </div>
                         </div>
                     </div>
-                }.into_any()
-            } else {
-                view! {}.into_any()
-            }
+                }
+            })
         }}
     }
 }

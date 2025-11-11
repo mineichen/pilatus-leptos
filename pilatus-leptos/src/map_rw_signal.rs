@@ -101,13 +101,13 @@ where
     }
 
     #[track_caller]
-    pub fn map_leaf<A: DeserializeOwned>(
+    pub fn map_leaf<A>(
         &self,
         towards: impl Fn(&T) -> PilatusPrimitiveValue<A> + Send + Sync + 'static,
         from: impl Fn(&mut T, PilatusPrimitiveValue<A>) + Send + Sync + 'static,
     ) -> LeafRwSignal<A>
     where
-        A: Send + Sync + 'static + PartialEq + Clone,
+        A: DeserializeOwned + Send + Sync + 'static + PartialEq + Clone,
     {
         let read = self.read_signal;
         let new_read: Signal<PilatusPrimitiveValue<A>> =
@@ -132,7 +132,7 @@ where
         A: Send + Sync + 'static,
     {
         self.map_internal(from, move |read| {
-            Signal::derive(move || read.with(|t| towards(t))).into()
+            Signal::derive(move || read.with(|t| towards(t)))
         })
     }
 

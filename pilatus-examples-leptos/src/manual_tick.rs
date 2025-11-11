@@ -1,18 +1,13 @@
 use futures_util::TryFutureExt;
 use impex::Impex;
 use leptos::prelude::*;
-use pilatus_leptos::{PilatusWrapperSettings, RecipeContext};
+use pilatus_leptos::{DeviceContext, PilatusWrapperSettings};
 use thaw::{Button, SpinButton};
 
-#[derive(Impex)]
+#[derive(Impex, Default)]
 #[impex(derive(PartialEq, Eq, Clone))]
 struct ManualTickParams {
     initial_count: i64,
-}
-impl Default for ManualTickParams {
-    fn default() -> Self {
-        Self { initial_count: 0 }
-    }
 }
 
 #[component]
@@ -34,12 +29,11 @@ pub fn ManualTick() -> impl IntoView {
             .await
     });
 
-    let device_context = expect_context::<RecipeContext>();
-    let params =
-        device_context.get_active_router_device::<ManualTickParamsImpex<PilatusWrapperSettings>>();
+    let device_context = expect_context::<DeviceContext>();
+    let params = device_context.get::<ManualTickParamsImpex<PilatusWrapperSettings>>();
 
     let initial_count = params.map_leaf(
-        |x| x.initial_count.clone(),
+        |x| x.initial_count,
         |target, prim_val| target.initial_count = prim_val,
     );
 

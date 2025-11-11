@@ -1,6 +1,6 @@
 use crate::{DeviceInfos, RecipeContext};
 use leptos::prelude::*;
-use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw};
+use pilatus::{Name, Recipe, RecipeId};
 
 #[derive(Clone, Debug)]
 pub struct RecipeInfo {
@@ -13,21 +13,17 @@ impl RecipeContext {
     pub fn list_devices(&self) -> Signal<Vec<DeviceInfos>> {
         let root = self.root.read_only();
         Signal::derive(move || {
-            root.with(|x| {
-                x.as_ref()
-                    .map(|r| {
-                        let (_, active) = r.active();
-                        active
-                            .devices
-                            .iter()
-                            .map(|(&device_id, device)| DeviceInfos {
-                                name: device.device_name.clone(),
-                                device_id,
-                                device_type: device.device_type.clone(),
-                            })
-                            .collect()
+            root.with(|recipes| {
+                let (_, active) = recipes.active();
+                active
+                    .devices
+                    .iter()
+                    .map(|(&device_id, device)| DeviceInfos {
+                        name: device.device_name.clone(),
+                        device_id,
+                        device_type: device.device_type.clone(),
                     })
-                    .unwrap_or_default()
+                    .collect()
             })
         })
     }
@@ -35,20 +31,16 @@ impl RecipeContext {
     pub fn list_recipes(&self) -> Signal<Vec<RecipeInfo>> {
         let root = self.root.read_only();
         Signal::derive(move || {
-            root.with(|x| {
-                x.as_ref()
-                    .map(|recipes| {
-                        let (active_id, _) = recipes.active();
-                        recipes
-                            .iter_without_backup()
-                            .map(|(id, recipe)| RecipeInfo {
-                                id: id.clone(),
-                                recipe: recipe.clone(),
-                                is_active: id == &active_id,
-                            })
-                            .collect()
+            root.with(|recipes| {
+                let (active_id, _) = recipes.active();
+                recipes
+                    .iter_without_backup()
+                    .map(|(id, recipe)| RecipeInfo {
+                        id: id.clone(),
+                        recipe: recipe.clone(),
+                        is_active: id == &active_id,
                     })
-                    .unwrap_or_default()
+                    .collect()
             })
         })
     }
@@ -89,7 +81,7 @@ impl RecipeContext {
                             .json::<pilatus::device::ActiveState>()
                             .await
                         {
-                            root.set(Some(state.recipes));
+                            root.set(state.recipes);
                         }
                     }
                 }

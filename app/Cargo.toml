@@ -17,6 +17,7 @@ http = "1"
 pilatus.workspace = true
 serde_json.workspace = true
 thaw.workspace = true
+thaw_utils.workspace = true
 thiserror = "1"
 pilatus-leptos = { path = "../pilatus-leptos" }
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }

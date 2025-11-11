@@ -22,7 +22,6 @@ pub fn App() -> impl IntoView {
                 <Router>
                     <Layout has_sider=true>
                         <LayoutSider attr:style="background-color: #0078ff99; padding: 20px;">
-
                             <Nav />
                         </LayoutSider>
                         <Layout>

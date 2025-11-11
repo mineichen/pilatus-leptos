@@ -112,6 +112,7 @@ dependencies = [
  "pilatus-rt",
  "serde_json",
  "thaw",
+ "thaw_utils",
  "thiserror 1.0.69",
  "tokio",
  "wasm-bindgen",

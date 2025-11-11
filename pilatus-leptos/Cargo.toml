@@ -11,7 +11,7 @@ impex.workspace = true
 leptos.workspace = true
 leptos_router.workspace = true
 leptos_forge_utils_leptos.workspace = true
-pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
+pilatus.workspace = true
 # reactive_graph.workspace = true
 serde.workspace = true
 serde_json.workspace = true

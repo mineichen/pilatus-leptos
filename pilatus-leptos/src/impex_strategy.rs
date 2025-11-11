@@ -133,29 +133,27 @@ impl<'de, T: serde::de::DeserializeOwned> serde::Deserialize<'de> for PilatusPri
             "Deserializing PilatusPrimitiveValue<{}>",
             std::any::type_name::<T>()
         );
-        // First deserialize to serde_json::Value to inspect it
+
         let value = serde_json::Value::deserialize(deserializer)?;
 
-        // Check if it's an object with __var field
-        if let serde_json::Value::Object(ref map) = value {
-            if let Some(serde_json::Value::String(var_name)) = map.get("__var") {
-                let var_kind = ValueKind::new_variable(var_name)
-                    .ok_or_else(|| D::Error::custom("Invalid variable name"))?;
+        if let serde_json::Value::Object(ref map) = value
+            && let Some(serde_json::Value::String(var_name)) = map.get("__var")
+        {
+            let var_kind = ValueKind::new_variable(var_name)
+                .ok_or_else(|| D::Error::custom("Invalid variable name"))?;
 
-                return Ok(PilatusPrimitiveValue {
-                    is_explicit: true,
-                    value: var_kind,
-                });
-            }
-        }
-
-        // Otherwise, deserialize as a normal value
-        T::deserialize(value)
-            .map(|val| PilatusPrimitiveValue {
+            Ok(PilatusPrimitiveValue {
                 is_explicit: true,
-                value: ValueKind::Value(val),
+                value: var_kind,
             })
-            .map_err(D::Error::custom)
+        } else {
+            T::deserialize(value)
+                .map(|val| PilatusPrimitiveValue {
+                    is_explicit: true,
+                    value: ValueKind::Value(val),
+                })
+                .map_err(D::Error::custom)
+        }
     }
 }
 

@@ -8,6 +8,8 @@ use serde_json::Value;
 
 mod list;
 
+pub use list::RecipeInfo;
+
 #[derive(Clone, PartialEq)]
 pub struct DeviceInfos {
     pub device_id: DeviceId,

@@ -5,10 +5,10 @@ use leptos_router::{
     components::{ParentRoute, Route, Router, Routes},
 };
 use pilatus_examples_leptos::{Greeter, ManualTick};
-use pilatus_leptos::{DeviceView, HomeView, JsonDeviceView, ProvideDeviceContext};
+use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
-use crate::nav::Nav;
+use crate::{home::HomeView, nav::Nav};
 
 #[component]
 pub fn App() -> impl IntoView {

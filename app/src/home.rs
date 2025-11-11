@@ -1,4 +1,4 @@
-use crate::BusyButton;
+use crate::busy_button::BusyButton;
 use crate::point::Point;
 use crate::point::PointView;
 use leptos::prelude::*;

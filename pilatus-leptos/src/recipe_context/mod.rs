@@ -6,7 +6,7 @@ use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
-mod list;
+pub mod list;
 
 pub use list::RecipeInfo;
 

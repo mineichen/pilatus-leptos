@@ -221,6 +221,22 @@ where
     }
 }
 
+impl<T> Update for MapRwSignal<T>
+where
+    T: Send + Sync + 'static + Clone,
+{
+    type Value = T;
+
+    fn try_maybe_update<U>(&self, fun: impl FnOnce(&mut Self::Value) -> (bool, U)) -> Option<U> {
+        let mut current = self.read_signal.get_untracked();
+        let (should_update, ret) = fun(&mut current);
+        if should_update {
+            self.write_signal.set(current);
+        }
+        Some(ret)
+    }
+}
+
 impl<T> Get for MapRwSignal<T>
 where
     T: Send + Sync + 'static + Clone,

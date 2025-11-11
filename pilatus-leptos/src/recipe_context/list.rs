@@ -2,7 +2,7 @@ use crate::{DeviceInfos, RecipeContext};
 use leptos::prelude::*;
 use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RecipeInfo {
     pub id: RecipeId,
     pub recipe: Recipe,
@@ -28,17 +28,22 @@ impl RecipeContext {
         })
     }
 
-    pub fn list_recipes(&self) -> Signal<Vec<RecipeInfo>> {
+    pub fn list_recipes(&self) -> Memo<Vec<RecipeInfo>> {
         let root = self.root.read_only();
-        Signal::derive(move || {
+
+        Memo::new(move |_| {
             root.with(|recipes| {
                 let (active_id, _) = recipes.active();
                 recipes
                     .iter_without_backup()
-                    .map(|(id, recipe)| RecipeInfo {
-                        id: id.clone(),
-                        recipe: recipe.clone(),
-                        is_active: id == &active_id,
+                    .map(|(id, recipe)| {
+                        let is_active = &active_id == id;
+
+                        RecipeInfo {
+                            id: id.clone(),
+                            recipe: recipe.clone(),
+                            is_active,
+                        }
                     })
                     .collect()
             })
@@ -63,7 +68,7 @@ impl RecipeContext {
 
         let metadata = RecipeMetadataRaw {
             new_id: recipe_id.clone(),
-            tags,
+            tags: tags.clone(),
         }
         .seal()?;
 
@@ -78,29 +83,18 @@ impl RecipeContext {
 
         match result {
             Ok(response) if response.ok() => {
-                let refresh_result = gloo_net::http::Request::get("/api/recipe/get_all")
-                    .header("content-type", "application/json")
-                    .send()
-                    .await;
-
-                if let Ok(refresh_response) = refresh_result
-                    && let Ok(state) = refresh_response
-                        .json::<pilatus::device::ActiveState>()
-                        .await
-                {
-                    leptos::logging::log!(
-                        "Tag added successfully {:?}",
-                        state
-                            .recipes
-                            .get_with_id(recipe_id)
-                            .map(|r| r.tags.clone())
-                            .unwrap_or_default()
-                    );
-                    root.set(state.recipes);
-                    Ok(())
-                } else {
-                    Err(anyhow::anyhow!("Failed to refresh recipes"))
-                }
+                // Update in place instead of replacing the entire root
+                root.update(|recipes| {
+                    if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
+                        leptos::logging::log!(
+                            "Updating tags in place: {:?} -> {:?}",
+                            recipe_mut.tags,
+                            tags
+                        );
+                        recipe_mut.tags = tags;
+                    }
+                });
+                Ok(())
             }
             Ok(response) => Err(anyhow::anyhow!(
                 "Failed to add tag: HTTP {}",

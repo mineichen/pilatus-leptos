@@ -2325,6 +2325,7 @@ dependencies = [
  "leptos_router",
  "pilatus",
  "pilatus-leptos",
+ "reactive_stores 0.3.0",
  "serde",
  "serde_json",
  "thaw",

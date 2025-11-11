@@ -42,24 +42,21 @@ pub fn RecipeManagement() -> impl IntoView {
                         <For
                             each=recipe_ids
                             key=|recipe_id| recipe_id.clone()
-                            children=move |recipe_id| {
-                                let recipe = Memo::new({
-                                    let recipes = recipes.clone();
-                                    let recipe_id = recipe_id.clone();
-                                    move |_| {
-                                        recipes
-                                            .get()
-                                            .iter()
-                                            .find(|info| info.id == recipe_id)
-                                            .unwrap()
-                                            .clone()
-                                    }
-                                });
-                                view! {
-                                    <RecipeRow recipe=recipe/>
+                            let(recipe_id)>
+                            >
+                            <RecipeRow recipe=Memo::new({
+                                let recipes = recipes.clone();
+                                let recipe_id = recipe_id.clone();
+                                move |_| {
+                                    recipes
+                                        .get()
+                                        .iter()
+                                        .find(|info| info.id == recipe_id)
+                                        .unwrap()
+                                        .clone()
                                 }
-                            }
-                        />
+                            })/>
+                        </For>
                     </tbody>
                 </table>
             </div>

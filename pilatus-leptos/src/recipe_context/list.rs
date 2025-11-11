@@ -1,4 +1,4 @@
-use crate::DeviceContext;
+use crate::RecipeContext;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
 
@@ -9,10 +9,9 @@ pub struct DeviceListItem {
     pub device_type: String,
 }
 
-impl DeviceContext {
+impl RecipeContext {
     pub fn list_devices(&self) -> Signal<Vec<DeviceListItem>> {
-        let lock = self.0.lock().unwrap();
-        let root = lock.root.read_only();
+        let root = self.0.root.read_only();
         Signal::derive(move || {
             root.with(|x| {
                 x.as_ref()

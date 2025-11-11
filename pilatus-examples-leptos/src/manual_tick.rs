@@ -1,7 +1,7 @@
 use futures_util::TryFutureExt;
 use impex::Impex;
 use leptos::prelude::*;
-use pilatus_leptos::{DeviceContext, PilatusWrapperSettings};
+use pilatus_leptos::{PilatusWrapperSettings, RecipeContext};
 use thaw::{Button, SpinButton};
 
 #[derive(Impex)]
@@ -34,7 +34,7 @@ pub fn ManualTick() -> impl IntoView {
             .await
     });
 
-    let device_context = expect_context::<DeviceContext>();
+    let device_context = expect_context::<RecipeContext>();
     let params =
         device_context.get_active_router_device::<ManualTickParamsImpex<PilatusWrapperSettings>>();
 
@@ -45,7 +45,6 @@ pub fn ManualTick() -> impl IntoView {
 
     view! {
 
-        <h1>"ManualTick"</h1>
         <div>"Initial count: " {move || initial_count.get()}</div>
         <SpinButton<i64> value=initial_count step_page=1/>
         <Button on:click=move |_| {

@@ -105,20 +105,11 @@ where
     where
         T: serde::de::DeserializeOwned,
     {
-        self.read_signal.with(|prim_val| {
-            match &prim_val.value {
-                ValueKind::Value(v) => v.clone(),
-                ValueKind::Variable(var) => {
-                    // Try to get DeviceContext and resolve the variable
-                    if let Some(device_ctx) = use_context::<crate::DeviceContext>() {
-                        device_ctx.get_variable::<T>(&**var)
-                    } else {
-                        panic!(
-                            "Cannot resolve variable '{}': DeviceContext not found",
-                            &**var
-                        )
-                    }
-                }
+        self.read_signal.with(|prim_val| match &prim_val.value {
+            ValueKind::Value(v) => v.clone(),
+            ValueKind::Variable(var) => {
+                let device_ctx = expect_context::<crate::RecipeContext>();
+                device_ctx.get_variable::<T>(&**var)
             }
         })
     }
@@ -133,14 +124,8 @@ where
                 ValueKind::Value(v) => v.clone(),
                 ValueKind::Variable(var) => {
                     // Try to get DeviceContext and resolve the variable
-                    if let Some(device_ctx) = use_context::<crate::DeviceContext>() {
-                        device_ctx.get_variable::<T>(&**var)
-                    } else {
-                        panic!(
-                            "Cannot resolve variable '{}': DeviceContext not found",
-                            &**var
-                        )
-                    }
+                    let device_ctx = expect_context::<crate::RecipeContext>();
+                    device_ctx.get_variable::<T>(&**var)
                 }
             }
         })
@@ -158,7 +143,7 @@ where
         match &current_prim.value {
             ValueKind::Variable(var) => {
                 // Write to the variable in DeviceContext
-                if let Some(device_ctx) = use_context::<crate::DeviceContext>() {
+                if let Some(device_ctx) = use_context::<crate::RecipeContext>() {
                     let var_name = var.to_string();
                     device_ctx.set_variable(&var_name, value);
                     leptos::logging::log!("Wrote value to variable '{}'", var_name);

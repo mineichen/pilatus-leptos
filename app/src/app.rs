@@ -5,8 +5,8 @@ use leptos_router::{
     components::{ParentRoute, Route, Router, Routes},
 };
 use pilatus_examples_leptos::{Greeter, ManualTick};
-use pilatus_leptos::{DeviceView, HomeView, ProvideDeviceContext};
-use thaw::{Anchor, AnchorLink, ConfigProvider, Layout, LayoutHeader, LayoutSider};
+use pilatus_leptos::{DeviceView, HomeView, JsonDeviceView, ProvideDeviceContext};
+use thaw::{ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
 use crate::nav::Nav;
 
@@ -35,6 +35,7 @@ pub fn App() -> impl IntoView {
                                     <ParentRoute path=leptos_router::path!("/device/:device_id") view=DeviceView>
                                         <Route path=StaticSegment("greeter") view=Greeter/>
                                         <Route path=StaticSegment("manual_tick") view=ManualTick />
+                                        <Route path=leptos_router::path!("/:device_type") view=JsonDeviceView/>
                                     </ParentRoute>
                                 </Routes>
                             </Router>

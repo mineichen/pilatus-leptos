@@ -7,12 +7,15 @@ use std::{
 
 use crate::{DeviceParams, MapRwSignal};
 use leptos::{either::Either, prelude::*};
-use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
+use pilatus::{
+    RecipeId, UntypedDeviceParamsWithVariables,
+    device::{self, DeviceId},
+};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
 #[derive(Clone)]
-pub struct DeviceContext(Arc<Mutex<DeviceContextState>>);
+pub struct RecipeContext(Arc<DeviceContextState>);
 
 // type DeviceTypeDeserializer =
 //     Box<dyn Fn() -> Box<dyn std::any::Any + Send + Sync> + Send + Sync + 'static>;
@@ -32,20 +35,17 @@ pub struct DeviceContext(Arc<Mutex<DeviceContextState>>);
 //     }
 // }
 mod list;
-
+#[derive(Clone)]
 pub struct DeviceContextState {
-    //pub deserializers: HashMap<&'static str, DeviceTypeDeserializer>,
-    // pub untyped: HashMap<DeviceId, Untyped>,
-    // pub managed_signals: HashMap<(DeviceId, TypeId), Box<dyn std::any::Any + Send + Sync>>,
     root: MapRwSignal<Option<pilatus::Recipes>>,
     unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     variables: RwSignal<HashMap<String, Value>>,
 }
 
-impl DeviceContext {
+impl RecipeContext {
     fn new() -> Self {
-        Self(Arc::new(Mutex::new(DeviceContextState::new())))
+        Self(Arc::new(DeviceContextState::new()))
     }
 }
 
@@ -66,7 +66,7 @@ impl DeviceContextState {
     }
 }
 
-impl DeviceContext {
+impl RecipeContext {
     pub fn get_active_router_device<T>(&self) -> MapRwSignal<T>
     where
         T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
@@ -79,10 +79,7 @@ impl DeviceContext {
     /// Get a variable value by name, deserializing to the target type
     /// Panics if the variable is not found or cannot be deserialized
     pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> T {
-        let lock = self.0.lock().unwrap();
-        let variables = lock.variables;
-
-        variables.with(|vars| {
+        self.0.variables.with(|vars| {
             vars.get(name)
                 .and_then(|val| T::deserialize(val).ok())
                 .unwrap_or_else(|| {
@@ -93,10 +90,7 @@ impl DeviceContext {
 
     /// Set a variable value by name
     pub fn set_variable<T: Serialize>(&self, name: &str, value: T) {
-        let lock = self.0.lock().unwrap();
-        let variables = lock.variables;
-
-        variables.update(|vars| {
+        self.0.variables.update(|vars| {
             if let Ok(json_val) = serde_json::to_value(&value) {
                 vars.insert(name.to_string(), json_val);
             } else {
@@ -107,9 +101,8 @@ impl DeviceContext {
 
     /// Get a typed signal from the JSON params
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
-        let lock = self.0.lock().unwrap();
-        let setter = lock.unsaved_changes_writer;
-        lock.root.map(
+        let setter = self.0.unsaved_changes_writer;
+        self.0.root.map(
             move |x| {
                 //leptos::logging::log!("Create device JSON-Value");
                 x.as_ref()
@@ -168,13 +161,12 @@ impl DeviceContext {
 
 #[component]
 pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
-    let device_context = DeviceContext::new();
+    let device_context = RecipeContext::new();
     let (root, ch_reader, ch_writer) = {
-        let lock = device_context.0.lock().unwrap();
         (
-            lock.root,
-            lock.unsaved_changes_reader,
-            lock.unsaved_changes_writer,
+            device_context.0.root,
+            device_context.0.unsaved_changes_reader,
+            device_context.0.unsaved_changes_writer,
         )
     };
     provide_context(device_context);

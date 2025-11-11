@@ -1,10 +1,10 @@
 use leptos::prelude::*;
-use pilatus_leptos::DeviceContext;
+use pilatus_leptos::RecipeContext;
 use thaw::{Anchor, AnchorLink};
 
 #[component]
 pub fn Nav() -> impl IntoView {
-    let ctx = use_context::<DeviceContext>().expect("Requires DeviceContext to render nav");
+    let ctx = expect_context::<RecipeContext>();
     view! {
         <Anchor>
             <AnchorLink title="Home" href="/" />

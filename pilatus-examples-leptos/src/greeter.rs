@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use futures_util::TryFutureExt;
 use impex::Impex;
 use leptos::prelude::*;
-use pilatus_leptos::{DeviceContext, PilatusWrapperSettings, VariableInput};
+use pilatus_leptos::{RecipeContext, PilatusWrapperSettings, VariableInput};
 use serde::{Deserialize, Serialize};
 use thaw::{Button, Input};
 
@@ -31,7 +31,7 @@ impl Default for ParamsCopyRemoveMe {
 
 #[component]
 pub fn Greeter() -> impl IntoView {
-    let device_context = expect_context::<DeviceContext>();
+    let device_context = expect_context::<RecipeContext>();
     let data = device_context
         .get_active_router_device::<ParamsCopyRemoveMeImpex<PilatusWrapperSettings>>();
     let lang = data.map_leaf(

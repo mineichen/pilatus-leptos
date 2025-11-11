@@ -1,6 +1,6 @@
 use crate::{DeviceInfos, RecipeContext};
 use leptos::prelude::*;
-use pilatus::{Name, Recipe, RecipeId};
+use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw};
 
 #[derive(Clone, Debug)]
 pub struct RecipeInfo {
@@ -47,51 +47,66 @@ impl RecipeContext {
 
     /// Add a tag to a specific recipe
     /// This sends an API request to update the recipe on the server
-    pub fn add_tag_to_recipe(&self, recipe_id: pilatus::RecipeId, tag_name: Name) {
+    pub async fn add_tag_to_recipe(
+        &self,
+        recipe_id: pilatus::RecipeId,
+        tag_name: Name,
+    ) -> Result<(), anyhow::Error> {
         let root = self.root;
+        let root_value = root.get_untracked();
+        let Some(recipe) = root_value.get_with_id(&recipe_id) else {
+            return Err(anyhow::anyhow!("Recipe {recipe_id} doesn't exist"));
+        };
+        let mut tags = recipe.tags.clone();
+        tags.push(tag_name);
+        let url = format!("/api/recipe/{}/meta", recipe_id);
 
-        leptos::task::spawn_local(async move {
-            let url = format!("/api/recipe/{}/meta", recipe_id);
+        let metadata = RecipeMetadataRaw {
+            new_id: recipe_id.clone(),
+            tags,
+        }
+        .seal()?;
 
-            let result = async {
-                gloo_net::http::Request::put(&url)
+        let result = async {
+            gloo_net::http::Request::put(&url)
+                .header("content-type", "application/json")
+                .body(serde_json::to_string(&metadata)?)?
+                .send()
+                .await
+        }
+        .await;
+
+        match result {
+            Ok(response) if response.ok() => {
+                let refresh_result = gloo_net::http::Request::get("/api/recipe/get_all")
                     .header("content-type", "application/json")
-                    .body(serde_json::json!({ "tag": tag_name }).to_string())?
                     .send()
-                    .await
-            }
-            .await;
+                    .await;
 
-            match result {
-                Ok(response) if response.ok() => {
+                if let Ok(refresh_response) = refresh_result
+                    && let Ok(state) = refresh_response
+                        .json::<pilatus::device::ActiveState>()
+                        .await
+                {
                     leptos::logging::log!(
-                        "Successfully added tag '{}' to recipe {:?}",
-                        tag_name,
-                        recipe_id
+                        "Tag added successfully {:?}",
+                        state
+                            .recipes
+                            .get_with_id(recipe_id)
+                            .map(|r| r.tags.clone())
+                            .unwrap_or_default()
                     );
-
-                    // Refresh the recipes from the server
-                    let refresh_result = gloo_net::http::Request::get("/api/recipe/get_all")
-                        .header("content-type", "application/json")
-                        .send()
-                        .await;
-
-                    if let Ok(refresh_response) = refresh_result {
-                        if let Ok(state) = refresh_response
-                            .json::<pilatus::device::ActiveState>()
-                            .await
-                        {
-                            root.set(state.recipes);
-                        }
-                    }
-                }
-                Ok(response) => {
-                    leptos::logging::error!("Failed to add tag: HTTP {}", response.status());
-                }
-                Err(e) => {
-                    leptos::logging::error!("Failed to add tag: {}", e);
+                    root.set(state.recipes);
+                    Ok(())
+                } else {
+                    Err(anyhow::anyhow!("Failed to refresh recipes"))
                 }
             }
-        });
+            Ok(response) => Err(anyhow::anyhow!(
+                "Failed to add tag: HTTP {}",
+                response.status()
+            )),
+            Err(e) => Err(anyhow::anyhow!("Failed to add tag: {}", e)),
+        }
     }
 }

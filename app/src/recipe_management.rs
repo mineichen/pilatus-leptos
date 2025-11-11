@@ -44,6 +44,21 @@ pub fn RecipeManagement() -> impl IntoView {
                                         let new_tag_input = RwSignal::new(String::new());
                                         let ctx_clone = ctx.clone();
 
+                                        let add_tag_to_recipe =
+                                        Action::new_local(move |_: &()| {
+                                            let ctx_clone = ctx_clone.clone();
+                                            let recipe_id = recipe_id.clone();
+                                            async move {
+                                                let Ok(tag_name) = Name::from_str(&new_tag_input.get()) else {
+                                                    leptos::logging::error!("Invalid tag name: {}", new_tag_input.get());
+                                                    return Err(anyhow::anyhow!("Invalid tag name: {}", new_tag_input.get()));
+                                                };
+                                                let r = ctx_clone.add_tag_to_recipe(recipe_id.clone(), tag_name.clone()).await;
+                                                new_tag_input.set(String::new());
+                                                r
+                                            }
+                                        });
+
                                         view! {
                                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -66,16 +81,14 @@ pub fn RecipeManagement() -> impl IntoView {
                                                     <Button
                                                         size=ButtonSize::Small
                                                         on:click=move |_| {
-                                                            let Ok(tag_name) = Name::from_str(&new_tag_input.get()) else {
-                                                                leptos::logging::error!("Invalid tag name: {}", new_tag_input.get());
-                                                                return;
-                                                            };
-                                                            ctx_clone.add_tag_to_recipe(recipe_id.clone(), tag_name.clone());
-                                                            new_tag_input.set(String::new());
+                                                            add_tag_to_recipe.dispatch(());
                                                         }
                                                     >
                                                         "+ Add Tag"
                                                     </Button>
+                                                </div>
+                                                <div style="display: flex; gap: 4px; align-items: center;">
+                                                        {move || add_tag_to_recipe.value().read().as_ref().and_then(|r| r.as_ref().err().map(|e| format!("Error: {e}")))}
                                                 </div>
                                             </div>
                                         }
@@ -124,6 +137,7 @@ pub fn RecipeManagement() -> impl IntoView {
                                                                 on:click=move |_| {
                                                                     leptos::logging::log!("Activate recipe: {} (id: {:?})", id_str_for_activate, recipe_id_activate);
                                                                     // Logic will be added later
+
                                                                 }
                                                             >
                                                                 "Activate"

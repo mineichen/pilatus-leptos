@@ -11,6 +11,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+anyhow = "1"
 axum = "0.8"
 gloo-net = "0.6"
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
@@ -35,12 +36,12 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
-# [patch."https://github.com/mineichen/pilatus.git"]
-# pilatus = { path = "../pilatus/pilatus" }
-# pilatus-rt = { path = "../pilatus/pilatus-rt" }
-# pilatus-axum = { path = "../pilatus/pilatus-axum" }
-# pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
-# pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
-# pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
-# pilatus-engineering-camera = { path = "../pilatus/pilatus-engineering-camera" }
-# pilatus-engineering-camera-rt = { path = "../pilatus/pilatus-engineering-camera-rt" }
+[patch."https://github.com/mineichen/pilatus.git"]
+pilatus = { path = "../pilatus/pilatus" }
+pilatus-rt = { path = "../pilatus/pilatus-rt" }
+pilatus-axum = { path = "../pilatus/pilatus-axum" }
+pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
+pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
+pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
+pilatus-engineering-camera = { path = "../pilatus/pilatus-engineering-camera" }
+pilatus-engineering-camera-rt = { path = "../pilatus/pilatus-engineering-camera-rt" }

@@ -1,12 +1,11 @@
-use std::{borrow::Cow, ops::Deref};
+use std::borrow::Cow;
 
 use futures_util::TryFutureExt;
 use impex::Impex;
 use leptos::prelude::*;
-use leptos_router::hooks::use_params;
-use pilatus_leptos::{DeviceContext, DeviceParams};
+use pilatus_leptos::{DeviceContext, PilatusWrapperSettings, VariableInput};
 use serde::{Deserialize, Serialize};
-use thaw::{Button, Field, Input};
+use thaw::{Button, Input};
 
 #[derive(Deserialize, Serialize, PartialEq, Clone, Impex)]
 #[impex(derive(PartialEq, Eq, Clone))]
@@ -33,13 +32,11 @@ impl Default for ParamsCopyRemoveMe {
 #[component]
 pub fn Greeter() -> impl IntoView {
     let device_context = expect_context::<DeviceContext>();
-    let params = use_params::<DeviceParams>();
-    let device_id = move || Some(params.read().as_ref().ok()?.device_id);
-    let data =
-        device_context.get::<ParamsCopyRemoveMeImpex>(Signal::derive(move || device_id().unwrap()));
-    let lang = data.map(
-        |x| x.lang.deref().clone(),
-        |target, value| target.lang.set_explicit(value),
+    let data = device_context
+        .get_active_router_device::<ParamsCopyRemoveMeImpex<PilatusWrapperSettings>>();
+    let lang = data.map_leaf(
+        |x| x.lang.clone(),
+        |target, prim_val| target.lang = prim_val,
     );
 
     // leptos::reactive::computed::create_slice(signal, getter, setter)
@@ -72,12 +69,12 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
-            <p>"Language '" {lang} "'" </p>
-            <Field
-                label = "Language"
-            >
-                <Input value=lang />
-            </Field>
+            <p>"Language: " {move || lang.get_value()} </p>
+
+            <VariableInput
+                value=lang
+                label="Language".to_string()
+            />
 
             <Input value=name placeholder="Enter your name"/>
             <Button on:click=move |_| { action.dispatch(name.get_untracked());}>"Say Hello"</Button>

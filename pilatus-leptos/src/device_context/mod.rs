@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use crate::MapRwSignal;
+use crate::{DeviceParams, MapRwSignal};
 use leptos::{either::Either, prelude::*};
 use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
@@ -31,6 +31,7 @@ pub struct DeviceContext(Arc<Mutex<DeviceContextState>>);
 //         }
 //     }
 // }
+mod list;
 
 pub struct DeviceContextState {
     //pub deserializers: HashMap<&'static str, DeviceTypeDeserializer>,
@@ -39,6 +40,7 @@ pub struct DeviceContextState {
     root: MapRwSignal<Option<pilatus::Recipes>>,
     unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
+    variables: RwSignal<HashMap<String, Value>>,
 }
 
 impl DeviceContext {
@@ -59,11 +61,50 @@ impl DeviceContextState {
             root: MapRwSignal::new(None),
             unsaved_changes_reader,
             unsaved_changes_writer,
+            variables: RwSignal::new([("foo".to_string(), 42.into())].into_iter().collect()),
         }
     }
 }
 
 impl DeviceContext {
+    pub fn get_active_router_device<T>(&self) -> MapRwSignal<T>
+    where
+        T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
+    {
+        let params = leptos_router::hooks::use_params::<DeviceParams>();
+        let device_id = move || Some(params.read().as_ref().ok()?.device_id);
+        self.get::<T>(Signal::derive(move || device_id().unwrap()))
+    }
+
+    /// Get a variable value by name, deserializing to the target type
+    /// Panics if the variable is not found or cannot be deserialized
+    pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> T {
+        let lock = self.0.lock().unwrap();
+        let variables = lock.variables;
+
+        variables.with(|vars| {
+            vars.get(name)
+                .and_then(|val| T::deserialize(val).ok())
+                .unwrap_or_else(|| {
+                    panic!("Variable '{}' not found or cannot be deserialized", name)
+                })
+        })
+    }
+
+    /// Set a variable value by name
+    pub fn set_variable<T: Serialize>(&self, name: &str, value: T) {
+        let lock = self.0.lock().unwrap();
+        let variables = lock.variables;
+
+        variables.update(|vars| {
+            if let Ok(json_val) = serde_json::to_value(&value) {
+                vars.insert(name.to_string(), json_val);
+            } else {
+                leptos::logging::error!("Failed to serialize variable '{}' value", name);
+            }
+        });
+    }
+
     /// Get a typed signal from the JSON params
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
         let lock = self.0.lock().unwrap();
@@ -113,7 +154,7 @@ impl DeviceContext {
                 T::deserialize(x).unwrap_or_else(|e| {
                     panic!(
                         "Cannot extract {:?} from {:?}: {e}",
-                        std::any::TypeId::of::<T>(),
+                        std::any::type_name::<T>(),
                         x
                     )
                 })
@@ -140,7 +181,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
 
     // Fetch recipes from the API
     let recipes_resource = LocalResource::new(|| async {
-        gloo_timers::future::sleep(std::time::Duration::from_secs(1)).await;
+        //gloo_timers::future::sleep(std::time::Duration::from_secs(1)).await;
         gloo_net::http::Request::get("/api/recipe/get_all")
             .header("content-type", "application/json")
             .send()
@@ -158,6 +199,8 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         }
     });
 
+    const DEBOUNCE_DURATION: Duration = Duration::from_millis(250);
+
     let action = Action::new_local(move |_| async move {
         loop {
             let mut next = None;
@@ -168,7 +211,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                 break;
             };
 
-            gloo_timers::future::sleep(Duration::from_millis(250)).await;
+            gloo_timers::future::sleep(DEBOUNCE_DURATION).await;
             if ch_reader.read_untracked().get(&device_id).is_some() {
                 leptos::logging::log!("Device : {device_id:?} has newer pending changes");
             } else {
@@ -218,6 +261,22 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         },
     );
 
+    //  let manual_tick_device_id =   Signal::derive(move || DeviceId::from_str("e8e8eb2d-2325-4a40-aba7-7d223d39fe83").unwrap());
+    leptos::task::spawn_local(async move {
+        // for _ in 0..10 {
+        //     gloo_timers::future::sleep(Duration::from_secs(1)).await;
+        //     leptos::logging::log!("Heartbeat");
+        //     if show_children.get_untracked() {
+        //         let manual_tick = temp_effect_clone.get::<serde_json::Value>(manual_tick_device_id);
+        //         let mut manual_tick_json = manual_tick.get_untracked();
+        //         let count_field = &mut manual_tick_json["initial_count"];
+        //         *count_field = (count_field.as_i64().unwrap() + 1).into();
+
+        //         manual_tick.set(manual_tick_json);
+        //         leptos::logging::log!("Showing children {:?}", manual_tick);
+        //     }
+        // }
+    });
     view! {
         {move || {
             if *show_children.read() {

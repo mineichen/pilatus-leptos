@@ -19,7 +19,11 @@ use leptos::tachys::view::Render;
 use leptos::tachys::view::RenderHtml;
 use leptos::tachys::view::add_attr::AddAnyAttr;
 
+use serde::de::DeserializeOwned;
 use serde::{Serialize, Serializer};
+
+use crate::LeafRwSignal;
+use crate::PilatusPrimitiveValue;
 
 /// Signal which allows reading and writing a value
 ///
@@ -94,6 +98,28 @@ where
         self.map_internal(from, move |read| {
             Memo::new(move |_| read.with(|t| towards(t))).into()
         })
+    }
+
+    #[track_caller]
+    pub fn map_leaf<A: DeserializeOwned>(
+        &self,
+        towards: impl Fn(&T) -> PilatusPrimitiveValue<A> + Send + Sync + 'static,
+        from: impl Fn(&mut T, PilatusPrimitiveValue<A>) + Send + Sync + 'static,
+    ) -> LeafRwSignal<A>
+    where
+        A: Send + Sync + 'static + PartialEq + Clone,
+    {
+        let read = self.read_signal;
+        let new_read: Signal<PilatusPrimitiveValue<A>> =
+            Memo::new(move |_| read.with(|t| towards(t))).into();
+        let write: SignalSetter<T> = self.write_signal;
+        let new_write = SignalSetter::map(move |value: PilatusPrimitiveValue<A>| {
+            let mut t = read.get_untracked();
+            from(&mut t, value);
+            write.set(t);
+        });
+
+        LeafRwSignal::new_with_signals(new_read, new_write)
     }
 
     #[track_caller]

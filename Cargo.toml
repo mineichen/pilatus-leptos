@@ -13,7 +13,7 @@ edition = "2024"
 [workspace.dependencies]
 axum = "0.8"
 gloo-net = "0.6"
-impex = { git = "https://github.com/mineichen/impex" }
+impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 leptos = "0.8"
 leptos_axum = "0.8"
 leptos_router = "0.8"

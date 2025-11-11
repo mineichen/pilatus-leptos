@@ -8,6 +8,8 @@ use pilatus_examples_leptos::{Greeter, ManualTick};
 use pilatus_leptos::{DeviceView, HomeView, ProvideDeviceContext};
 use thaw::{Anchor, AnchorLink, ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
+use crate::nav::Nav;
+
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
@@ -19,11 +21,8 @@ pub fn App() -> impl IntoView {
             <ProvideDeviceContext>
                 <Layout has_sider=true>
                     <LayoutSider attr:style="background-color: #0078ff99; padding: 20px;">
-                        <Anchor>
-                            <AnchorLink title="Home" href="/" />
-                            <AnchorLink title="Greeter" href="/device/bc505bd1-1818-4d97-a4cb-2b698b657000/greeter" />
-                            <AnchorLink title="ManualTick" href="/device/e8e8eb2d-2325-4a40-aba7-7d223d39fe83/manual_tick" />
-                        </Anchor>
+
+                        <Nav />
                     </LayoutSider>
                     <Layout>
                         <LayoutHeader attr:style="background-color: #0078ffaa; padding: 20px;">

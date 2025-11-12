@@ -4,7 +4,7 @@ members = [
     "app",
     "pilatus-leptos",
     "pilatus-examples-leptos"
-]
+, "app-backend"]
 
 [workspace.package]
 version = "0.1.0"

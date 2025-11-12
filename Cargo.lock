@@ -120,6 +120,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "app-backend"
+version = "0.1.0"
+dependencies = [
+ "minfac",
+ "pilatus",
+ "pilatus-axum-rt",
+ "pilatus-rt",
+ "pilatus-tick",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2357,6 +2368,24 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "pilatus-tick"
+version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#e2108d608d425e97073913f9c25ba0feaeb4bb96"
+dependencies = [
+ "anyhow",
+ "futures",
+ "minfac",
+ "pilatus",
+ "pilatus-axum",
+ "pilatus-axum-rt",
+ "pilatus-rt",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

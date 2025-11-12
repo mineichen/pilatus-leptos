@@ -11,4 +11,4 @@ app/dist
 *.pdb
 
 /.sass-cache
-/data
+/app-backend/data

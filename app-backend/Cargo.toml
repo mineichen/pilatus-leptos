@@ -1,0 +1,11 @@
+[package]
+name = "app-backend"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+minfac = "0.1"
+pilatus = { git = "https://github.com/mineichen/pilatus.git"}
+pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-rt = { git = "https://github.com/mineichen/pilatus.git"}
+pilatus-tick = { git = "https://github.com/mineichen/pilatus.git" }

@@ -43,5 +43,4 @@ pilatus-axum = { path = "../pilatus/pilatus-axum" }
 pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
 pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
 pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
-pilatus-engineering-camera = { path = "../pilatus/pilatus-engineering-camera" }
-pilatus-engineering-camera-rt = { path = "../pilatus/pilatus-engineering-camera-rt" }
+pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }

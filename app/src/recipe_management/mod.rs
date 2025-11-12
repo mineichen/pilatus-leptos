@@ -3,8 +3,9 @@ mod recipe_tags;
 
 use leptos::prelude::*;
 use pilatus_leptos::RecipeContext;
+use thaw::Button;
 
-use self::recipe_row::RecipeRow;
+use self::recipe_row::{RecipeRow, RecipeRowProps};
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {
@@ -12,20 +13,12 @@ pub fn RecipeManagement() -> impl IntoView {
 
     // Get real recipes from context - returns Memo<Vec<RecipeInfo>>
     let recipes = ctx.list_recipes();
-    let recipe_ids = move || {
-        recipes
-            .get()
-            .iter()
-            .map(|info| info.id.clone())
-            .collect::<Vec<_>>()
-    };
+    let recipe_ids =
+        move || recipes.with(|x| x.iter().map(|info| info.id.clone()).collect::<Vec<_>>());
 
     view! {
         <div style="padding: 20px;">
-        <h1>"Recipe Management"</h1>
-        <p style="color: #666; margin-bottom: 20px;">
-            "Manage your recipes - activate, delete, and organize with tags"
-        </p>
+        <h1 style="padding-bottom: 20px;">"Recipe Management"</h1>
 
         <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <table style="width: 100%; border-collapse: collapse;">
@@ -41,24 +34,28 @@ pub fn RecipeManagement() -> impl IntoView {
                     <tbody>
                         <For
                             each=recipe_ids
-                            key=|recipe_id| recipe_id.clone()
-                            let(recipe_id)>
-                            >
-                            <RecipeRow recipe=Memo::new({
-                                let recipes = recipes.clone();
-                                let recipe_id = recipe_id.clone();
-                                move |_| {
-                                    recipes
-                                        .get()
-                                        .iter()
-                                        .find(|info| info.id == recipe_id)
-                                        .unwrap()
-                                        .clone()
+                            key=|id| id.clone()
+                            let(id)>
+                            {
+                                let recipe = Memo::new(move |_| {
+                                    recipes.with(|x| x.iter().find(|x|x.id == id).cloned()).unwrap()
+                                });
+
+                                move || {
+                                    RecipeRow(RecipeRowProps {
+                                        recipe
+                                    })
+
                                 }
-                            })/>
+                            }
                         </For>
                     </tbody>
                 </table>
+                <Button class="mt-4" on:click=move |_| {
+                    leptos::logging::log!("Create recipe");
+                }>
+                    "Create Recipe"
+                </Button>
             </div>
         </div>
     }

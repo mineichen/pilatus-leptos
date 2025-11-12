@@ -103,4 +103,67 @@ impl RecipeContext {
             Err(e) => Err(anyhow::anyhow!("Failed to add tag: {}", e)),
         }
     }
+
+    /// Delete a recipe
+    /// This sends a DELETE request to the server and refreshes the recipe list
+    pub async fn delete_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
+        let url = format!("/api/recipe/{}", recipe_id);
+        let response = gloo_net::http::Request::delete(&url)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to delete recipe: {}", e))?;
+
+        if !response.ok() {
+            return Err(anyhow::anyhow!(
+                "Failed to delete recipe: HTTP {}",
+                response.status()
+            ));
+        }
+
+        // Refresh the recipe list from the server
+        self.refresh_recipes().await?;
+        leptos::logging::log!("Recipe deleted successfully: {:?}", recipe_id);
+        Ok(())
+    }
+
+    /// Duplicate a recipe
+    /// This sends a PUT request to clone the recipe and refreshes the recipe list
+    pub async fn duplicate_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
+        let url = format!("/api/recipe/{}/clone", recipe_id);
+        let response = gloo_net::http::Request::put(&url)
+            .header("content-type", "application/json")
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to clone recipe: {}", e))?;
+
+        if !response.ok() {
+            return Err(anyhow::anyhow!(
+                "Failed to clone recipe: HTTP {}",
+                response.status()
+            ));
+        }
+
+        // Refresh the recipe list from the server
+        self.refresh_recipes().await?;
+        leptos::logging::log!("Recipe cloned successfully: {:?}", recipe_id);
+        Ok(())
+    }
+
+    /// Refresh the recipe list from the server
+    async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
+        let response = gloo_net::http::Request::get("/api/recipe/get_all")
+            .header("content-type", "application/json")
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to fetch recipes: {}", e))?;
+
+        let active_state: pilatus::device::ActiveState = response
+            .json()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to parse recipes: {}", e))?;
+
+        // Update the root signal with the new recipes
+        self.root.set(active_state.recipes);
+        Ok(())
+    }
 }

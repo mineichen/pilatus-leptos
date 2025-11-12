@@ -12,3 +12,4 @@ app/dist
 
 /.sass-cache
 /app-backend/data
+!/app-backend/data/config.json

@@ -6,6 +6,7 @@ fn main() {
     Runtime::default()
         .register(pilatus_axum_rt::register)
         .register(pilatus_tick::register)
+        .register(pilatus_emulation_camera::register)
         .register(register)
         .run();
 }
@@ -25,6 +26,10 @@ extern "C" fn register(c: &mut ServiceCollection) {
             r.add_device(
                 pilatus_tick::create_default_greeter_device_config()
                     .with_name(Name::new("Greeter").unwrap()),
+            );
+            r.add_device(
+                pilatus_emulation_camera::create_default_device_config()
+                    .with_name(Name::new("EmulationCamera").unwrap()),
             );
         })
     });

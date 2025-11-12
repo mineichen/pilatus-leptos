@@ -1,13 +1,28 @@
 use leptos::prelude::*;
-use pilatus_leptos::RecipeInfo;
+use pilatus_leptos::{RecipeContext, RecipeInfo};
 use thaw::{Button, ButtonSize};
 
 use super::recipe_tags::RecipeTags;
 
 #[component]
 pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
+    let ctx = expect_context::<RecipeContext>();
+    let ctx_duplicate = ctx.clone();
+    let ctx_delete = ctx.clone();
     let is_active = Signal::derive(move || recipe.read().is_active);
     let recipe_id_signal = move || recipe.read().id.clone();
+
+    let duplicate_action = Action::new_local(move |_: &()| {
+        let ctx = ctx_duplicate.clone();
+        let recipe_id = recipe_id_signal();
+        async move { ctx.duplicate_recipe(recipe_id).await }
+    });
+
+    let delete_action = Action::new_local(move |_: &()| {
+        let ctx = ctx_delete.clone();
+        let recipe_id = recipe_id_signal();
+        async move { ctx.delete_recipe(recipe_id).await }
+    });
 
     view! {
         <tr style="border-bottom: 1px solid #e0e0e0;">
@@ -51,9 +66,17 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                     </Button>
                     <Button
                         size=ButtonSize::Small
+                        on:click=move |_| {
+                            duplicate_action.dispatch(());
+                        }
+                    >
+                        "Duplicate"
+                    </Button>
+                    <Button
+                        size=ButtonSize::Small
                         disabled=is_active
                         on:click=move |_| {
-                            leptos::logging::log!("Delete recipe: (id: {:?})", recipe_id_signal());
+                            delete_action.dispatch(());
                         }
                     >
                         "Delete"

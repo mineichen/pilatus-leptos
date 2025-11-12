@@ -99,6 +99,7 @@ dependencies = [
  "axum",
  "chrono",
  "console_error_panic_hook",
+ "gloo-net",
  "http",
  "leptos",
  "leptos_axum",
@@ -126,6 +127,7 @@ dependencies = [
  "minfac",
  "pilatus",
  "pilatus-axum-rt",
+ "pilatus-emulation-camera",
  "pilatus-rt",
  "pilatus-tick",
 ]
@@ -488,9 +490,9 @@ dependencies = [
 
 [[package]]
 name = "config"
-version = "0.15.18"
+version = "0.15.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "180e549344080374f9b32ed41bf3b6b57885ff6a289367b3dbc10eea8acc1918"
+checksum = "b30fa8254caad766fc03cb0ccae691e14bf3bd72bfff27f72802ce729551b3d6"
 dependencies = [
  "convert_case 0.6.0",
  "pathdiff",
@@ -676,9 +678,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crypto-common"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
+checksum = "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a"
 dependencies = [
  "generic-array",
  "typenum",
@@ -1032,9 +1034,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "0.14.9"
+version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb6743198531e02858aeaea5398fcc883e71851fcbcb5a2f773e2fb6cb1edf2"
+checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
@@ -2212,6 +2214,7 @@ dependencies = [
 [[package]]
 name = "pilatus"
 version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "approx",
@@ -2238,6 +2241,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2258,6 +2262,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -2284,8 +2289,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pilatus-emulation-camera"
+version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "image",
+ "minfac",
+ "pilatus",
+ "pilatus-axum",
+ "pilatus-engineering",
+ "serde",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "approx",
@@ -2347,6 +2372,7 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2373,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#cfc0f985f7f43eb1f03098374899de6595c54569"
+source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
 dependencies = [
  "anyhow",
  "futures",
@@ -4313,11 +4339,3 @@ dependencies = [
  "quote",
  "syn 2.0.110",
 ]
-
-[[patch.unused]]
-name = "pilatus-emulation-camera-rt"
-version = "0.1.0"
-
-[[patch.unused]]
-name = "pilatus-engineering-rt"
-version = "0.1.0"

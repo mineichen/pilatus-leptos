@@ -7,10 +7,17 @@ use super::recipe_tags::RecipeTags;
 #[component]
 pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
     let ctx = expect_context::<RecipeContext>();
+    let ctx_activate = ctx.clone();
     let ctx_duplicate = ctx.clone();
     let ctx_delete = ctx.clone();
     let is_active = Signal::derive(move || recipe.read().is_active);
     let recipe_id_signal = move || recipe.read().id.clone();
+
+    let activate_action = Action::new_local(move |_: &()| {
+        let ctx = ctx_activate.clone();
+        let recipe_id = recipe_id_signal();
+        async move { ctx.activate_recipe(recipe_id).await }
+    });
 
     let duplicate_action = Action::new_local(move |_: &()| {
         let ctx = ctx_duplicate.clone();
@@ -54,34 +61,60 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                 </span>
             </td>
             <td style="padding: 12px;">
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                    <Button
-                        size=ButtonSize::Small
-                        disabled=is_active
-                        on:click=move |_| {
-                            leptos::logging::log!("Activate recipe (id: {:?})", recipe_id_signal());
-                        }
-                    >
-                        "Activate"
-                    </Button>
-                    <Button
-                        size=ButtonSize::Small
-                        on:click=move |_| {
-                            duplicate_action.dispatch(());
-                        }
-                    >
-                        "Duplicate"
-                    </Button>
-                    <Button
-                        size=ButtonSize::Small
-                        disabled=is_active
-                        on:click=move |_| {
-                            delete_action.dispatch(());
-                        }
-                    >
-                        "Delete"
-                    </Button>
-
+                <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        <Button
+                            size=ButtonSize::Small
+                            disabled=is_active
+                            on:click=move |_| {
+                                activate_action.dispatch(());
+                            }
+                        >
+                            "Activate"
+                        </Button>
+                        {move || {
+                            activate_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                                view! {
+                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
+                                }
+                            })
+                        }}
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        <Button
+                            size=ButtonSize::Small
+                            on:click=move |_| {
+                                duplicate_action.dispatch(());
+                            }
+                        >
+                            "Duplicate"
+                        </Button>
+                        {move || {
+                            duplicate_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                                view! {
+                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
+                                }
+                            })
+                        }}
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        <Button
+                            size=ButtonSize::Small
+                            disabled=is_active
+                            on:click=move |_| {
+                                delete_action.dispatch(());
+                            }
+                        >
+                            "Delete"
+                        </Button>
+                        {move || {
+                            delete_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                                view! {
+                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
+                                }
+                            })
+                        }}
+                    </div>
                 </div>
             </td>
         </tr>

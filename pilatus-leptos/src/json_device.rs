@@ -55,7 +55,6 @@ pub fn JsonDeviceView() -> impl IntoView {
 
     view! {
 
-        <h1>"ManualTick"</h1>
         {move || {
             has_external_update.get().then(move|| {
                 view! {

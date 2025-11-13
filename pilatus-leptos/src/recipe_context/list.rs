@@ -50,6 +50,11 @@ impl RecipeContext {
         })
     }
 
+    pub fn has_active_changes(&self) -> Signal<bool> {
+        let root = self.root.read_only();
+        Signal::derive(move || root.with(|recipes| recipes.has_active_changes()))
+    }
+
     /// Add a tag to a specific recipe
     /// This sends an API request to update the recipe on the server
     pub async fn add_tag_to_recipe(
@@ -114,10 +119,11 @@ impl RecipeContext {
             .map_err(|e| anyhow::anyhow!("Failed to delete recipe: {}", e))?;
 
         if !response.ok() {
-            return Err(anyhow::anyhow!(
-                "Failed to delete recipe: HTTP {}",
-                response.status()
-            ));
+            let error_msg = match response.text().await.as_deref() {
+                Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                Ok(body) => body.to_string(),
+            };
+            return Err(anyhow::anyhow!("Failed to delete recipe: {}", error_msg));
         }
 
         // Refresh the recipe list from the server
@@ -137,15 +143,88 @@ impl RecipeContext {
             .map_err(|e| anyhow::anyhow!("Failed to clone recipe: {}", e))?;
 
         if !response.ok() {
-            return Err(anyhow::anyhow!(
-                "Failed to clone recipe: HTTP {}",
-                response.status()
-            ));
+            let error_msg = match response.text().await.as_deref() {
+                Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                Ok(body) => body.to_string(),
+            };
+            return Err(anyhow::anyhow!("Failed to clone recipe: {}", error_msg));
         }
 
         // Refresh the recipe list from the server
         self.refresh_recipes().await?;
         leptos::logging::log!("Recipe cloned successfully: {:?}", recipe_id);
+        Ok(())
+    }
+
+    /// Create a new default recipe
+    /// This sends a PUT request to create a new default recipe and refreshes the recipe list
+    pub async fn create_new_default_recipe(&self) -> Result<(), anyhow::Error> {
+        let url = "/api/recipe/new_default";
+        let response = gloo_net::http::Request::put(url)
+            .header("content-type", "application/json")
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create recipe: {}", e))?;
+
+        if !response.ok() {
+            let error_msg = match response.text().await.as_deref() {
+                Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                Ok(body) => body.to_string(),
+            };
+            return Err(anyhow::anyhow!("Failed to create recipe: {}", error_msg));
+        }
+
+        // Refresh the recipe list from the server
+        self.refresh_recipes().await?;
+        leptos::logging::log!("Recipe created successfully");
+        Ok(())
+    }
+
+    /// Activate a recipe
+    /// This sends a PUT request to start the recipe and refreshes the recipe list
+    pub async fn activate_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
+        let url = format!("/api/recipe/start/{}", recipe_id);
+        let response = gloo_net::http::Request::put(&url)
+            .header("content-type", "application/json")
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to activate recipe: {}", e))?;
+
+        if !response.ok() {
+            let error_msg = match response.text().await.as_deref() {
+                Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                Ok(body) => body.to_string(),
+            };
+            return Err(anyhow::anyhow!("Failed to activate recipe: {}", error_msg));
+        }
+
+        // Refresh the recipe list from the server
+        self.refresh_recipes().await?;
+        leptos::logging::log!("Recipe activated successfully: {:?}", recipe_id);
+        Ok(())
+    }
+
+    /// Commit changes
+    /// This sends a PUT request to commit changes and refreshes the recipe list
+    pub async fn commit_changes(&self) -> Result<(), anyhow::Error> {
+        let url = "/api/recipe/commit";
+        let response = gloo_net::http::Request::put(url)
+            .header("content-type", "application/json")
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to commit changes: {}", e))?;
+
+        if !response.ok() {
+            let error_msg = match response.text().await.as_deref() {
+                Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                Ok(body) => body.to_string(),
+            };
+            return Err(anyhow::anyhow!("Failed to commit changes: {}", error_msg));
+        }
+
+        // Refresh the recipe list from the server
+        self.refresh_recipes().await?;
+        leptos::logging::log!("Changes committed successfully");
         Ok(())
     }
 

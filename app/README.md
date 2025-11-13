@@ -1,5 +1,5 @@
 # Leptos
 
 ```
-cargo leptos serve
+trunk serve
 ```

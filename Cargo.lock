@@ -2214,7 +2214,7 @@ dependencies = [
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "approx",
@@ -2241,7 +2241,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2262,7 +2262,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -2291,7 +2291,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2310,7 +2310,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "approx",
@@ -2372,7 +2372,7 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2399,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#bcd40d6cab1f760f51dee11046f036ffb8ab1d6d"
+source = "git+https://github.com/mineichen/pilatus.git#2691127926053f0234f46e13543fea25dd08c551"
 dependencies = [
  "anyhow",
  "futures",

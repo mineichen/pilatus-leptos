@@ -101,11 +101,71 @@ impl RecipeContext {
                 });
                 Ok(())
             }
-            Ok(response) => Err(anyhow::anyhow!(
-                "Failed to add tag: HTTP {}",
-                response.status()
-            )),
+            Ok(response) => {
+                let error_msg = match response.text().await.as_deref() {
+                    Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                    Ok(body) => body.to_string(),
+                };
+                Err(anyhow::anyhow!("Failed to add tag: {}", error_msg))
+            }
             Err(e) => Err(anyhow::anyhow!("Failed to add tag: {}", e)),
+        }
+    }
+
+    /// Remove a tag from a specific recipe
+    /// This sends an API request to update the recipe on the server
+    pub async fn remove_tag_from_recipe(
+        &self,
+        recipe_id: pilatus::RecipeId,
+        tag_name: Name,
+    ) -> Result<(), anyhow::Error> {
+        let root = self.root;
+        let root_value = root.get_untracked();
+        let Some(recipe) = root_value.get_with_id(&recipe_id) else {
+            return Err(anyhow::anyhow!("Recipe {recipe_id} doesn't exist"));
+        };
+        let mut tags = recipe.tags.clone();
+        tags.retain(|tag| tag != &tag_name);
+        let url = format!("/api/recipe/{}/meta", recipe_id);
+
+        let metadata = RecipeMetadataRaw {
+            new_id: recipe_id.clone(),
+            tags: tags.clone(),
+        }
+        .seal()?;
+
+        let result = async {
+            gloo_net::http::Request::put(&url)
+                .header("content-type", "application/json")
+                .body(serde_json::to_string(&metadata)?)?
+                .send()
+                .await
+        }
+        .await;
+
+        match result {
+            Ok(response) if response.ok() => {
+                // Update in place instead of replacing the entire root
+                root.update(|recipes| {
+                    if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
+                        leptos::logging::log!(
+                            "Updating tags in place: {:?} -> {:?}",
+                            recipe_mut.tags,
+                            tags
+                        );
+                        recipe_mut.tags = tags;
+                    }
+                });
+                Ok(())
+            }
+            Ok(response) => {
+                let error_msg = match response.text().await.as_deref() {
+                    Ok("") | Err(_) => format!("HTTP {}", response.status()),
+                    Ok(body) => body.to_string(),
+                };
+                Err(anyhow::anyhow!("Failed to remove tag: {}", error_msg))
+            }
+            Err(e) => Err(anyhow::anyhow!("Failed to remove tag: {}", e)),
         }
     }
 

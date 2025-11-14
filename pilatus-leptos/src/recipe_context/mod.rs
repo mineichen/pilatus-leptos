@@ -168,7 +168,81 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
     view! {
         {move || {
             error_signal.get().map(|error| {
-                view! { <div>"Error:" {error}</div> }
+                view! {
+                    <div
+                        style="
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100vw;
+                            height: 100vh;
+                            background-color: rgba(0, 0, 0, 0.8);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 9999;
+                            pointer-events: all;
+                        "
+                    >
+                        <div
+                            style="
+                                background-color: white;
+                                padding: 2rem;
+                                border-radius: 8px;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                                max-width: 500px;
+                                text-align: center;
+                                border: 2px solid #ef4444;
+                            "
+                        >
+                            <div
+                                style="
+                                    color: #ef4444;
+                                    font-size: 3rem;
+                                    margin-bottom: 2rem;
+                                "
+                            >
+                                "⚠️"
+                            </div>
+                            <h2
+                                style="
+                                    color: #1f2937;
+                                    margin: 0 0 1rem 0;
+                                    font-size: 1.5rem;
+                                    font-weight: bold;
+                                "
+                            >
+                                "Failed to Load Recipes"
+                            </h2>
+                            <p
+                                style="
+                                    color: #6b7280;
+                                    margin: 0 0 1.5rem 0;
+                                    font-size: 1rem;
+                                    line-height: 1.5;
+                                "
+                            >
+                                "Unable to connect to the recipe service. The application will retry automatically."
+                            </p>
+                            <div
+                                style="
+                                    background-color: #fef2f2;
+                                    border: 1px solid #fecaca;
+                                    border-radius: 4px;
+                                    padding: 1rem;
+                                    margin-bottom: 1rem;
+                                    font-family: monospace;
+                                    font-size: 0.875rem;
+                                    color: #991b1b;
+                                    text-align: left;
+                                    overflow-x: auto;
+                                "
+                            >
+                                {error}
+                            </div>
+                        </div>
+                    </div>
+                }
             })
 
         }}
@@ -187,7 +261,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                 //#[cfg(not(feature = "ssr"))]
                 {
                     leptos::task::spawn_local(async move {
-                        start_recipe_stream_listener2(device_context, set_error_signal).await;
+                        start_recipe_stream_listener(device_context, set_error_signal).await;
                     });
                 }
 
@@ -258,7 +332,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
     }
 }
 
-async fn start_recipe_stream_listener2(
+async fn start_recipe_stream_listener(
     ctx: RecipeContext,
     set_error_signal: WriteSignal<Option<String>>,
 ) {

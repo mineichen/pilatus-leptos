@@ -7,3 +7,7 @@ watch = [
 
 [[proxy]]
 backend = "http://localhost:4123/api"
+
+[[proxy]]
+backend = "ws://localhost:4123/api/recipe/stream"
+ws = true

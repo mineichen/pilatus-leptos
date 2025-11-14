@@ -1,10 +1,13 @@
 use std::{collections::HashMap, ops::Deref, sync::Arc, time::Duration};
 
-use crate::MapRwSignal;
-use leptos::{either::Either, prelude::*};
-use pilatus::{RecipeId, UntypedDeviceParamsWithVariables, device::DeviceId};
+use futures::StreamExt;
+use gloo_net::websocket::{Message, futures::WebSocket};
+use leptos::prelude::*;
+use pilatus::{RecipeId, Recipes, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
+
+use crate::MapRwSignal;
 
 pub mod list;
 
@@ -154,32 +157,39 @@ impl RecipeContext {
 
 #[component]
 pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
-    // Fetch recipes from the API
-    let recipes_resource = LocalResource::new(|| async {
-        gloo_net::http::Request::get("/api/recipe/get_all")
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| e.to_string())?
-            .json::<pilatus::device::ActiveState>()
-            .await
-            .map_err(|e| e.to_string())
-            .map(|state| state.recipes)
-    });
+    let (error_signal, set_error_signal) = signal(None);
+    let recipes_resource =
+        LocalResource::new(
+            move || async move { load_recipes_until_success(set_error_signal).await },
+        );
 
     let mut children = Some(children);
 
     view! {
         {move || {
-            if let Some(Ok(recipes)) = recipes_resource.get() {
-                let device_context = RecipeContext::new(recipes.clone());
+            error_signal.get().map(|error| {
+                view! { <div>"Error:" {error}</div> }
+            })
+
+        }}
+        {move || {
+            recipes_resource.get().and_then(|recipes| {
+                let device_context = RecipeContext::new(recipes);
                 let (ch_reader, ch_writer) = {
                     (
                         device_context.0.unsaved_changes_reader,
                         device_context.0.unsaved_changes_writer,
                     )
                 };
-                provide_context(device_context);
+                provide_context(device_context.clone());
+
+                // Start WebSocket listener for recipe changes
+                //#[cfg(not(feature = "ssr"))]
+                {
+                    leptos::task::spawn_local(async move {
+                        start_recipe_stream_listener2(device_context, set_error_signal).await;
+                    });
+                }
 
                 const DEBOUNCE_DURATION: Duration = Duration::from_millis(250);
 
@@ -241,10 +251,80 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                     },
                 );
 
-                Either::Left(children.take().expect("Only extracted max once")())
-            } else {
-                Either::Right(view! { "Loading..." })
-            }
+                Some(children.take().expect("extracted max once")())
+            })
         }}
+
+    }
+}
+
+async fn start_recipe_stream_listener2(
+    ctx: RecipeContext,
+    set_error_signal: WriteSignal<Option<String>>,
+) {
+    let ws_url = {
+        let window = web_sys::window().expect("no global `window` exists");
+        let location = window.location();
+        let protocol = if location.protocol().unwrap_or_default() == "https:" {
+            "wss:"
+        } else {
+            "ws:"
+        };
+        let host = location
+            .host()
+            .expect("Cannot listen to recipes without location");
+        format!("{}//{}/api/recipe/stream", protocol, host)
+    };
+    loop {
+        leptos::logging::log!("Connecting to WebSocket: {}", ws_url);
+        match WebSocket::open(&ws_url) {
+            Ok(mut ws) => {
+                leptos::logging::log!("WebSocket connected successfully");
+
+                // Read messages from the server
+                loop {
+                    match ws.next().await {
+                        Some(Ok(Message::Text(text))) => {
+                            leptos::logging::log!("Recipe change UUID: {}", text);
+                        }
+                        Some(Ok(Message::Bytes(_))) => {
+                            leptos::logging::warn!("Received unexpected binary message");
+                        }
+                        Some(Err(e)) => {
+                            leptos::logging::error!("WebSocket error: {:?}", e);
+                            break;
+                        }
+                        None => {
+                            leptos::logging::log!("WebSocket stream ended");
+                            break;
+                        }
+                    }
+                }
+
+                leptos::logging::log!("WebSocket connection closed, will reload recipes and retry");
+            }
+            Err(e) => {
+                leptos::logging::error!("Failed to create WebSocket connection: {:?}", e);
+            }
+        }
+
+        ctx.0
+            .root
+            .set(load_recipes_until_success(set_error_signal).await);
+    }
+}
+
+async fn load_recipes_until_success(error_signal: WriteSignal<Option<String>>) -> Recipes {
+    loop {
+        match RecipeContext::load_recipes().await {
+            Ok(recipes) => {
+                error_signal.set(None);
+                return recipes;
+            }
+            Err(e) => {
+                error_signal.set(Some(e.to_string()));
+                gloo_timers::future::sleep(Duration::from_secs(1)).await;
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 use crate::{DeviceInfos, RecipeContext};
+use anyhow::anyhow;
 use leptos::prelude::*;
-use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw};
+use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw, Recipes};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RecipeInfo {
@@ -289,20 +290,31 @@ impl RecipeContext {
     }
 
     /// Refresh the recipe list from the server
-    async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
+    pub(crate) async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
+        let recipes = Self::load_recipes().await?;
+        self.root.set(recipes);
+        Ok(())
+    }
+
+    pub(super) async fn load_recipes() -> Result<Recipes, anyhow::Error> {
         let response = gloo_net::http::Request::get("/api/recipe/get_all")
             .header("content-type", "application/json")
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("Failed to fetch recipes: {}", e))?;
 
-        let active_state: pilatus::device::ActiveState = response
-            .json()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to parse recipes: {}", e))?;
+        if !response.ok() {
+            match response.text().await.as_deref() {
+                Ok("") | Err(_) => Err(anyhow!("HTTP {}", response.status()).into()),
+                Ok(body) => Err(anyhow!("{body}")),
+            }
+        } else {
+            let active_state: pilatus::device::ActiveState = response
+                .json()
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to parse recipes: {}", e))?;
 
-        // Update the root signal with the new recipes
-        self.root.set(active_state.recipes);
-        Ok(())
+            Ok(active_state.recipes)
+        }
     }
 }

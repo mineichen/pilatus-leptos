@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use pilatus::{RecipeId, Recipes, UntypedDeviceParamsWithVariables, device::DeviceId};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::MapRwSignal;
 
@@ -32,6 +33,7 @@ impl std::ops::Deref for RecipeContext {
 
 #[derive(Clone)]
 pub struct DeviceContextState {
+    client_id: Uuid,
     root: MapRwSignal<pilatus::Recipes>,
     unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
@@ -39,15 +41,16 @@ pub struct DeviceContextState {
 }
 
 impl RecipeContext {
-    fn new(recipes: pilatus::Recipes) -> Self {
-        Self(Arc::new(DeviceContextState::new(recipes)))
+    fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
+        Self(Arc::new(DeviceContextState::new(recipes, client_id)))
     }
 }
 
 impl DeviceContextState {
-    fn new(recipes: pilatus::Recipes) -> Self {
+    fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
         let (unsaved_changes_reader, unsaved_changes_writer) = signal(Default::default());
         Self {
+            client_id,
             root: MapRwSignal::new(recipes),
             unsaved_changes_reader,
             unsaved_changes_writer,
@@ -164,6 +167,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         );
 
     let mut children = Some(children);
+    let my_id = uuid::Uuid::new_v4();
 
     view! {
         {move || {
@@ -248,7 +252,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         }}
         {move || {
             recipes_resource.get().and_then(|recipes| {
-                let device_context = RecipeContext::new(recipes);
+                let device_context = RecipeContext::new(recipes, my_id);
                 let (ch_reader, ch_writer) = {
                     (
                         device_context.0.unsaved_changes_reader,
@@ -279,47 +283,39 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
 
                         gloo_timers::future::sleep(DEBOUNCE_DURATION).await;
                         if ch_reader.read_untracked().get(&device_id).is_some() {
-                            leptos::logging::log!("Device : {device_id:?} has newer pending changes");
+                            leptos::logging::debug_log!("Device : {device_id:?} has newer pending changes");
                         } else {
-                            leptos::logging::log!("Sending update now ({device_id:?}): {value:?}");
-                            let url = format!("/api/recipe/{recipe_id}/device/{device_id}/params");
+                            leptos::logging::debug_log!("Sending update now ({device_id:?}): {value:?}");
+                            let url = format!("/api/recipe/{recipe_id}/device/{device_id}/params?key={}", my_id);
 
-                            let r = async move {
-                                gloo_net::http::Request::put(&url)
-                                    .header("content-type", "application/json")
-                                    .body(
-                                        serde_json::json!( {
-                                            "parameters": value,
-                                            "variables": {}
-                                        })
-                                        .to_string(),
-                                    )?
-                                    .send()
-                                    .await
-                            }
-                            .await;
-                            match r {
-                                Ok(_r) => {
-                                    leptos::logging::log!("Save was successful");
-                                }
-                                Err(e) => leptos::logging::error!("Store failed: {e:?}"),
-                            }
+                            gloo_net::http::Request::put(&url)
+                                .header("content-type", "application/json")
+                                .body(
+                                    serde_json::json!( {
+                                        "parameters": value,
+                                        "variables": {}
+                                    })
+                                    .to_string(),
+                                )?
+                                .send()
+                                .await?;
+
                         }
                     }
-                    anyhow::Ok("Foo")
+                    anyhow::Ok(())
                 });
 
                 Effect::new(
                     move |_| match (ch_reader.try_read(), action.pending().get_untracked()) {
                         (Some(x), false) if !x.is_empty() => {
-                            leptos::logging::log!("Dispatch save from effect");
+                            leptos::logging::debug_log!("Dispatch save from effect");
                             action.dispatch(());
                         }
                         (_, true) => {
-                            leptos::logging::log!("Dispatch not needed: Running already",);
+                            leptos::logging::debug_log!("Dispatch not needed: Running already",);
                         }
                         (Some(x), _) if x.is_empty() => {
-                            leptos::logging::log!("Dispatch not needed: Empty list")
+                            leptos::logging::debug_log!("Dispatch not needed: Empty list")
                         }
                         x => leptos::logging::log!("Dispatch not needed: {x:?}"),
                     },
@@ -349,17 +345,28 @@ async fn start_recipe_stream_listener(
             .expect("Cannot listen to recipes without location");
         format!("{}//{}/api/recipe/stream", protocol, host)
     };
+    let my_client_id_str = ctx.client_id.to_string();
     loop {
-        leptos::logging::log!("Connecting to WebSocket: {}", ws_url);
         match WebSocket::open(&ws_url) {
             Ok(mut ws) => {
-                leptos::logging::log!("WebSocket connected successfully");
+                leptos::logging::debug_log!("Connecting to WebSocket '{}' was successful", ws_url);
 
                 // Read messages from the server
                 loop {
                     match ws.next().await {
-                        Some(Ok(Message::Text(text))) => {
-                            leptos::logging::log!("Recipe change UUID: {}", text);
+                        Some(Ok(Message::Text(client))) => {
+                            if client != my_client_id_str {
+                                leptos::logging::debug_log!("Recipe change UUID: {}", client);
+                                if let Err(e) = ctx.refresh_recipes().await {
+                                    leptos::logging::error!(
+                                        "Cannot update recipes after receiving change from client {client:?}: {e:?}"
+                                    )
+                                }
+                            } else {
+                                leptos::logging::debug_log!(
+                                    "Got a change, which was produced by myself"
+                                )
+                            }
                         }
                         Some(Ok(Message::Bytes(_))) => {
                             leptos::logging::warn!("Received unexpected binary message");

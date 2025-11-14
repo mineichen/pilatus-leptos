@@ -2368,6 +2368,7 @@ dependencies = [
  "thaw",
  "thaw_utils",
  "tokio",
+ "uuid",
  "web-sys",
 ]
 

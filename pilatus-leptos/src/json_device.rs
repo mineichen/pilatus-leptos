@@ -37,7 +37,6 @@ pub fn JsonDeviceView() -> impl IntoView {
             set_last_saved_value.set(formatted.clone());
             edited_json.set(formatted);
             set_error_message.set(None);
-            leptos::logging::log!("JSON saved successfully");
         }
         Err(e) => {
             let error_text = e.to_string();

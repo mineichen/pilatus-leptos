@@ -187,8 +187,6 @@ impl RecipeContext {
             return Err(anyhow::anyhow!("Failed to delete recipe: {}", error_msg));
         }
 
-        // Refresh the recipe list from the server
-        self.refresh_recipes().await?;
         leptos::logging::log!("Recipe deleted successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -211,8 +209,6 @@ impl RecipeContext {
             return Err(anyhow::anyhow!("Failed to clone recipe: {}", error_msg));
         }
 
-        // Refresh the recipe list from the server
-        self.refresh_recipes().await?;
         leptos::logging::log!("Recipe cloned successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -235,8 +231,6 @@ impl RecipeContext {
             return Err(anyhow::anyhow!("Failed to create recipe: {}", error_msg));
         }
 
-        // Refresh the recipe list from the server
-        self.refresh_recipes().await?;
         leptos::logging::log!("Recipe created successfully");
         Ok(())
     }
@@ -259,8 +253,6 @@ impl RecipeContext {
             return Err(anyhow::anyhow!("Failed to activate recipe: {}", error_msg));
         }
 
-        // Refresh the recipe list from the server
-        self.refresh_recipes().await?;
         leptos::logging::log!("Recipe activated successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -284,14 +276,13 @@ impl RecipeContext {
         }
 
         // Refresh the recipe list from the server
-        self.refresh_recipes().await?;
-        leptos::logging::log!("Changes committed successfully");
         Ok(())
     }
 
     /// Refresh the recipe list from the server
     pub(crate) async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
         let recipes = Self::load_recipes().await?;
+        leptos::logging::debug_log!("Refresh recipes");
         self.root.set(recipes);
         Ok(())
     }

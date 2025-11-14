@@ -129,11 +129,6 @@ impl<'de, T: serde::de::DeserializeOwned> serde::Deserialize<'de> for PilatusPri
     {
         use serde::de::Error;
 
-        leptos::logging::log!(
-            "Deserializing PilatusPrimitiveValue<{}>",
-            std::any::type_name::<T>()
-        );
-
         let value = serde_json::Value::deserialize(deserializer)?;
 
         if let serde_json::Value::Object(ref map) = value

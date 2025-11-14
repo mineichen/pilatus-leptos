@@ -19,6 +19,7 @@ serde_json.workspace = true
 thaw.workspace = true
 thaw_utils.workspace = true
 tokio = { version = "1", features = ["time"], optional = true }
+uuid = "1"
 web-sys = { version = "0.3", features = ["Window", "Location"] }
 futures = "0.3"
 

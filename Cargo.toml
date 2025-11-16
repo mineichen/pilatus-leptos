@@ -23,6 +23,7 @@ leptos_forge_utils_leptos = "0.6"
 minfac = "0.1"
 pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
 pilatus-emulation-camera = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-emulation-camera-rt = { git = "https://github.com/mineichen/pilatus.git" }
 reactive_stores = "0.3"
 serde = "1"
 serde_json = "1"

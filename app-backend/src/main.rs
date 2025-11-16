@@ -6,7 +6,7 @@ fn main() {
     Runtime::default()
         .register(pilatus_axum_rt::register)
         .register(pilatus_tick::register)
-        .register(pilatus_emulation_camera::register)
+        .register(pilatus_emulation_camera_rt::register)
         .register(register)
         .run();
 }

@@ -129,7 +129,7 @@ dependencies = [
  "pilatus-axum-rt",
  "pilatus-emulation-camera-rt",
  "pilatus-rt",
- "pilatus-tick",
+ "pilatus-tick-rt",
 ]
 
 [[package]]
@@ -2417,6 +2417,24 @@ dependencies = [
  "impex",
  "pilatus",
  "serde",
+]
+
+[[package]]
+name = "pilatus-tick-rt"
+version = "0.1.0"
+source = "git+https://github.com/mineichen/pilatus.git#67828208b99c0cb997ac94b57adaf8963c5b729b"
+dependencies = [
+ "anyhow",
+ "futures",
+ "impex",
+ "minfac",
+ "pilatus",
+ "pilatus-axum",
+ "pilatus-tick",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

@@ -59,16 +59,26 @@ impl DeviceContextState {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum GetVariableError {
+    #[error("Variable not found")]
+    NotFound,
+    #[error("Failed to deserialize variable: {0}")]
+    DeserializationError(#[from] serde_json::Error),
+}
+
 impl RecipeContext {
     /// Get a variable value by name, deserializing to the target type
     /// Panics if the variable is not found or cannot be deserialized
-    pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> T {
+    pub fn expect_variable<T: DeserializeOwned>(&self, name: &str) -> T {
+        self.get_variable(name)
+            .unwrap_or_else(|e| panic!("Cannot get Variable '{name}': {e}"))
+    }
+
+    pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> Result<T, GetVariableError> {
         self.variables.with(|vars| {
-            vars.get(name)
-                .and_then(|val| T::deserialize(val).ok())
-                .unwrap_or_else(|| {
-                    panic!("Variable '{}' not found or cannot be deserialized", name)
-                })
+            T::deserialize(vars.get(name).ok_or(GetVariableError::NotFound)?)
+                .map_err(GetVariableError::from)
         })
     }
 

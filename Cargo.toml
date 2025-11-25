@@ -22,13 +22,18 @@ leptos_meta = "0.8"
 leptos_forge_utils_leptos = "0.6"
 minfac = "0.1"
 pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
+pilatus-axum = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-leptos = { path = "pilatus-leptos" }
+pilatus-examples-leptos = { path = "pilatus-examples-leptos"}
 pilatus-emulation-camera = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-tick = { git = "https://github.com/mineichen/pilatus.git" }
 reactive_stores = "0.3"
 serde = "1"
 serde_json = "1"
 thaw = { git = "https://github.com/thaw-ui/thaw.git" }
 thaw_utils = { git = "https://github.com/thaw-ui/thaw.git" }
+thiserror = "2"
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]
@@ -38,11 +43,12 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
-#[patch."https://github.com/mineichen/pilatus.git"]
-#pilatus = { path = "../pilatus/pilatus" }
-#pilatus-rt = { path = "../pilatus/pilatus-rt" }
-#pilatus-axum = { path = "../pilatus/pilatus-axum" }
-#pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
-#pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
-#pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
-#pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
+# [patch."https://github.com/mineichen/pilatus.git"]
+# pilatus = { path = "../pilatus/pilatus" }
+# pilatus-rt = { path = "../pilatus/pilatus-rt" }
+# pilatus-axum = { path = "../pilatus/pilatus-axum" }
+# pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
+# pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
+# pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
+# pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
+# pilatus-tick = { path = "../pilatus/examples/tick" }

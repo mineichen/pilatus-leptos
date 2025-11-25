@@ -19,6 +19,7 @@ use leptos::tachys::view::RenderHtml;
 use leptos::tachys::view::add_attr::AddAnyAttr;
 
 use serde::{Serialize, Serializer};
+use serde_json;
 
 use crate::PilatusPrimitiveValue;
 use crate::ValueKind;
@@ -103,32 +104,18 @@ where
     /// Gets the actual value (T), resolving variables from DeviceContext if needed
     pub fn get_value(&self) -> T
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + Clone,
     {
-        self.read_signal.with(|prim_val| match &prim_val.value {
-            ValueKind::Value(v) => v.clone(),
-            ValueKind::Variable(var) => {
-                let device_ctx = expect_context::<crate::RecipeContext>();
-                device_ctx.get_variable::<T>(var)
-            }
-        })
+        self.read_signal.with(|prim_val| prim_val.get_value())
     }
 
     /// Gets the actual value (T) without tracking, resolving variables from DeviceContext if needed
     pub fn get_value_untracked(&self) -> T
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + Clone,
     {
-        self.read_signal.with_untracked(|prim_val| {
-            match &prim_val.value {
-                ValueKind::Value(v) => v.clone(),
-                ValueKind::Variable(var) => {
-                    // Try to get DeviceContext and resolve the variable
-                    let device_ctx = expect_context::<crate::RecipeContext>();
-                    device_ctx.get_variable::<T>(var)
-                }
-            }
-        })
+        self.read_signal
+            .with_untracked(|prim_val| prim_val.get_value())
     }
 
     /// Sets the value
@@ -204,6 +191,92 @@ where
         T: serde::Serialize,
     {
         self.set_value(value);
+    }
+
+    /// Maps this LeafRwSignal to a different type using getter and setter functions
+    ///
+    /// The getter converts `T -> A`, and the setter converts `A -> T`.
+    /// Variable references are preserved during the mapping.
+    #[track_caller]
+    pub fn map<A>(
+        &self,
+        getter: impl Fn(T) -> A + Send + Sync + 'static,
+        setter: impl Fn(A) -> Result<T, String> + Send + Sync + 'static,
+    ) -> LeafRwSignal<A>
+    where
+        T: serde::de::DeserializeOwned + serde::Serialize,
+        A: Send
+            + Sync
+            + 'static
+            + Clone
+            + serde::de::DeserializeOwned
+            + serde::Serialize
+            + PartialEq,
+    {
+        let read = self.read_signal;
+        let write = self.write_signal;
+
+        let new_read: Signal<PilatusPrimitiveValue<A>> = Memo::new(move |_| {
+            read.with(|prim_val_t| {
+                let clone = prim_val_t.clone();
+                clone.with_mapped_value(&getter)
+                // if let Some(var_name) = prim_val_t.variable_name() {
+                //     // Preserve variable
+                //     prim_val_t.with_mapped_value::<A>().unwrap_or_else(|_| {
+                //         serde_json::from_value(serde_json::json!({ "__var": var_name }))
+                //             .expect("Variable preservation must work")
+                //     })
+                // } else if let Some(t_value) = prim_val_t.try_get_value() {
+                //     // Extract value, apply getter, wrap
+                //     PilatusPrimitiveValue::new(getter(t_value))
+                // } else {
+                //     // Fallback (shouldn't happen)
+                //     prim_val_t
+                //         .with_mapped_value::<A>()
+                //         .expect("Failed to map value")
+                // }
+            })
+        })
+        .into();
+
+        let new_write = SignalSetter::map(move |prim_val_a: PilatusPrimitiveValue<A>| {
+            let current = read.get();
+            if let Some(var_name) = prim_val_a.variable_name() {
+                // Preserve variable by creating PilatusPrimitiveValue<T> with same variable
+                if let Ok(prim_val_t) = serde_json::from_value::<PilatusPrimitiveValue<T>>(
+                    serde_json::json!({ "__var": var_name }),
+                ) {
+                    write.set(prim_val_t);
+                }
+            } else if let Some(a_value) = prim_val_a.try_get_nonvar_value() {
+                // Convert value: A -> T
+                if let Ok(t_value) = setter(a_value) {
+                    write.set(PilatusPrimitiveValue::new(t_value));
+                }
+            }
+        });
+
+        LeafRwSignal::new_with_signals(new_read, new_write)
+    }
+
+    /// Convenience method to map this LeafRwSignal to a LeafRwSignal<String>
+    ///
+    /// Uses serde for serialization/deserialization. Invalid values in the setter are ignored.
+    /// Variable references are preserved during the mapping.
+    #[track_caller]
+    pub fn map_to_string(&self) -> LeafRwSignal<String>
+    where
+        T: serde::de::DeserializeOwned + serde::Serialize + std::fmt::Debug,
+    {
+        self.map(
+            // Getter: T -> String using serde
+            |t| serde_json::to_string(&t).unwrap_or_else(|_| format!("{:?}", t)),
+            // Setter: String -> T using serde, ignore errors
+            |s| {
+                serde_json::from_value(serde_json::Value::String(s))
+                    .map_err(|e| format!("Failed to deserialize: {}", e))
+            },
+        )
     }
 }
 

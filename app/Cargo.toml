@@ -20,16 +20,16 @@ pilatus.workspace = true
 serde_json.workspace = true
 thaw.workspace = true
 thaw_utils.workspace = true
-thiserror = "1"
-pilatus-leptos = { path = "../pilatus-leptos" }
+thiserror.workspace = true
+pilatus-leptos.workspace = true
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }
 
 axum = { workspace = true, optional = true }
 leptos_axum = { workspace = true, optional = true }
 minfac = { workspace = true, optional = true }
-pilatus-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
-pilatus-axum = { git = "https://github.com/mineichen/pilatus.git", optional = true }
-pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+# pilatus-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+# pilatus-axum = { git = "https://github.com/mineichen/pilatus.git", optional = true }
+# pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 
 
@@ -41,9 +41,9 @@ ssr = [
     "dep:axum",
     "dep:tokio",
     "dep:leptos_axum",
-    "dep:pilatus-rt",
-    "dep:pilatus-axum",
-    "dep:pilatus-axum-rt",
+    # "dep:pilatus-rt",
+    # "dep:pilatus-axum",
+    # "dep:pilatus-axum-rt",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",

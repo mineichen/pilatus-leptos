@@ -1,12 +1,15 @@
 use leptos::{either::Either, prelude::*};
 use thaw::{Button, Field, Input};
+use thaw_utils::Model;
 
 use crate::LeafRwSignal;
 
 #[component]
-pub fn VariableInput(
+pub fn VariableInput<
+    T: Into<String> + Clone + serde::de::DeserializeOwned + serde::Serialize + Send + Sync + 'static,
+>(
     /// The LeafRwSignal to bind to
-    value: LeafRwSignal<String>,
+    value: LeafRwSignal<T>,
     /// Label for the input field
     #[prop(optional)]
     label: Option<String>,
@@ -40,11 +43,26 @@ pub fn VariableInput(
         value.convert_to_local(current_value);
     };
 
+    let str_value = Signal::derive(move || value.get_value().into());
+    let set_str_value = SignalSetter::map(move |v: String| {
+        match serde_json::from_value(serde_json::Value::String(v)) {
+            Ok(v) => value.set_value(v),
+            Err(e) => {
+                leptos::logging::error!(
+                    "Failed to deserialize {} from str: {}",
+                    std::any::type_name::<T>(),
+                    e
+                );
+            }
+        }
+    });
+    let model: Model<String> = Model::from((str_value, set_str_value));
+
     view! {
         <Field label=label.unwrap_or_default()>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <Input
-                    value=value
+                    value=model
                     disabled=is_var
                     attr:style="flex: 1;"
                 />

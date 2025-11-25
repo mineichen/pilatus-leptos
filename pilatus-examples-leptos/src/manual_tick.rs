@@ -1,14 +1,8 @@
 use futures_util::TryFutureExt;
-use impex::Impex;
 use leptos::prelude::*;
 use pilatus_leptos::{DeviceContext, PilatusWrapperSettings};
+use pilatus_tick::ManualTickParamsImpex;
 use thaw::{Button, SpinButton};
-
-#[derive(Impex, Default)]
-#[impex(derive(PartialEq, Eq, Clone))]
-struct ManualTickParams {
-    initial_count: i64,
-}
 
 #[component]
 pub fn ManualTick() -> impl IntoView {
@@ -40,7 +34,7 @@ pub fn ManualTick() -> impl IntoView {
     view! {
 
         <div>"Initial count: " {move || initial_count.get()}</div>
-        <SpinButton<i64> value=initial_count step_page=1/>
+        <SpinButton<u32> value=initial_count step_page=1/>
         <Button on:click=move |_| {
             increment.dispatch(());
         }>

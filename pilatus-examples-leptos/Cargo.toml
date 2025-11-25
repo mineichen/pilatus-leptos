@@ -8,12 +8,12 @@ anyhow = "1"
 futures-util = "0.3"
 gloo-net.workspace = true
 gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
-impex.workspace = true
 leptos.workspace = true
 leptos_router.workspace = true
 leptos_forge_utils_leptos.workspace = true
-pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
-pilatus-leptos = { path = "../pilatus-leptos" }
+pilatus = { workspace = true, default-features = false }
+pilatus-tick = { workspace = true, features = ["unstable"] }
+pilatus-leptos.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 reactive_stores.workspace = true

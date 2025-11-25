@@ -1,41 +1,20 @@
 use std::borrow::Cow;
 
 use futures_util::TryFutureExt;
-use impex::Impex;
 use leptos::prelude::*;
 use pilatus_leptos::{DeviceContext, PilatusWrapperSettings, VariableInput};
-use serde::{Deserialize, Serialize};
+use pilatus_tick::GreeterParamsImpex;
 use thaw::{Button, Input};
-
-#[derive(Deserialize, Serialize, PartialEq, Clone, Impex)]
-#[impex(derive(PartialEq, Eq, Clone))]
-#[serde(default)]
-pub(crate) struct ParamsCopyRemoveMe {
-    lang: String,
-    sub: SubItem,
-}
-#[derive(Deserialize, Serialize, PartialEq, Clone, Default, Impex)]
-#[impex(derive(PartialEq, Eq, Clone))]
-struct SubItem {
-    foo: i32,
-}
-
-impl Default for ParamsCopyRemoveMe {
-    fn default() -> Self {
-        Self {
-            lang: "FakeItTillYouMakeIt".into(),
-            sub: Default::default(),
-        }
-    }
-}
 
 #[component]
 pub fn Greeter() -> impl IntoView {
     let device_context = expect_context::<DeviceContext>();
-    let data = device_context.get::<ParamsCopyRemoveMeImpex<PilatusWrapperSettings>>();
+    let data = device_context.get::<GreeterParamsImpex<PilatusWrapperSettings>>();
     let lang = data.map_leaf(
         |x| x.lang.clone(),
-        |target, prim_val| target.lang = prim_val,
+        |target, prim_val| {
+            target.lang = prim_val;
+        },
     );
 
     // leptos::reactive::computed::create_slice(signal, getter, setter)
@@ -68,7 +47,7 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div style="background-color: lightgreen; padding: 20px;">
             <h1>"I'm the friendly greeter!"</h1>
-            <p>"Language: " {move || lang.get_value()} </p>
+            <p>"Language: " {move || lang.get_value().to_string()} </p>
 
             <VariableInput
                 value=lang

@@ -1,6 +1,7 @@
 use std::{num::NonZeroU8, ops::Deref};
 
 use impex::{Impex, ImpexPrimitive, WrapperSettings};
+use leptos::prelude::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default)]
 pub struct PilatusPrimitiveValue<T> {
@@ -84,6 +85,57 @@ impl<T> PilatusPrimitiveValue<T> {
         match &self.value {
             ValueKind::Variable(variable) => Some(variable),
             ValueKind::Value(_) => None,
+        }
+    }
+
+    /// Maps the value to a different type, preserving variable references
+    /// The code assumes, that the A can always be read from Variable, whereas the opposite might not be the case
+    pub fn with_mapped_value<A>(self, transformer: impl FnOnce(T) -> A) -> PilatusPrimitiveValue<A>
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
+        A: serde::Serialize + serde::de::DeserializeOwned,
+    {
+        match self.value {
+            ValueKind::Variable(variable) => {
+                #[cfg(debug_assertions)]
+                {
+                    let context = expect_context::<crate::RecipeContext>();
+                    context.expect_variable::<A>(&variable);
+                }
+                PilatusPrimitiveValue {
+                    is_explicit: self.is_explicit,
+                    value: ValueKind::Variable(variable),
+                }
+            }
+            ValueKind::Value(value) => PilatusPrimitiveValue {
+                is_explicit: self.is_explicit,
+                value: ValueKind::Value(transformer(value)),
+            },
+        }
+    }
+
+    /// Extracts the actual value, or None if it's a variable reference
+    pub fn try_get_nonvar_value(&self) -> Option<T>
+    where
+        T: serde::de::DeserializeOwned + Clone,
+    {
+        match &self.value {
+            ValueKind::Value(v) => Some(v.clone()),
+            ValueKind::Variable(_) => None,
+        }
+    }
+
+    /// Gets the actual value, resolving variables from DeviceContext if needed
+    pub fn get_value(&self) -> T
+    where
+        T: serde::de::DeserializeOwned + Clone,
+    {
+        match &self.value {
+            ValueKind::Value(v) => v.clone(),
+            ValueKind::Variable(var) => {
+                let device_ctx = expect_context::<crate::RecipeContext>();
+                device_ctx.expect_variable::<T>(var)
+            }
         }
     }
 }

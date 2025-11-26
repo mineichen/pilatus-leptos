@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{DeviceInfos, MapRwSignal, RecipeContext};
+use crate::{DeviceInfos, MapRwSignal, RecipeContext, VariableChangeCtx};
 use leptos::{either::Either, prelude::*};
 use leptos_router::hooks::use_params_map;
 use pilatus::device::DeviceId;
@@ -15,7 +15,15 @@ pub struct DeviceContext {
 
 impl DeviceContext {
     pub fn get<
-        T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
+        T: DeserializeOwned
+            + Serialize
+            + Send
+            + Sync
+            + PartialEq
+            + Default
+            + Clone
+            + 'static
+            + impex::Visitor<VariableChangeCtx>,
     >(
         &self,
     ) -> MapRwSignal<T> {

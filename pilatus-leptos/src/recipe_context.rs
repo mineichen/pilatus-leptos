@@ -3,12 +3,14 @@ use std::{collections::HashMap, ops::Deref, sync::Arc, time::Duration};
 use futures::StreamExt;
 use gloo_net::websocket::{Message, futures::WebSocket};
 use leptos::prelude::*;
-use pilatus::{RecipeId, Recipes, UntypedDeviceParamsWithVariables, device::DeviceId};
+use pilatus::{
+    Name, RecipeId, Recipes, UntypedDeviceParamsWithVariables, VariablesPatch, device::DeviceId,
+};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::MapRwSignal;
+use crate::{MapRwSignal, VariableChangeCtx};
 
 pub mod list;
 
@@ -25,6 +27,7 @@ pub struct DeviceInfos {
 struct UnsavedDeviceChange {
     recipe_id: RecipeId,
     params: Value,
+    var_changes: VariablesPatch,
 }
 
 #[derive(Clone)]
@@ -45,7 +48,7 @@ pub struct RecipeContextState {
     valid_root: RwSignal<pilatus::Recipes>,
     unsaved_changes_reader: ReadSignal<HashMap<DeviceId, UnsavedDeviceChange>>,
     unsaved_changes_writer: WriteSignal<HashMap<DeviceId, UnsavedDeviceChange>>,
-    variables: RwSignal<HashMap<String, Value>>,
+    variables: RwSignal<HashMap<Name, Value>>,
 }
 
 impl RecipeContext {
@@ -63,7 +66,11 @@ impl RecipeContextState {
             valid_root: RwSignal::new(recipes),
             unsaved_changes_reader,
             unsaved_changes_writer,
-            variables: RwSignal::new([("foo".to_string(), 42.into())].into_iter().collect()),
+            variables: RwSignal::new(
+                [(Name::new("foo").unwrap(), 42.into())]
+                    .into_iter()
+                    .collect(),
+            ),
         }
     }
 }
@@ -79,12 +86,12 @@ pub enum GetVariableError {
 impl RecipeContext {
     /// Get a variable value by name, deserializing to the target type
     /// Panics if the variable is not found or cannot be deserialized
-    pub fn expect_variable<T: DeserializeOwned>(&self, name: &str) -> T {
+    pub fn expect_variable<T: DeserializeOwned>(&self, name: &Name) -> T {
         self.get_variable(name)
             .unwrap_or_else(|e| panic!("Cannot get Variable '{name}': {e}"))
     }
 
-    pub fn get_variable<T: DeserializeOwned>(&self, name: &str) -> Result<T, GetVariableError> {
+    pub fn get_variable<T: DeserializeOwned>(&self, name: &Name) -> Result<T, GetVariableError> {
         self.variables.with(|vars| {
             T::deserialize(vars.get(name).ok_or(GetVariableError::NotFound)?)
                 .map_err(GetVariableError::from)
@@ -92,10 +99,10 @@ impl RecipeContext {
     }
 
     /// Set a variable value by name
-    pub fn set_variable<T: Serialize>(&self, name: &str, value: T) {
+    pub fn set_variable<T: Serialize>(&self, name: Name, value: T) {
         self.variables.update(|vars| {
             if let Ok(json_val) = serde_json::to_value(&value) {
-                vars.insert(name.to_string(), json_val);
+                vars.insert(name, json_val);
             } else {
                 leptos::logging::error!("Failed to serialize variable '{}' value", name);
             }
@@ -127,18 +134,9 @@ impl RecipeContext {
     /// Panics, if the device_id doesn't exist in active. Usually, DeviceContext is responsible not to render children if this is the case
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
         let setter = self.unsaved_changes_writer;
+        let getter = build_getter(device_id);
         self.root.map(
-            move |recipes| {
-                recipes
-                    .active()
-                    .1
-                    .devices
-                    .get(&device_id.get())
-                    .expect("DeviceId must exits")
-                    .params
-                    .deref()
-                    .clone()
-            },
+            move |x| getter(x).clone(),
             move |recipes, x| {
                 let device_id = device_id.get_untracked();
                 let (active_id, active) = recipes.get_active();
@@ -149,12 +147,14 @@ impl RecipeContext {
                     .unwrap_or_else(|| panic!("Unknown DeviceId {device_id} in active recipe"));
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
+
                 setter.update(move |u| {
                     u.insert(
                         device_id,
                         UnsavedDeviceChange {
                             recipe_id: active_id,
                             params: x,
+                            var_changes: HashMap::new(),
                         },
                     );
                 });
@@ -162,29 +162,29 @@ impl RecipeContext {
         )
     }
     pub fn get<
-        T: DeserializeOwned + Serialize + Send + Sync + PartialEq + Default + Clone + 'static,
+        T: DeserializeOwned
+            + Serialize
+            + Send
+            + Sync
+            + PartialEq
+            + Default
+            + Clone
+            + 'static
+            + impex::Visitor<VariableChangeCtx>,
     >(
         &self,
         device_id: Signal<DeviceId>,
     ) -> MapRwSignal<T> {
         let valid_root = self.valid_root;
-        self.get_untyped(device_id).map(
+        let getter = build_getter(device_id);
+        let setter = self.unsaved_changes_writer;
+        let recipe_context = self.clone();
+        self.root.map(
             move |x| {
-                T::deserialize(x).unwrap_or_else(|_| {
-                    leptos::logging::log!("Root was invalid, reading from valid_root");
-                    T::deserialize(
-                        valid_root
-                            .read()
-                            .active()
-                            .1
-                            .devices
-                            .get(&device_id.get())
-                            .expect("DeviceId must exits")
-                            .params
-                            .deref()
-                            .clone(),
-                    )
-                    .unwrap_or_else(|e| {
+                T::deserialize(getter(x)).unwrap_or_else(|_| {
+                    let valid = valid_root.read();
+                    let x = getter(&valid);
+                    T::deserialize(x).unwrap_or_else(|e| {
                         panic!(
                             "Cannot extract {:?} from {:?}: {e}",
                             std::any::type_name::<T>(),
@@ -193,10 +193,46 @@ impl RecipeContext {
                     })
                 })
             },
-            |target, x| {
-                *target = serde_json::to_value(&x).expect("Serialization always works");
+            move |recipes, mut x| {
+                let device_id = device_id.get_untracked();
+                let (active_id, active) = recipes.get_active();
+
+                let device = active
+                    .devices
+                    .get_mut(&device_id)
+                    .unwrap_or_else(|| panic!("Unknown DeviceId {device_id} in active recipe"));
+                device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
+                    .expect("Expect serialize to work");
+
+                let mut visitor = VariableChangeCtx::new(recipe_context.clone());
+
+                x.visit(&mut visitor);
+
+                setter.update(move |u| {
+                    u.insert(
+                        device_id,
+                        UnsavedDeviceChange {
+                            recipe_id: active_id,
+                            params: serde_json::to_value(&x).expect("Serialization always works"),
+                            var_changes: visitor.var_changes,
+                        },
+                    );
+                });
             },
         )
+    }
+}
+
+fn build_getter(device_id: Signal<DeviceId>) -> impl Fn(&Recipes) -> &Value {
+    move |recipes| {
+        recipes
+            .active()
+            .1
+            .devices
+            .get(&device_id.get())
+            .expect("DeviceId must exist")
+            .params
+            .deref()
     }
 }
 

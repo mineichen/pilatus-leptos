@@ -18,6 +18,7 @@ use leptos::tachys::view::Render;
 use leptos::tachys::view::RenderHtml;
 use leptos::tachys::view::add_attr::AddAnyAttr;
 
+use pilatus::Name;
 use serde::{Serialize, Serializer};
 use serde_json;
 
@@ -132,13 +133,14 @@ where
 
     /// Gets the variable if this is a variable reference
     pub fn variable(&self) -> Option<crate::Variable> {
-        self.read_signal.with(|prim_val| prim_val.variable())
+        self.read_signal
+            .with(|prim_val| prim_val.variable().cloned())
     }
 
     /// Gets the variable if this is a variable reference without tracking
     pub fn variable_untracked(&self) -> Option<crate::Variable> {
         self.read_signal
-            .with_untracked(|prim_val| prim_val.variable())
+            .with_untracked(|prim_val| prim_val.variable().cloned())
     }
 
     /// Gets the variable name if this is a variable reference
@@ -154,11 +156,7 @@ where
     }
 
     /// Converts the current value to a variable reference
-    pub fn convert_to_variable(&self, variable_name: &str) -> Result<(), String> {
-        use crate::Variable;
-        let variable =
-            Variable::new(variable_name).ok_or_else(|| "Invalid variable name".to_string())?;
-
+    pub fn convert_to_variable(&self, variable: Name) -> Result<(), String> {
         let mut current_prim = self.read_signal.get_untracked();
         current_prim.set_kind_to_variable(variable);
         self.write_signal.set(current_prim);

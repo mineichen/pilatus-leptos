@@ -27,7 +27,7 @@ pub fn ManualTick() -> impl IntoView {
     let params = device_context.get::<ManualTickParamsImpex<PilatusWrapperSettings>>();
 
     let initial_count = params.map_leaf(
-        |x| x.initial_count,
+        |x| x.initial_count.clone(),
         |target, prim_val| target.initial_count = prim_val,
     );
 

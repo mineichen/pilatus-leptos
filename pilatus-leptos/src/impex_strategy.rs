@@ -1,17 +1,20 @@
-use std::{num::NonZeroU8, ops::Deref};
+use std::{collections::HashMap, num::NonZeroU8, ops::Deref};
 
 use impex::{Impex, ImpexPrimitive, WrapperSettings};
 use leptos::prelude::*;
+use pilatus::Name;
 use serde_json;
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+use crate::RecipeContext;
+
+#[derive(PartialEq, Eq, Clone, Debug)]
 enum PilatusPrimitiveValueKind {
     Explicit,
     Implicit,
     Variable(Variable),
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PilatusPrimitiveValue<T> {
     kind: PilatusPrimitiveValueKind,
     pub(crate) value: T,
@@ -26,35 +29,37 @@ impl<T: Default> Default for PilatusPrimitiveValue<T> {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub struct Variable {
-    bytes: [u8; 30],
-    len: NonZeroU8,
-}
+// #[derive(PartialEq, Eq, Copy, Clone, Debug)]
+// pub struct Variable {
+//     bytes: [u8; 30],
+//     len: NonZeroU8,
+// }
 
-impl Variable {
-    pub fn new(name: &str) -> Option<Self> {
-        let len = name.len();
-        if len > 30 {
-            return None;
-        }
-        let len_u8 = NonZeroU8::new(len as u8)?;
-        let mut name_bytes = [0u8; 30];
-        name_bytes[..len].copy_from_slice(name.as_bytes());
-        Some(Self {
-            bytes: name_bytes,
-            len: len_u8,
-        })
-    }
-}
+pub type Variable = pilatus::Name;
 
-impl std::ops::Deref for Variable {
-    type Target = str;
+// impl Variable {
+//     pub fn new(name: &str) -> Option<Self> {
+//         let len = name.len();
+//         if len > 30 {
+//             return None;
+//         }
+//         let len_u8 = NonZeroU8::new(len as u8)?;
+//         let mut name_bytes = [0u8; 30];
+//         name_bytes[..len].copy_from_slice(name.as_bytes());
+//         Some(Self {
+//             bytes: name_bytes,
+//             len: len_u8,
+//         })
+//     }
+// }
 
-    fn deref(&self) -> &Self::Target {
-        std::str::from_utf8(&self.bytes[..self.len.get() as usize]).unwrap()
-    }
-}
+// impl std::ops::Deref for Variable {
+//     type Target = str;
+
+//     fn deref(&self) -> &Self::Target {
+//         std::str::from_utf8(&self.bytes[..self.len.get() as usize]).unwrap()
+//     }
+// }
 
 impl<T> PilatusPrimitiveValue<T> {
     pub fn new(value: T) -> Self {
@@ -108,9 +113,9 @@ impl<T> PilatusPrimitiveValue<T> {
     }
 
     /// Gets the variable if this is a variable reference
-    pub fn variable(&self) -> Option<Variable> {
+    pub fn variable(&self) -> Option<&Variable> {
         match &self.kind {
-            PilatusPrimitiveValueKind::Variable(var) => Some(*var),
+            PilatusPrimitiveValueKind::Variable(var) => Some(var),
             _ => None,
         }
     }
@@ -175,15 +180,15 @@ impl<'de, T: serde::de::DeserializeOwned> serde::Deserialize<'de> for PilatusPri
             && let Some(serde_json::Value::String(var_name)) = map.get("__var")
         {
             // It's a variable reference - get the value from RecipeContext
-            let variable =
-                Variable::new(var_name).ok_or_else(|| D::Error::custom("Invalid variable name"))?;
+            let variable = Variable::new(var_name)
+                .map_err(|e| D::Error::custom("Invalid variable name {e}"))?;
 
             // Try to get RecipeContext and resolve the variable
             let device_ctx = use_context::<crate::RecipeContext>().ok_or_else(|| {
                 D::Error::custom("RecipeContext not available during deserialization")
             })?;
 
-            let t_value = device_ctx.get_variable::<T>(var_name).map_err(|e| {
+            let t_value = device_ctx.get_variable::<T>(&variable).map_err(|e| {
                 D::Error::custom(format!("Failed to get variable '{}': {}", var_name, e))
             })?;
 
@@ -272,21 +277,34 @@ impl WrapperSettings for PilatusWrapperSettings {
     }
 }
 
-impl<T: serde::de::DeserializeOwned> ::impex::Visitor<(NonZeroU8, [u8; 30])>
+pub struct VariableChangeCtx {
+    pub(crate) var_changes: HashMap<Name, pilatus::Variable>,
+    pub(crate) recipe_context: RecipeContext,
+}
+
+impl VariableChangeCtx {
+    pub fn new(recipe_context: RecipeContext) -> Self {
+        Self {
+            var_changes: HashMap::new(),
+            recipe_context,
+        }
+    }
+}
+
+impl<T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug> impex::Visitor<VariableChangeCtx>
     for PilatusPrimitiveValue<T>
 {
-    fn visit(&mut self, ctx: &mut (NonZeroU8, [u8; 30])) {
-        // When visiting a variable, we need to get the value from RecipeContext
-        let variable = Variable {
-            len: ctx.0,
-            bytes: ctx.1,
-        };
-        let var_name = variable.deref();
-
-        if let Some(device_ctx) = use_context::<crate::RecipeContext>() {
-            if let Ok(value) = device_ctx.get_variable::<T>(var_name) {
-                self.kind = PilatusPrimitiveValueKind::Variable(variable);
-                self.value = value;
+    fn visit(&mut self, ctx: &mut VariableChangeCtx) {
+        if let Some(v) = self.variable() {
+            let current = ctx.recipe_context.get_variable::<T>(&v);
+            leptos::logging::log!(
+                "Variable change?: {v:?}, var_val: {current:?}, new_val: {self:?}"
+            );
+            match current {
+                Ok(c) if c == self.value => {}
+                _ => {
+                    // ctx.var_changes.insert(v.deref().to_string(), v);
+                }
             }
         }
     }
@@ -325,7 +343,7 @@ mod tests {
             let ctx = RecipeContext::new(recipes, client_id);
 
             // Set the variable value
-            ctx.set_variable("myvar", "test_value");
+            ctx.set_variable(Name::new("myvar").unwrap(), "test_value");
 
             // Provide the context using the same mechanism as production
             // provide_context uses the current scope automatically (no need to pass scope explicitly)

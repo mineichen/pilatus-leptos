@@ -1,4 +1,5 @@
 use leptos::{either::Either, prelude::*};
+use pilatus::Name;
 use thaw::{Button, Field, Input};
 use thaw_utils::Model;
 
@@ -23,9 +24,12 @@ pub fn VariableInput<
 
     // Convert to variable
     let convert_to_var = move |_| {
-        let var_name_val = new_var_name.get();
+        let Ok(var_name_val) = Name::new(new_var_name.get()) else {
+            leptos::logging::log!("Invalid name");
+            return;
+        };
         if !var_name_val.is_empty() {
-            match value.convert_to_variable(&var_name_val) {
+            match value.convert_to_variable(var_name_val) {
                 Ok(()) => {
                     set_show_var_dialog.set(false);
                     new_var_name.set(String::new());

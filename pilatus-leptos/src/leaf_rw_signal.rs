@@ -22,7 +22,6 @@ use serde::{Serialize, Serializer};
 use serde_json;
 
 use crate::PilatusPrimitiveValue;
-use crate::ValueKind;
 
 /// Signal which allows reading and writing a value
 ///
@@ -101,61 +100,45 @@ where
         self.write_signal
     }
 
-    /// Gets the actual value (T), resolving variables from DeviceContext if needed
+    /// Gets the actual value (T)
     pub fn get_value(&self) -> T
     where
-        T: serde::de::DeserializeOwned + Clone,
+        T: Clone,
     {
-        self.read_signal.with(|prim_val| prim_val.get_value())
+        self.read_signal.with(|prim_val| prim_val.value.clone())
     }
 
-    /// Gets the actual value (T) without tracking, resolving variables from DeviceContext if needed
+    /// Gets the actual value (T) without tracking
     pub fn get_value_untracked(&self) -> T
     where
-        T: serde::de::DeserializeOwned + Clone,
+        T: Clone,
     {
         self.read_signal
-            .with_untracked(|prim_val| prim_val.get_value())
+            .with_untracked(|prim_val| prim_val.value.clone())
     }
 
     /// Sets the value
-    /// - If currently a variable reference, writes to that variable in DeviceContext
+    /// - If currently a variable reference, updates the value (variable reference is preserved)
     /// - If currently a local value, updates the local value
+    /// - Makes implicit values explicit
     pub fn set_value(&self, value: T)
     where
-        T: serde::Serialize,
+        T: Clone,
     {
-        let current_prim = self.read_signal.get_untracked();
-
-        match &current_prim.value {
-            ValueKind::Variable(var) => {
-                // Write to the variable in DeviceContext
-                if let Some(device_ctx) = use_context::<crate::RecipeContext>() {
-                    let var_name = var.to_string();
-                    device_ctx.set_variable(&var_name, value);
-                    leptos::logging::log!("Wrote value to variable '{}'", var_name);
-                } else {
-                    leptos::logging::error!("Cannot write to variable: DeviceContext not found");
-                }
-            }
-            ValueKind::Value(_) => {
-                // Update local value
-                let prim_val = PilatusPrimitiveValue::new(value);
-                self.write_signal.set(prim_val);
-            }
-        }
+        let mut current_prim = self.read_signal.get_untracked();
+        current_prim.set(value);
+        self.write_signal.set(current_prim);
     }
 
-    /// Checks if the current value is a variable reference
-    pub fn is_variable(&self) -> bool {
-        self.read_signal
-            .with(|prim_val| matches!(prim_val.value, ValueKind::Variable(_)))
+    /// Gets the variable if this is a variable reference
+    pub fn variable(&self) -> Option<crate::Variable> {
+        self.read_signal.with(|prim_val| prim_val.variable())
     }
 
-    /// Checks if the current value is a variable reference without tracking
-    pub fn is_variable_untracked(&self) -> bool {
+    /// Gets the variable if this is a variable reference without tracking
+    pub fn variable_untracked(&self) -> Option<crate::Variable> {
         self.read_signal
-            .with_untracked(|prim_val| matches!(prim_val.value, ValueKind::Variable(_)))
+            .with_untracked(|prim_val| prim_val.variable())
     }
 
     /// Gets the variable name if this is a variable reference
@@ -172,14 +155,13 @@ where
 
     /// Converts the current value to a variable reference
     pub fn convert_to_variable(&self, variable_name: &str) -> Result<(), String> {
-        let var_kind = ValueKind::new_variable(variable_name)
-            .ok_or_else(|| "Invalid variable name".to_string())?;
+        use crate::Variable;
+        let variable =
+            Variable::new(variable_name).ok_or_else(|| "Invalid variable name".to_string())?;
 
-        let prim_val = PilatusPrimitiveValue {
-            is_explicit: true,
-            value: var_kind,
-        };
-        self.write_signal.set(prim_val);
+        let mut current_prim = self.read_signal.get_untracked();
+        current_prim.set_kind_to_variable(variable);
+        self.write_signal.set(current_prim);
 
         Ok(())
     }
@@ -216,43 +198,18 @@ where
         let read = self.read_signal;
         let write = self.write_signal;
 
-        let new_read: Signal<PilatusPrimitiveValue<A>> = Memo::new(move |_| {
-            read.with(|prim_val_t| {
-                let clone = prim_val_t.clone();
-                clone.with_mapped_value(&getter)
-                // if let Some(var_name) = prim_val_t.variable_name() {
-                //     // Preserve variable
-                //     prim_val_t.with_mapped_value::<A>().unwrap_or_else(|_| {
-                //         serde_json::from_value(serde_json::json!({ "__var": var_name }))
-                //             .expect("Variable preservation must work")
-                //     })
-                // } else if let Some(t_value) = prim_val_t.try_get_value() {
-                //     // Extract value, apply getter, wrap
-                //     PilatusPrimitiveValue::new(getter(t_value))
-                // } else {
-                //     // Fallback (shouldn't happen)
-                //     prim_val_t
-                //         .with_mapped_value::<A>()
-                //         .expect("Failed to map value")
-                // }
-            })
-        })
-        .into();
+        let new_read: Signal<PilatusPrimitiveValue<A>> =
+            Memo::new(move |_| read.get().map(|t_value| getter(t_value))).into();
 
         let new_write = SignalSetter::map(move |prim_val_a: PilatusPrimitiveValue<A>| {
-            let current = read.get();
-            if let Some(var_name) = prim_val_a.variable_name() {
-                // Preserve variable by creating PilatusPrimitiveValue<T> with same variable
-                if let Ok(prim_val_t) = serde_json::from_value::<PilatusPrimitiveValue<T>>(
-                    serde_json::json!({ "__var": var_name }),
-                ) {
-                    write.set(prim_val_t);
-                }
-            } else if let Some(a_value) = prim_val_a.try_get_nonvar_value() {
-                // Convert value: A -> T
-                if let Ok(t_value) = setter(a_value) {
-                    write.set(PilatusPrimitiveValue::new(t_value));
-                }
+            // Todo: Avoid cloning
+            let prim_val_a_clone = prim_val_a.clone();
+            if let Ok(t_value) = setter(prim_val_a.value) {
+                // Use with_mapped_value to convert A -> T while preserving the kind
+                let mut prim_val_t = prim_val_a_clone.map(|_| t_value.clone());
+                // Propagate the value (set handles implicit->explicit and preserves variables)
+                prim_val_t.set(t_value);
+                write.set(prim_val_t);
             }
         });
 

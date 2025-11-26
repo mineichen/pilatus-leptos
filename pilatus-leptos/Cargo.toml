@@ -13,7 +13,6 @@ leptos_router.workspace = true
 leptos_forge_utils_leptos.workspace = true
 pilatus.workspace = true
 reactive_stores.workspace = true
-# reactive_graph.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thaw.workspace = true
@@ -25,6 +24,7 @@ web-sys = { version = "0.3", features = ["Window", "Location"] }
 futures = "0.3"
 
 [dev-dependencies]
+leptos_reactive = "0.6.15"
 pilatus-leptos = { workspace = true, features = ["ssr"] }
 
 [features]

@@ -282,9 +282,15 @@ impl RecipeContext {
     /// Refresh the recipe list from the server
     pub(crate) async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
         let recipes = Self::load_recipes().await?;
+
         leptos::logging::debug_log!("Refresh recipes");
-        self.root.set(recipes);
+        self.set_root(recipes);
         Ok(())
+    }
+
+    pub(super) fn set_root(&self, recipes: Recipes) {
+        self.root.set(recipes.clone());
+        self.valid_root.set(recipes);
     }
 
     pub(super) async fn load_recipes() -> Result<Recipes, anyhow::Error> {

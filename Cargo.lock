@@ -1578,12 +1578,12 @@ dependencies = [
  "leptos_hot_reload",
  "leptos_macro",
  "leptos_server",
- "oco_ref",
+ "oco_ref 0.2.1",
  "or_poisoned",
  "paste",
  "rand 0.9.2",
  "reactive_graph",
- "rustc-hash",
+ "rustc-hash 2.1.1",
  "rustc_version",
  "send_wrapper",
  "serde",
@@ -1780,6 +1780,30 @@ dependencies = [
  "send_wrapper",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "leptos_reactive"
+version = "0.6.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4161acbf80f59219d8d14182371f57302bc7ff81ee41aba8ba1ff7295727f23"
+dependencies = [
+ "base64 0.22.1",
+ "cfg-if",
+ "futures",
+ "indexmap",
+ "oco_ref 0.1.1",
+ "paste",
+ "pin-project",
+ "rustc-hash 1.1.0",
+ "self_cell",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "slotmap",
+ "thiserror 1.0.69",
+ "tracing",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -2074,6 +2098,16 @@ dependencies = [
 
 [[package]]
 name = "oco_ref"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c51ebcefb2f0b9a5e0bea115532c8ae4215d1b01eff176d0f4ba4192895c2708"
+dependencies = [
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "oco_ref"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed0423ff9973dea4d6bd075934fdda86ebb8c05bdf9d6b0507067d4a1226371d"
@@ -2210,7 +2244,7 @@ dependencies = [
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "approx",
@@ -2237,7 +2271,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2258,7 +2292,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -2287,7 +2321,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "pilatus",
  "serde",
@@ -2296,7 +2330,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2316,7 +2350,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "approx",
@@ -2365,6 +2399,7 @@ dependencies = [
  "impex",
  "leptos",
  "leptos_forge_utils_leptos",
+ "leptos_reactive",
  "leptos_router",
  "pilatus",
  "pilatus-leptos",
@@ -2382,7 +2417,7 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2409,7 +2444,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "impex",
  "pilatus",
@@ -2419,7 +2454,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#7e274712b7e927bfdb2348de1e9049415739de42"
+source = "git+https://github.com/mineichen/pilatus.git#a10a4ad2c56a2cd24ff5c1f5d44720018821b345"
 dependencies = [
  "anyhow",
  "futures",
@@ -2722,7 +2757,7 @@ dependencies = [
  "or_poisoned",
  "paste",
  "pin-project-lite",
- "rustc-hash",
+ "rustc-hash 2.1.1",
  "rustc_version",
  "send_wrapper",
  "serde",
@@ -2744,7 +2779,7 @@ dependencies = [
  "paste",
  "reactive_graph",
  "reactive_stores_macro",
- "rustc-hash",
+ "rustc-hash 2.1.1",
  "send_wrapper",
 ]
 
@@ -2761,7 +2796,7 @@ dependencies = [
  "paste",
  "reactive_graph",
  "reactive_stores_macro",
- "rustc-hash",
+ "rustc-hash 2.1.1",
  "send_wrapper",
 ]
 
@@ -2839,6 +2874,12 @@ dependencies = [
  "syn_derive",
  "thiserror 2.0.17",
 ]
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc-hash"
@@ -2923,6 +2964,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "self_cell"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16c2f82143577edb4921b71ede051dac62ca3c16084e918bf7b40c96ae10eb33"
+
+[[package]]
 name = "semver"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2945,6 +2992,17 @@ checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
  "serde_core",
  "serde_derive",
+]
+
+[[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3159,6 +3217,7 @@ version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
+ "serde",
  "version_check",
 ]
 
@@ -3276,13 +3335,13 @@ dependencies = [
  "js-sys",
  "linear-map",
  "next_tuple",
- "oco_ref",
+ "oco_ref 0.2.1",
  "or_poisoned",
  "parking_lot",
  "paste",
  "reactive_graph",
  "reactive_stores 0.3.0",
- "rustc-hash",
+ "rustc-hash 2.1.1",
  "rustc_version",
  "send_wrapper",
  "slotmap",

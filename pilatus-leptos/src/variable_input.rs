@@ -18,8 +18,8 @@ pub fn VariableInput<
     let new_var_name = RwSignal::new(String::new());
 
     // Reactive signals derived from the value
-    let is_var = Signal::derive(move || value.is_variable());
-    let var_name = Signal::derive(move || value.get_variable_name().unwrap_or_default());
+    let var_name = Signal::derive(move || value.get_variable_name());
+    let is_var = Signal::derive(move || var_name.read().is_some());
 
     // Convert to variable
     let convert_to_var = move |_| {
@@ -72,7 +72,7 @@ pub fn VariableInput<
                         Either::Left(view! {
                             <div style="display: flex; gap: 4px; align-items: center;">
                                 <span style="color: #0078ff; font-weight: bold;">
-                                    "🔗 " {var_name.get()}
+                                    "🔗 " {var_name}
                                 </span>
                                 <Button on:click=convert_to_local size=thaw::ButtonSize::Small>
                                     "Use Local Value"

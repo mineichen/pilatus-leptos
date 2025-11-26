@@ -35,7 +35,7 @@ A reactive signal wrapper around `Signal<PilatusPrimitiveValue<T>>` that provide
 **Key Methods:**
 - `get_value()` - Gets the actual T value (panics if unresolved variable)
 - `set_value(value: T)` - Sets as an explicit local value
-- `is_variable()` - Checks if currently a variable reference
+- `variable()` - Gets the variable if this is a variable reference (returns `Option<Variable>`)
 - `get_variable_name()` - Gets the variable name if it's a variable
 - `convert_to_variable(name: &str)` - Converts current value to a variable reference
 - `convert_to_local(value: T)` - Converts a variable back to a local value

@@ -22,36 +22,39 @@ pub struct DeviceInfos {
 }
 
 #[derive(Clone)]
-pub struct RecipeContext(Arc<DeviceContextState>);
+pub struct RecipeContext(Arc<RecipeContextState>);
 
 impl std::ops::Deref for RecipeContext {
-    type Target = DeviceContextState;
+    type Target = RecipeContextState;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 #[derive(Clone)]
-pub struct DeviceContextState {
+pub struct RecipeContextState {
     client_id: Uuid,
     root: MapRwSignal<pilatus::Recipes>,
+    // The Recipes might become invalid between updates. This value is only written with values approved by the server
+    valid_root: RwSignal<pilatus::Recipes>,
     unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
     variables: RwSignal<HashMap<String, Value>>,
 }
 
 impl RecipeContext {
-    fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
-        Self(Arc::new(DeviceContextState::new(recipes, client_id)))
+    pub(crate) fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
+        Self(Arc::new(RecipeContextState::new(recipes, client_id)))
     }
 }
 
-impl DeviceContextState {
+impl RecipeContextState {
     fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
         let (unsaved_changes_reader, unsaved_changes_writer) = signal(Default::default());
         Self {
             client_id,
-            root: MapRwSignal::new(recipes),
+            root: MapRwSignal::new(recipes.clone()),
+            valid_root: RwSignal::new(recipes),
             unsaved_changes_reader,
             unsaved_changes_writer,
             variables: RwSignal::new([("foo".to_string(), 42.into())].into_iter().collect()),
@@ -115,6 +118,7 @@ impl RecipeContext {
     }
 
     /// Get a typed signal from the JSON params
+    /// Panics, if the device_id doesn't exist in active. Usually, DeviceContext is responsible not to render children if this is the case
     pub fn get_untyped(&self, device_id: Signal<DeviceId>) -> MapRwSignal<serde_json::Value> {
         let setter = self.unsaved_changes_writer;
         self.root.map(
@@ -151,14 +155,30 @@ impl RecipeContext {
         &self,
         device_id: Signal<DeviceId>,
     ) -> MapRwSignal<T> {
+        let valid_root = self.valid_root;
         self.get_untyped(device_id).map(
-            |x| {
-                T::deserialize(x).unwrap_or_else(|e| {
-                    panic!(
-                        "Cannot extract {:?} from {:?}: {e}",
-                        std::any::type_name::<T>(),
-                        x
+            move |x| {
+                T::deserialize(x).unwrap_or_else(|_| {
+                    leptos::logging::log!("Root was invalid, reading from valid_root");
+                    T::deserialize(
+                        valid_root
+                            .read()
+                            .active()
+                            .1
+                            .devices
+                            .get(&device_id.get())
+                            .expect("DeviceId must exits")
+                            .params
+                            .deref()
+                            .clone(),
                     )
+                    .unwrap_or_else(|e| {
+                        panic!(
+                            "Cannot extract {:?} from {:?}: {e}",
+                            std::any::type_name::<T>(),
+                            x
+                        )
+                    })
                 })
             },
             |target, x| {
@@ -298,6 +318,8 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                             leptos::logging::debug_log!("Sending update now ({device_id:?}): {value:?}");
                             let url = format!("/api/recipe/{recipe_id}/device/{device_id}/params?key={}", my_id);
 
+
+
                             gloo_net::http::Request::put(&url)
                                 .header("content-type", "application/json")
                                 .body(
@@ -399,9 +421,7 @@ async fn start_recipe_stream_listener(
             }
         }
 
-        ctx.0
-            .root
-            .set(load_recipes_until_success(set_error_signal).await);
+        ctx.set_root(load_recipes_until_success(set_error_signal).await);
     }
 }
 

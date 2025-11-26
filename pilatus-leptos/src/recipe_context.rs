@@ -21,6 +21,12 @@ pub struct DeviceInfos {
     pub device_type: String,
 }
 
+#[derive(Clone, PartialEq, Debug)]
+struct UnsavedDeviceChange {
+    recipe_id: RecipeId,
+    params: Value,
+}
+
 #[derive(Clone)]
 pub struct RecipeContext(Arc<RecipeContextState>);
 
@@ -37,8 +43,8 @@ pub struct RecipeContextState {
     root: MapRwSignal<pilatus::Recipes>,
     // The Recipes might become invalid between updates. This value is only written with values approved by the server
     valid_root: RwSignal<pilatus::Recipes>,
-    unsaved_changes_reader: ReadSignal<HashMap<DeviceId, (RecipeId, Value)>>,
-    unsaved_changes_writer: WriteSignal<HashMap<DeviceId, (RecipeId, Value)>>,
+    unsaved_changes_reader: ReadSignal<HashMap<DeviceId, UnsavedDeviceChange>>,
+    unsaved_changes_writer: WriteSignal<HashMap<DeviceId, UnsavedDeviceChange>>,
     variables: RwSignal<HashMap<String, Value>>,
 }
 
@@ -144,7 +150,13 @@ impl RecipeContext {
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
                 setter.update(move |u| {
-                    u.insert(device_id, (active_id, x));
+                    u.insert(
+                        device_id,
+                        UnsavedDeviceChange {
+                            recipe_id: active_id,
+                            params: x,
+                        },
+                    );
                 });
             },
         )
@@ -307,7 +319,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                         ch_writer.update(|x| {
                             next = x.extract_if(|_, _| true).next();
                         });
-                        let Some((device_id, (recipe_id, value))) = next else {
+                        let Some((device_id, change)) = next else {
                             break;
                         };
 
@@ -315,8 +327,8 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                         if ch_reader.read_untracked().get(&device_id).is_some() {
                             leptos::logging::debug_log!("Device : {device_id:?} has newer pending changes");
                         } else {
-                            leptos::logging::debug_log!("Sending update now ({device_id:?}): {value:?}");
-                            let url = format!("/api/recipe/{recipe_id}/device/{device_id}/params?key={}", my_id);
+                            leptos::logging::debug_log!("Sending update now ({device_id:?}): {:?}", change.params);
+                            let url = format!("/api/recipe/{}/device/{device_id}/params?key={}", change.recipe_id, my_id);
 
 
 
@@ -324,7 +336,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                                 .header("content-type", "application/json")
                                 .body(
                                     serde_json::json!( {
-                                        "parameters": value,
+                                        "parameters": change.params,
                                         "variables": {}
                                     })
                                     .to_string(),

@@ -1,0 +1,13 @@
+[package]
+name = "pilatus-engineering-leptos"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+leptos.workspace = true
+pilatus-leptos.workspace = true
+egui-pixels.workspace = true
+egui.workspace = true
+eframe.workspace = true
+web-sys.workspace = true
+js-sys.workspace = true

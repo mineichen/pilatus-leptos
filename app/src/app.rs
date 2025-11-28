@@ -4,6 +4,7 @@ use leptos_router::{
     StaticSegment,
     components::{A, ParentRoute, Route, Router, Routes},
 };
+use pilatus_engineering_leptos::PilatusEngineeringView;
 use pilatus_examples_leptos::{Greeter, ManualTick};
 use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{Button, ButtonSize, ConfigProvider, Layout, LayoutHeader, LayoutSider};
@@ -40,6 +41,7 @@ pub fn App() -> impl IntoView {
                                     <ParentRoute path=leptos_router::path!("/device/:device_id") view=DeviceView>
                                         <Route path=StaticSegment("greeter") view=Greeter/>
                                         <Route path=StaticSegment("manual_tick") view=ManualTick />
+                                        <Route path=StaticSegment("engineering-emulation-camera") view=PilatusEngineeringView/>
                                         <Route path=leptos_router::path!("/:device_type") view=JsonDeviceView/>
                                     </ParentRoute>
                                 </Routes>

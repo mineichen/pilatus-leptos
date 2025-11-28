@@ -2,6 +2,7 @@
 watch = [
     "../pilatus-leptos",
     ".",
+    "../pilatus-engineering-leptos",
     "../pilatus-examples-leptos"
 ]
 

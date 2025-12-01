@@ -2,10 +2,10 @@
 resolver = "3"
 members = [
     "app",
-    "app-backend", 
+    "app-backend",
     "pilatus-leptos",
     "pilatus-engineering-leptos",
-    "pilatus-examples-leptos" 
+    "pilatus-examples-leptos"
 ]
 
 [workspace.package]
@@ -18,6 +18,8 @@ axum = "0.8"
 egui = "0.33"
 egui-pixels = { git = "https://github.com/mineichen/egui-pixels" }
 eframe = "0.33"
+futures = "0.3"
+gloo = "0.11.0"
 gloo-net = "0.6"
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"

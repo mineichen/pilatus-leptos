@@ -1,37 +1,74 @@
 use egui::{InnerResponse, Sense};
 
 use egui_pixels::{
-    ClearTool, ImageData, ImageStateLoaded, ImageViewer, ImageViewerInteraction, Tool, ToolContext,
+    ClearTool, ImageData, ImageId, ImageLoadOk, ImageStateLoaded, ImageViewer,
+    ImageViewerInteraction, Tool, ToolContext,
 };
+use futures::{
+    SinkExt,
+    channel::{mpsc, oneshot},
+};
+use image_buffer::GenericImage;
+use leptos::logging::debug_log;
+
+type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
 
 pub struct EframeImageViewer {
     runner: eframe::WebRunner,
+    command_send: futures::channel::mpsc::Sender<ChangeItem>,
+    ctx: egui::Context,
 }
 
 impl EframeImageViewer {
-    pub fn new() -> Self {
-        Self {
-            runner: eframe::WebRunner::new(),
-        }
-    }
-
-    pub async fn start(&self, canvas: web_sys::HtmlCanvasElement) {
+    pub async fn create(canvas: web_sys::HtmlCanvasElement) -> anyhow::Result<Self> {
+        let (sender, receiver) = futures::channel::mpsc::channel(1);
         let web_options = eframe::WebOptions::default();
-        let result = self
-            .runner
+        let runner = eframe::WebRunner::new();
+        let ctx = std::rc::Rc::new(std::cell::Cell::new(None));
+        let ctx_start = ctx.clone();
+        let result = runner
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| {
+                Box::new(move |cc| {
                     leptos::logging::log!("App creation callback called - eframe instance created");
-                    Ok(Box::new(App::new(&cc.egui_ctx)))
+                    ctx_start.set(Some(cc.egui_ctx.clone()));
+                    Ok(Box::new(App::new(&cc.egui_ctx, receiver)))
                 }),
             )
-            .await;
+            .await
+            .map_err(|e| anyhow::anyhow!("Couldn't start {e:?}"))?;
 
         // It is normal for start() to return after initialization... The eventloop continues
-        if let Err(e) = result {
-            leptos::logging::log!("eframe start() returned error: {e:?}");
+        Ok(Self {
+            ctx: ctx.take().unwrap(),
+            runner,
+            command_send: sender,
+        })
+    }
+    pub async fn replace_image(&self, adjust: GenericImage<[u8; 3], 1>) {
+        let (r_send, r_recv) = oneshot::channel();
+        let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
+            app.image_state = ImageStateLoaded::from_image_data(
+                ImageData {
+                    id: ImageId::from("foo"),
+                    image: ImageLoadOk {
+                        original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
+                        adjust,
+                    },
+                    masks: Vec::new(),
+                },
+                ctx,
+            );
+            debug_log!("Replaced image state");
+            r_send.send(());
+        }));
+        // Avoid no deadlock
+        if set_result.is_ok() {
+            self.ctx.request_repaint();
+            r_recv.await;
+            // Assure it is painted
+            self.ctx.request_repaint();
         }
     }
 }
@@ -40,22 +77,27 @@ pub struct App {
     image_state: ImageStateLoaded,
     viewer: ImageViewer,
     tool: Box<dyn Tool>,
+    receiver: mpsc::Receiver<ChangeItem>,
 }
 
 impl App {
-    pub fn new(ctx: &egui::Context) -> Self {
+    pub fn new(ctx: &egui::Context, receiver: mpsc::Receiver<ChangeItem>) -> Self {
         let image = ImageData::chessboard().next().unwrap();
         let image_state = ImageStateLoaded::from_image_data(image, &ctx);
         Self {
             image_state,
             viewer: ImageViewer::default(),
             tool: Box::new(ClearTool::default()),
+            receiver,
         }
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Ok(Some(x)) = self.receiver.try_next() {
+            x(self, ctx)
+        }
         egui::CentralPanel::default()
             .frame(egui::Frame::new().fill(egui::Color32::TRANSPARENT))
             .show(ctx, |ui| {
@@ -93,7 +135,7 @@ impl eframe::App for App {
                                 egui::Frame::popup(ui.style())
                                     .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
                                     .show(ui, |ui| {
-                                        ui.label(format!("Pixel Coordinates: ({}, {})", x, y));
+                                        ui.label(format!("x: {} y: {}", x, y));
                                     });
                             });
                     }

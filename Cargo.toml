@@ -19,8 +19,10 @@ egui = "0.33"
 egui-pixels = { git = "https://github.com/mineichen/egui-pixels" }
 eframe = "0.33"
 futures = "0.3"
-gloo = "0.11.0"
+gloo-events = "0.2"
 gloo-net = "0.6"
+gloo-timers = "0.3"
+gloo-utils = "0.2"
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"

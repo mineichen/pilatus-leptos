@@ -1,0 +1,13 @@
+{
+    "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+    "rust-analyzer.check.allTargets": false,
+    "rust-analyzer.check.extraArgs": [
+        "--target=wasm32-unknown-unknown"
+    ],
+    "rust-analyzer.linkedProjects": [
+        "./app/Cargo.toml",
+        "./pilatus-leptos/Cargo.toml",
+        "./pilatus-engineering-leptos/Cargo.toml",
+        "./pilatus-examples-leptos/Cargo.toml"
+    ]
+}

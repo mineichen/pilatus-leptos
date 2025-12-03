@@ -9,10 +9,14 @@ eframe.workspace = true
 egui.workspace = true
 egui-pixels.workspace = true
 futures.workspace = true
+gloo-events.workspace = true
 gloo-net.workspace = true
-gloo.workspace = true
+gloo-utils.workspace = true
+gloo-timers.workspace = true
 image-buffer = { git = "https://github.com/mineichen/image-buffer.git", branch = "main" }
 js-sys.workspace = true
 leptos.workspace = true
 pilatus-leptos.workspace = true
+pin-project-lite = "0.2"
+thiserror.workspace = true
 web-sys.workspace = true

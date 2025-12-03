@@ -1,0 +1,22 @@
+{
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "cargo": {
+          "target": "wasm32-unknown-unknown"
+        },
+        "check": {
+          "allTargets": false,
+          "extraArgs": ["--target=wasm32-unknown-unknown"]
+        },
+        "linkedProjects": [
+          "./app/Cargo.toml",
+          "./pilatus-leptos/Cargo.toml",
+          "./pilatus-engineering-leptos/Cargo.toml",
+          "./pilatus-examples-leptos/Cargo.toml"
+        ]
+      }
+    }
+  }
+}
+

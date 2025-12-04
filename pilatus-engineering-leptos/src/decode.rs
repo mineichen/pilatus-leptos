@@ -52,19 +52,6 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
     let height_offset = (height.get() / 2) as isize;
     match kind {
         0 => {
-            // let x = pixels // 8bit
-            //     .iter()
-            //     .enumerate()
-            //     .map(|(pos, x)| InstanceData {
-            //         position: Vec3::new(
-            //             (pos as isize / width.get() as isize - height_offset) as f32 * SCALE,
-            //             *x as f32 * SCALE * 0.01,
-            //             (pos as isize % width.get() as isize - width_offset) as f32 * SCALE,
-            //         ),
-            //         scale: settings.scale,
-            //         color: [0.5, 0.5, 0.5, 0.5],
-            //     })
-            //     .collect();
             log!("Encode u8");
 
             Ok(Some(egui_pixels::RgbImageInterleaved::new_arc(

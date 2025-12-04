@@ -10,3 +10,4 @@ pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-rt = { git = "https://github.com/mineichen/pilatus.git"}
 pilatus-tick-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt.workspace = true
+image = { workspace = true, features = ["tiff"] }

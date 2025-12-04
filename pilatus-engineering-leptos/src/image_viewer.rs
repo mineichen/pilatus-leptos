@@ -26,7 +26,7 @@ impl EframeImageViewer {
         let runner = eframe::WebRunner::new();
         let ctx = std::rc::Rc::new(std::cell::Cell::new(None));
         let ctx_start = ctx.clone();
-        let result = runner
+        runner
             .start(
                 canvas,
                 web_options,

@@ -268,6 +268,7 @@ dependencies = [
 name = "app-backend"
 version = "0.1.0"
 dependencies = [
+ "image",
  "minfac",
  "pilatus",
  "pilatus-axum-rt",
@@ -2381,9 +2382,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.18"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52e9a2a24dc5c6821e71a7030e1e14b7b632acac55c40e9d2e082c621261bb56"
+checksum = "727805d60e7938b76b826a6ef209eb70eaa1812794f9424d4a4e2d740662df5f"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -2574,7 +2575,7 @@ source = "git+https://github.com/mineichen/image-buffer.git#df2c88f348b401561420
 [[package]]
 name = "impex"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#9432107d73205aa8c4f36fbf8608b374f73930d3"
+source = "git+https://github.com/mineichen/impex#d8f91be992d561cc16a745329b0b09bcde689287"
 dependencies = [
  "impex_derive",
  "serde",
@@ -2583,7 +2584,7 @@ dependencies = [
 [[package]]
 name = "impex_derive"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#9432107d73205aa8c4f36fbf8608b374f73930d3"
+source = "git+https://github.com/mineichen/impex#d8f91be992d561cc16a745329b0b09bcde689287"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3234,9 +3235,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69d83b0086dc8ecf3ce9ae2874b2d1290252e2a30720bea58a5c6639b0092873"
+checksum = "a69bcab0ad47271a0234d9422b131806bf3968021e5dc9328caf2d4cd58557fc"
 dependencies = [
  "libc",
  "wasi",
@@ -3883,7 +3884,7 @@ dependencies = [
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "approx",
@@ -3894,6 +3895,7 @@ dependencies = [
  "futures-channel",
  "futures-util",
  "glob",
+ "impex",
  "indexmap",
  "minfac",
  "sealedstruct",
@@ -3910,7 +3912,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3931,7 +3933,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -3960,8 +3962,9 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
+ "impex",
  "pilatus",
  "serde",
 ]
@@ -3969,9 +3972,10 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
+ "bytes",
  "chrono",
  "futures",
  "image",
@@ -3984,12 +3988,13 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
+ "tracing-test",
 ]
 
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "approx",
@@ -4021,9 +4026,13 @@ dependencies = [
  "image-buffer 0.1.0 (git+https://github.com/mineichen/image-buffer.git?branch=main)",
  "js-sys",
  "leptos",
+ "pilatus",
+ "pilatus-emulation-camera",
  "pilatus-leptos",
  "pin-project-lite",
  "thiserror 2.0.17",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -4078,7 +4087,7 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4105,7 +4114,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "impex",
  "pilatus",
@@ -4115,7 +4124,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#925e7c2a2c83f3aeaef3995d48c08fa78f11dfb2"
+source = "git+https://github.com/mineichen/pilatus.git#065ff5b23d25174a193c877484e0b055b7e28d86"
 dependencies = [
  "anyhow",
  "futures",
@@ -5757,6 +5766,27 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "tracing-test"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "557b891436fe0d5e0e363427fc7f217abf9ccd510d5136549847bdcbcd011d68"
+dependencies = [
+ "tracing-core",
+ "tracing-subscriber",
+ "tracing-test-macro",
+]
+
+[[package]]
+name = "tracing-test-macro"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04659ddb06c87d233c566112c1c9c5b9e98256d9af50ec3bc9c8327f873a7568"
+dependencies = [
+ "quote",
+ "syn 2.0.111",
 ]
 
 [[package]]

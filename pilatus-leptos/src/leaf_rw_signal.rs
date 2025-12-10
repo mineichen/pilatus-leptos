@@ -19,6 +19,7 @@ use leptos::tachys::view::RenderHtml;
 use leptos::tachys::view::add_attr::AddAnyAttr;
 
 use pilatus::Name;
+use reactive_graph::signal::guards::ReadGuard;
 use serde::{Serialize, Serializer};
 
 use crate::PilatusPrimitiveValue;
@@ -290,14 +291,52 @@ where
     }
 }
 
-impl<T> Get for LeafRwSignal<T>
-where
-    T: Send + Sync + 'static + Clone + serde::de::DeserializeOwned,
-{
-    type Value = T;
+pub struct LeafRwSignalReadGuard<T: Send + Sync + 'static> {
+    read_signal:
+        ReadGuard<PilatusPrimitiveValue<T>, SignalReadGuard<PilatusPrimitiveValue<T>, SyncStorage>>,
+}
 
-    fn try_get(&self) -> Option<Self::Value> {
-        Some(self.get_value())
+impl<T>
+    From<
+        ReadGuard<PilatusPrimitiveValue<T>, SignalReadGuard<PilatusPrimitiveValue<T>, SyncStorage>>,
+    > for LeafRwSignalReadGuard<T>
+where
+    T: Send + Sync + 'static,
+{
+    fn from(
+        read_signal: ReadGuard<
+            PilatusPrimitiveValue<T>,
+            SignalReadGuard<PilatusPrimitiveValue<T>, SyncStorage>,
+        >,
+    ) -> Self {
+        LeafRwSignalReadGuard { read_signal }
+    }
+}
+
+impl<T> std::ops::Deref for LeafRwSignalReadGuard<T>
+where
+    T: Send + Sync + 'static,
+{
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.read_signal.deref().value
+    }
+}
+
+impl<T> Read for LeafRwSignal<T>
+where
+    T: Send + Sync + 'static,
+{
+    type Value = LeafRwSignalReadGuard<T>;
+
+    fn read(&self) -> Self::Value {
+        let x = self.read_signal.read();
+        x.into()
+    }
+
+    fn try_read(&self) -> Option<Self::Value> {
+        self.read_signal.try_read().map(Into::into)
     }
 }
 

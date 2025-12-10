@@ -19,6 +19,7 @@ use leptos::tachys::view::Render;
 use leptos::tachys::view::RenderHtml;
 use leptos::tachys::view::add_attr::AddAnyAttr;
 
+use reactive_graph::signal::guards::ReadGuard;
 use serde::de::DeserializeOwned;
 use serde::{Serialize, Serializer};
 
@@ -241,7 +242,7 @@ impl<T> Read for MapRwSignal<T>
 where
     T: Send + Sync + 'static + Clone,
 {
-    type Value = reactive_graph::signal::guards::ReadGuard<T, SignalReadGuard<T, SyncStorage>>;
+    type Value = ReadGuard<T, SignalReadGuard<T, SyncStorage>>;
 
     fn read(&self) -> Self::Value {
         self.read_signal.read()

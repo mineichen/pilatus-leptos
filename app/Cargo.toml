@@ -8,22 +8,17 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-chrono = "0.4"
-gloo-net.workspace = true
 leptos = { workspace = true, features = ["csr"] }
 leptos_router.workspace = true
 console_error_panic_hook = "0.1"
 leptos_meta.workspace = true
-wasm-bindgen = "0.2.100"
-http = "1"
 pilatus.workspace = true
-serde_json.workspace = true
 thaw.workspace = true
 thaw_utils.workspace = true
-thiserror.workspace = true
 pilatus-leptos.workspace = true
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }
 pilatus-engineering-leptos = { path = "../pilatus-engineering-leptos" }
+pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos" }
 
 axum = { workspace = true, optional = true }
 leptos_axum = { workspace = true, optional = true }

@@ -4,7 +4,7 @@ use leptos_router::{
     StaticSegment,
     components::{A, ParentRoute, Route, Router, Routes},
 };
-use pilatus_engineering_leptos::PilatusEngineeringView;
+use pilatus_emulation_camera_leptos::PilatusEngineeringView;
 use pilatus_examples_leptos::{Greeter, ManualTick};
 use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{Button, ButtonSize, ConfigProvider, Layout, LayoutHeader, LayoutSider};

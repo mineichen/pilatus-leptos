@@ -5,7 +5,7 @@ use leptos::logging::{debug_log, log};
 
 pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterleaved<u8>>> {
     if input.len() < 8 {
-        return Err(anyhow!("Header is {} bytes long", input.len()).into());
+        return Err(anyhow!("Header is {} bytes long", input.len()));
     }
 
     const MISSING_FRAME_ERROR: u8 = 16;
@@ -14,7 +14,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
         0 => {}
         MISSING_FRAME_ERROR => return Ok(None),
         x => {
-            return Err(anyhow!("Stream item with error: {}", x).into());
+            return Err(anyhow!("Stream item with error: {}", x));
         }
     }
     let meta_len = u32::from_le_bytes(array(&input[4..8]));
@@ -30,7 +30,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
     let size_without_image_data: usize = 4 + 4 + meta_len as usize + 4;
     //let metadata = dbg!(&input.get(ok_header_len..ok_header_len + 10));
     if input.len() < size_without_image_data + 12 {
-        return Err(anyhow!("Before image is not long enouth: {}", input.len()).into());
+        return Err(anyhow!("Before image is not long enouth: {}", input.len()));
     }
 
     let size = u32::from_le_bytes(array(
@@ -42,8 +42,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
     let align_bytes = (image_buf_start - size_without_image_data) as u32;
 
     // +0 is reserved
-    let (kind, width, image_buf_len, height) =
-        read_raw(&input, size, image_buf_start, align_bytes)?;
+    let (kind, width, image_buf_len, height) = read_raw(input, size, image_buf_start, align_bytes)?;
 
     let pixels = &input[image_buf_start + 8..image_buf_start + 8 + image_buf_len as usize];
 
@@ -74,7 +73,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
             log!("Encode u16");
             Ok(None)
         }
-        x => Err(anyhow::anyhow!("Unkonwn image format {x}").into()),
+        x => Err(anyhow::anyhow!("Unkonwn image format {x}")),
     }
 }
 
@@ -97,11 +96,11 @@ fn read_raw(
     let pixel_count = match kind {
         0 => image_buf_len,
         1 => image_buf_len / 2,
-        _ => return Err(anyhow!("Unknown kind {kind}").into()),
+        _ => return Err(anyhow!("Unknown kind {kind}")),
     };
     let height: NonZeroU32 = (pixel_count / width).try_into()?;
     if pixel_count % width != 0 {
-        return Err(anyhow!("Expected remainer of 0 {pixel_count}h {width}w").into());
+        return Err(anyhow!("Expected remainer of 0 {pixel_count}h {width}w"));
     }
     Ok((kind, width, image_buf_len, height))
 }

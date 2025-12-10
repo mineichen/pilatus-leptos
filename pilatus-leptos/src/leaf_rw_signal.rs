@@ -20,7 +20,6 @@ use leptos::tachys::view::add_attr::AddAnyAttr;
 
 use pilatus::Name;
 use serde::{Serialize, Serializer};
-use serde_json;
 
 use crate::PilatusPrimitiveValue;
 
@@ -197,7 +196,7 @@ where
         let write = self.write_signal;
 
         let new_read: Signal<PilatusPrimitiveValue<A>> =
-            Memo::new(move |_| read.get().map(|t_value| getter(t_value))).into();
+            Memo::new(move |_| read.get().map(&getter)).into();
 
         let new_write = SignalSetter::map(move |prim_val_a: PilatusPrimitiveValue<A>| {
             // Todo: Avoid cloning

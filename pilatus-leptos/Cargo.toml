@@ -13,6 +13,7 @@ leptos_router.workspace = true
 leptos_forge_utils_leptos.workspace = true
 pilatus.workspace = true
 reactive_stores.workspace = true
+reactive_graph.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thaw.workspace = true

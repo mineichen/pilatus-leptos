@@ -39,6 +39,7 @@ pilatus-examples-leptos = { path = "pilatus-examples-leptos"}
 pilatus-emulation-camera = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-tick = { git = "https://github.com/mineichen/pilatus.git" }
+reactive_graph = "0.2"
 reactive_stores = "0.3"
 serde = "1"
 serde_json = "1"

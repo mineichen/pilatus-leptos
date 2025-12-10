@@ -80,7 +80,7 @@ pub struct App {
 impl App {
     pub fn new(ctx: &egui::Context, receiver: mpsc::Receiver<ChangeItem>) -> Self {
         let image = ImageData::chessboard().next().unwrap();
-        let image_state = ImageStateLoaded::from_image_data(image, &ctx);
+        let image_state = ImageStateLoaded::from_image_data(image, ctx);
         Self {
             image_state,
             viewer: ImageViewer::default(),

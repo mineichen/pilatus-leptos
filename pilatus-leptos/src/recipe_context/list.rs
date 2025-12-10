@@ -302,7 +302,7 @@ impl RecipeContext {
 
         if !response.ok() {
             match response.text().await.as_deref() {
-                Ok("") | Err(_) => Err(anyhow!("HTTP {}", response.status()).into()),
+                Ok("") | Err(_) => Err(anyhow!("HTTP {}", response.status())),
                 Ok(body) => Err(anyhow!("{body}")),
             }
         } else {

@@ -76,11 +76,11 @@ pub fn PilatusEngineeringView() -> impl IntoView {
 
     // Effect to refresh collections after successful upload to a new collection
     Effect::new(move |_| {
-        if let Some(Ok(_)) = upload_action.value().get() {
-            if is_creating_new_collection.get() {
-                collections.refetch();
-                set_is_creating_new_collection.set(false);
-            }
+        if let Some(Ok(_)) = upload_action.value().get()
+            && is_creating_new_collection.get()
+        {
+            collections.refetch();
+            set_is_creating_new_collection.set(false);
         }
     });
 
@@ -111,13 +111,12 @@ pub fn PilatusEngineeringView() -> impl IntoView {
 
     let confirm_new_collection = move || {
         let name_str = new_collection_name.get_untracked();
-        if !name_str.is_empty() {
-            if let Ok(collection_name) = name_str.parse::<Name>() {
-                if let Some(file) = pending_file.get_untracked() {
-                    set_is_creating_new_collection.set(true);
-                    upload_action.dispatch_local((collection_name, file));
-                }
-            }
+        if !name_str.is_empty()
+            && let Ok(collection_name) = name_str.parse::<Name>()
+            && let Some(file) = pending_file.get_untracked()
+        {
+            set_is_creating_new_collection.set(true);
+            upload_action.dispatch_local((collection_name, file));
         }
         set_show_new_collection_dialog.set(false);
         set_new_collection_name.set(String::new());
@@ -131,8 +130,10 @@ pub fn PilatusEngineeringView() -> impl IntoView {
     };
 
     let image_url = Signal::derive(move || {
-        format!("ws://localhost:4123/api/image/subscribe?format=Raw")
-        // format!("ws://localhost:8080/api/image/subscribe?device_id={}&format=Raw", device_id.get())
+        format!(
+            "ws://localhost:4123/api/image/subscribe?format=Raw&device_id={}",
+            device_id.read().deref()
+        )
     });
     view! {
         <div>
@@ -182,7 +183,7 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                     let (name, _set_name) = signal(name.clone());
 
                                                     let is_active = Signal::derive(move || {
-                                                        active_collection.get().as_ref() == Some(&name.read().deref())
+                                                        active_collection.read().as_deref() == Some(name.read().deref())
                                                     });
 
 
@@ -199,41 +200,36 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                             }
                                                             on:dragover=move |ev| {
                                                                 ev.prevent_default();
-                                                                if let Some(target) = ev.target() {
-                                                                    if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                                        let _ = elem.style().set_property("background", "#d0e8f0");
-                                                                        let _ = elem.style().set_property("border-color", "#4a90a4");
-                                                                    }
+                                                                if let Some(target) = ev.target()
+                                                                    && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                                    let _ = elem.style().set_property("background", "#d0e8f0");
+                                                                    let _ = elem.style().set_property("border-color", "#4a90a4");
                                                                 }
                                                             }
                                                             on:dragleave=move |ev| {
-                                                                if let Some(target) = ev.target() {
-                                                                    if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                                        let active = is_active.get_untracked();
-                                                                        let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
-                                                                        let border = if active { "#4caf50" } else { "#ccc" };
-                                                                        let _ = elem.style().set_property("background", bg);
-                                                                        let _ = elem.style().set_property("border-color", border);
-                                                                    }
+                                                                if let Some(target) = ev.target()
+                                                                    && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                                    let active = is_active.get_untracked();
+                                                                    let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
+                                                                    let border = if active { "#4caf50" } else { "#ccc" };
+                                                                    let _ = elem.style().set_property("background", bg);
+                                                                    let _ = elem.style().set_property("border-color", border);
                                                                 }
                                                             }
                                                             on:drop=move |ev| {
                                                                 ev.prevent_default();
-                                                                if let Some(target) = ev.target() {
-                                                                    if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                                        let active = is_active.get_untracked();
-                                                                        let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
-                                                                        let border = if active { "#4caf50" } else { "#ccc" };
-                                                                        let _ = elem.style().set_property("background", bg);
-                                                                        let _ = elem.style().set_property("border-color", border);
-                                                                    }
+                                                                if let Some(target) = ev.target()
+                                                                    && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                                    let active = is_active.get_untracked();
+                                                                    let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
+                                                                    let border = if active { "#4caf50" } else { "#ccc" };
+                                                                    let _ = elem.style().set_property("background", bg);
+                                                                    let _ = elem.style().set_property("border-color", border);
                                                                 }
-                                                                if let Some(dt) = ev.data_transfer() {
-                                                                    if let Some(files) = dt.files() {
-                                                                        if let Some(file) = files.get(0) {
-                                                                            upload_action.dispatch_local((name.get(), file));
-                                                                        }
-                                                                    }
+                                                                if let Some(dt) = ev.data_transfer()
+                                                                    && let Some(files) = dt.files()
+                                                                    && let Some(file) = files.get(0) {
+                                                                    upload_action.dispatch_local((name.get(), file));
                                                                 }
                                                             }
                                                         >

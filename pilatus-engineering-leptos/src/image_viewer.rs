@@ -18,8 +18,7 @@ pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
             && viewer.read_untracked().is_none()
         {
             leptos::reactive::spawn_local(async move {
-                let canvas_element: web_sys::HtmlCanvasElement = canvas.into();
-                match EframeImageViewer::create(canvas_element).await {
+                match EframeImageViewer::create(canvas).await {
                     Ok(viewer) => {
                         set_viewer.set(Some(viewer));
                     }
@@ -32,10 +31,8 @@ pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
     });
 
     let stream = LocalResource::new({
-        let viewer = viewer.clone();
         move || {
             let ws_url = url.get();
-            let viewer = viewer.clone();
             async move {
                 let mut ws = crate::ws_suspend::SuspensibleWebSocket::new(ws_url)?;
                 leptos::logging::debug_log!("Suspensible WebSocket created");

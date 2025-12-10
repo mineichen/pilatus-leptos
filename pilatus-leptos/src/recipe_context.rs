@@ -329,7 +329,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
 
         }}
         {move || {
-            recipes_resource.get().and_then(|recipes| {
+            recipes_resource.get().map(|recipes| {
                 let device_context = RecipeContext::new(recipes, my_id);
                 let (ch_reader, ch_writer) = {
                     (
@@ -401,7 +401,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                     },
                 );
 
-                Some(children.take().expect("extracted max once")())
+                children.take().expect("extracted max once")()
             })
         }}
 

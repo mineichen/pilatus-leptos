@@ -237,14 +237,18 @@ where
     }
 }
 
-impl<T> Get for MapRwSignal<T>
+impl<T> Read for MapRwSignal<T>
 where
     T: Send + Sync + 'static + Clone,
 {
-    type Value = T;
+    type Value = reactive_graph::signal::guards::ReadGuard<T, SignalReadGuard<T, SyncStorage>>;
 
-    fn try_get(&self) -> Option<Self::Value> {
-        self.read_signal.try_get()
+    fn read(&self) -> Self::Value {
+        self.read_signal.read()
+    }
+
+    fn try_read(&self) -> Option<Self::Value> {
+        self.read_signal.try_read()
     }
 }
 

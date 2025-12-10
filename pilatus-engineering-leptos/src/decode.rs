@@ -47,9 +47,6 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
 
     let pixels = &input[image_buf_start + 8..image_buf_start + 8 + image_buf_len as usize];
 
-    const SCALE: f32 = 0.01;
-    let width_offset = (width.get() / 2) as isize;
-    let height_offset = (height.get() / 2) as isize;
     match kind {
         0 => {
             log!("Encode u8");
@@ -91,7 +88,7 @@ fn read_raw(
     align_bytes: u32,
 ) -> anyhow::Result<(u8, std::num::NonZero<u32>, u32, std::num::NonZero<u32>)> {
     let kind = input[image_buf_start + 1];
-    let channels = u16::from_le_bytes(array(&input[image_buf_start + 2..image_buf_start + 4]));
+    let _channels = u16::from_le_bytes(array(&input[image_buf_start + 2..image_buf_start + 4]));
     let width: NonZeroU32 =
         u32::from_le_bytes(array(&input[image_buf_start + 4..image_buf_start + 8]))
             .try_into()

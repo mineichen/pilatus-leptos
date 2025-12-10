@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZeroU8, ops::Deref};
+use std::{collections::HashMap, ops::Deref};
 
 use impex::{Impex, ImpexPrimitive, WrapperSettings};
 use leptos::prelude::*;
@@ -191,7 +191,7 @@ impl<'de, T: serde::de::DeserializeOwned> serde::Deserialize<'de> for PilatusPri
         {
             // It's a variable reference - get the value from RecipeContext
             let variable = Variable::new(var_name)
-                .map_err(|e| D::Error::custom("Invalid variable name {e}"))?;
+                .map_err(|e| D::Error::custom(format!("Invalid variable name {e}")))?;
 
             // Try to get RecipeContext and resolve the variable
             let device_ctx = use_context::<crate::RecipeContext>().ok_or_else(|| {
@@ -311,7 +311,7 @@ impl<T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug> impex::Visito
 {
     fn visit(&mut self, ctx: &mut VariableChangeCtx) {
         if let Some(v) = self.variable() {
-            let current = ctx.recipe_context.get_variable::<T>(&v);
+            let current = ctx.recipe_context.get_variable::<T>(v);
             leptos::logging::log!(
                 "Variable change?: {v:?}, var_val: {current:?}, new_val: {self:?}"
             );

@@ -3,7 +3,8 @@ watch = [
     "../pilatus-leptos",
     ".",
     "../pilatus-engineering-leptos",
-    "../pilatus-examples-leptos"
+    "../pilatus-examples-leptos",
+    "../pilatus-emulation-camera-leptos"
 ]
 
 [[proxy]]

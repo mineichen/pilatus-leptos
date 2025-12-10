@@ -7,7 +7,7 @@ use std::{
 
 use futures::Stream;
 use gloo_events::EventListener;
-use gloo_net::websocket::{Message, WebSocketError, futures::WebSocket};
+use gloo_net::websocket::{Message, futures::WebSocket};
 use gloo_timers::callback::Timeout;
 use pin_project_lite::pin_project;
 

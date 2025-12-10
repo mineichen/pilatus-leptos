@@ -283,37 +283,29 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                 style="padding: 10px; margin: 4px 0; background: #fff8e1; border: 2px dashed #ffa726; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;"
                                                 on:dragover=move |ev| {
                                                     ev.prevent_default();
-                                                    if let Some(target) = ev.target() {
-                                                        if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                            let _ = elem.style().set_property("background", "#ffe0b2");
-                                                            let _ = elem.style().set_property("border-color", "#ff9800");
-                                                        }
+                                                    if let Some(target) = ev.target() && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                        elem.style().set_property("background", "#ffe0b2").expect("style can be set");
+                                                        elem.style().set_property("border-color", "#ff9800").expect("style can be set");
                                                     }
                                                 }
                                                 on:dragleave=move |ev| {
-                                                    if let Some(target) = ev.target() {
-                                                        if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                            let _ = elem.style().set_property("background", "#fff8e1");
-                                                            let _ = elem.style().set_property("border-color", "#ffa726");
-                                                        }
+                                                    if let Some(target) = ev.target() && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                        elem.style().set_property("background", "#fff8e1").expect("style can be set");
+                                                        elem.style().set_property("border-color", "#ffa726").expect("style can be set");
                                                     }
                                                 }
                                                 on:drop=move |ev| {
                                                     ev.prevent_default();
-                                                    if let Some(target) = ev.target() {
-                                                        if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                            let _ = elem.style().set_property("background", "#fff8e1");
-                                                            let _ = elem.style().set_property("border-color", "#ffa726");
-                                                        }
+                                                    if let Some(target) = ev.target() && let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
+                                                        elem.style().set_property("background", "#fff8e1").expect("style can be set");
+                                                        elem.style().set_property("border-color", "#ffa726").expect("style can be set");
+
                                                     }
-                                                    if let Some(dt) = ev.data_transfer() {
-                                                        if let Some(files) = dt.files() {
-                                                            if let Some(file) = files.get(0) {
-                                                                set_pending_file.set(Some(file));
-                                                                set_show_new_collection_dialog.set(true);
-                                                            }
-                                                        }
+                                                    if let Some(dt) = ev.data_transfer() && let Some(files) = dt.files() && let Some(file) = files.get(0) {
+                                                        set_pending_file.set(Some(file));
+                                                        set_show_new_collection_dialog.set(true);
                                                     }
+
                                                 }
                                             >
                                                 <div style="display: flex; align-items: center; justify-content: space-between;">

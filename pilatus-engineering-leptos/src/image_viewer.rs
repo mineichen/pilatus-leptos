@@ -6,7 +6,6 @@ use futures::StreamExt;
 use gloo_net::websocket::Message;
 use leptos::html::Canvas;
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
 
 #[component]
 pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {

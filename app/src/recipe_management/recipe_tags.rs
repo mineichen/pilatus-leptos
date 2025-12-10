@@ -15,7 +15,6 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
 
     let add_tag_to_recipe = Action::new_local(move |_: &()| {
         let ctx = ctx.clone();
-        let recipe_id = recipe_id.clone();
         async move {
             let Ok(tag_name) = Name::from_str(&new_tag_input.get()) else {
                 leptos::logging::error!("Invalid tag name: {}", new_tag_input.get());

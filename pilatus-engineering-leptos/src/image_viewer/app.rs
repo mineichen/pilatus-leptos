@@ -4,17 +4,14 @@ use egui_pixels::{
     ClearTool, ImageData, ImageId, ImageLoadOk, ImageStateLoaded, ImageViewer,
     ImageViewerInteraction, Tool, ToolContext,
 };
-use futures::{
-    SinkExt,
-    channel::{mpsc, oneshot},
-};
-use image_buffer::GenericImage;
+use futures::channel::{mpsc, oneshot};
+use image_buffer::Image;
 use leptos::logging::debug_log;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
 
 pub struct EframeImageViewer {
-    runner: eframe::WebRunner,
+    _runner: eframe::WebRunner,
     command_send: futures::channel::mpsc::Sender<ChangeItem>,
     ctx: egui::Context,
 }
@@ -42,11 +39,11 @@ impl EframeImageViewer {
         // It is normal for start() to return after initialization... The eventloop continues
         Ok(Self {
             ctx: ctx.take().unwrap(),
-            runner,
+            _runner: runner,
             command_send: sender,
         })
     }
-    pub async fn replace_image(&self, adjust: GenericImage<[u8; 3], 1>) {
+    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>) {
         let (r_send, r_recv) = oneshot::channel();
         let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
             app.image_state = ImageStateLoaded::from_image_data(
@@ -61,7 +58,7 @@ impl EframeImageViewer {
                 ctx,
             );
             debug_log!("Replaced image state");
-            r_send.send(());
+            r_send.send(()).ok();
         }));
         // Avoid no deadlock
         if set_result.is_ok() {

@@ -1,145 +1,113 @@
-use egui::{InnerResponse, Sense};
+mod app;
 
-use egui_pixels::{
-    ClearTool, ImageData, ImageId, ImageLoadOk, ImageStateLoaded, ImageViewer,
-    ImageViewerInteraction, Tool, ToolContext,
-};
-use futures::{
-    SinkExt,
-    channel::{mpsc, oneshot},
-};
-use image_buffer::GenericImage;
-use leptos::logging::debug_log;
+pub use app::EframeImageViewer;
 
-type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
+use futures::StreamExt;
+use gloo_net::websocket::Message;
+use leptos::html::Canvas;
+use leptos::prelude::*;
+use wasm_bindgen::JsCast;
 
-pub struct EframeImageViewer {
-    runner: eframe::WebRunner,
-    command_send: futures::channel::mpsc::Sender<ChangeItem>,
-    ctx: egui::Context,
-}
+#[component]
+pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
+    let canvas_ref = NodeRef::<Canvas>::new();
+    let (viewer, set_viewer) = signal_local::<Option<EframeImageViewer>>(None);
 
-impl EframeImageViewer {
-    pub async fn create(canvas: web_sys::HtmlCanvasElement) -> anyhow::Result<Self> {
-        let (sender, receiver) = futures::channel::mpsc::channel(1);
-        let web_options = eframe::WebOptions::default();
-        let runner = eframe::WebRunner::new();
-        let ctx = std::rc::Rc::new(std::cell::Cell::new(None));
-        let ctx_start = ctx.clone();
-        runner
-            .start(
-                canvas,
-                web_options,
-                Box::new(move |cc| {
-                    leptos::logging::log!("App creation callback called - eframe instance created");
-                    ctx_start.set(Some(cc.egui_ctx.clone()));
-                    Ok(Box::new(App::new(&cc.egui_ctx, receiver)))
-                }),
-            )
-            .await
-            .map_err(|e| anyhow::anyhow!("Couldn't start {e:?}"))?;
-
-        // It is normal for start() to return after initialization... The eventloop continues
-        Ok(Self {
-            ctx: ctx.take().unwrap(),
-            runner,
-            command_send: sender,
-        })
-    }
-    pub async fn replace_image(&self, adjust: GenericImage<[u8; 3], 1>) {
-        let (r_send, r_recv) = oneshot::channel();
-        let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
-            app.image_state = ImageStateLoaded::from_image_data(
-                ImageData {
-                    id: ImageId::from("foo"),
-                    image: ImageLoadOk {
-                        original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
-                        adjust,
-                    },
-                    masks: Vec::new(),
-                },
-                ctx,
-            );
-            debug_log!("Replaced image state");
-            r_send.send(());
-        }));
-        // Avoid no deadlock
-        if set_result.is_ok() {
-            self.ctx.request_repaint();
-            r_recv.await;
-            // Assure it is painted
-            self.ctx.request_repaint();
-        }
-    }
-}
-
-pub struct App {
-    image_state: ImageStateLoaded,
-    viewer: ImageViewer,
-    tool: Box<dyn Tool>,
-    receiver: mpsc::Receiver<ChangeItem>,
-}
-
-impl App {
-    pub fn new(ctx: &egui::Context, receiver: mpsc::Receiver<ChangeItem>) -> Self {
-        let image = ImageData::chessboard().next().unwrap();
-        let image_state = ImageStateLoaded::from_image_data(image, &ctx);
-        Self {
-            image_state,
-            viewer: ImageViewer::default(),
-            tool: Box::new(ClearTool::default()),
-            receiver,
-        }
-    }
-}
-
-impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Ok(Some(x)) = self.receiver.try_next() {
-            x(self, ctx)
-        }
-        egui::CentralPanel::default()
-            .frame(egui::Frame::new().fill(egui::Color32::TRANSPARENT))
-            .show(ctx, |ui| {
-                if let InnerResponse {
-                    inner:
-                        Some(ImageViewerInteraction {
-                            original_image_size: _,
-                            cursor_image_pos,
-                        }),
-                    response,
-                } = self
-                    .viewer
-                    .ui(ui, self.image_state.sources(ui.ctx()), Some(Sense::click()))
-                {
-                    // Store the image rect before response is moved
-                    let image_rect = response.rect;
-
-                    if let Some(cursor_image_pos) = cursor_image_pos {
-                        self.tool.handle_interaction(ToolContext::new(
-                            &mut self.image_state,
-                            response,
-                            cursor_image_pos,
-                            ctx,
-                        ));
+    Effect::new(move |_| {
+        leptos::logging::log!("Before read canvas");
+        if let Some(canvas) = canvas_ref.get()
+            && viewer.read_untracked().is_none()
+        {
+            leptos::reactive::spawn_local(async move {
+                let canvas_element: web_sys::HtmlCanvasElement = canvas.into();
+                match EframeImageViewer::create(canvas_element).await {
+                    Ok(viewer) => {
+                        set_viewer.set(Some(viewer));
                     }
-
-                    // Overlay pixel coordinates on top of the image
-                    if let Some((x, y)) = cursor_image_pos {
-                        let offset_pos = egui::pos2(image_rect.max.x - 5.0, image_rect.max.y - 5.0);
-                        egui::Area::new(egui::Id::new("pixel_coords_overlay"))
-                            .fixed_pos(offset_pos)
-                            .pivot(egui::Align2::RIGHT_BOTTOM)
-                            .order(egui::Order::Foreground)
-                            .show(ctx, |ui| {
-                                egui::Frame::popup(ui.style())
-                                    .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
-                                    .show(ui, |ui| {
-                                        ui.label(format!("x: {} y: {}", x, y));
-                                    });
-                            });
+                    Err(e) => {
+                        leptos::logging::error!("eframe start() returned error: {e:?}");
                     }
                 }
             });
+        }
+    });
+
+    let stream = LocalResource::new({
+        let viewer = viewer.clone();
+        move || {
+            let ws_url = url.get();
+            let viewer = viewer.clone();
+            async move {
+                let mut ws = crate::ws_suspend::SuspensibleWebSocket::new(ws_url)?;
+                leptos::logging::debug_log!("Suspensible WebSocket created");
+
+                let mut last = now_millis();
+                while let Some(message_result) = ws.next().await {
+                    let bytes = match message_result {
+                        Ok(Message::Bytes(bytes)) => bytes,
+                        Ok(_other) => {
+                            // Ignore unexpected message types for this viewer.
+                            continue;
+                        }
+                        Err(crate::ws_suspend::SuspensibleError::Suspended) => {
+                            leptos::logging::log!(
+                                "Image WebSocket suspended; will reopen once resumed"
+                            );
+                            continue;
+                        }
+                        Err(crate::ws_suspend::SuspensibleError::WebSocket(err)) => {
+                            leptos::logging::error!("WebSocket error: {:?}", err);
+                            return Err(err);
+                        }
+                    };
+
+                    let viewer_opt = viewer.try_read();
+                    let Some(active) = viewer_opt.as_deref() else {
+                        leptos::logging::debug_log!("Viewer state not accessible yet");
+                        continue;
+                    };
+                    let Some(viewer) = active else {
+                        leptos::logging::debug_log!("Viewer is not ready to display images");
+                        continue;
+                    };
+
+                    let now = now_millis();
+                    leptos::logging::log!(
+                        "Forward image to viewer {} at {:?}ms",
+                        bytes.len(),
+                        now - last
+                    );
+                    last = now;
+
+                    if let Some(image) = crate::decode::parse(&bytes)? {
+                        viewer.replace_image(image).await;
+                    } else {
+                        leptos::logging::log!("No image in this frame");
+                    }
+                }
+
+                leptos::logging::log!("WebSocket connection closed");
+                anyhow::Ok(())
+            }
+        }
+    });
+
+    view! {
+        <canvas
+            node_ref=canvas_ref
+            style="height: 500px; width: 100%; background-color: black;"
+        />
+        { move || {
+            stream.read().as_ref()?.as_ref().err().map(move|e| view! {
+                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+                    <p class="font-medium">Error occurred</p>
+                    <p class="text-sm mt-1">{e.to_string()}</p>
+                </div>
+            })
+        } }
     }
+}
+
+fn now_millis() -> f64 {
+    js_sys::Date::now()
 }

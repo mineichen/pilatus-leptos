@@ -1,8 +1,11 @@
+use std::ops::Deref;
+
 use futures::StreamExt;
 use gloo_net::websocket::Message;
-use leptos::html::Canvas;
 use leptos::prelude::*;
+use leptos::{html::Canvas, logging};
 use pilatus::Name;
+use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
 use wasm_bindgen::JsCast;
 
@@ -32,7 +35,27 @@ pub fn PilatusEngineeringView() -> impl IntoView {
     let (new_collection_name, set_new_collection_name) = signal(String::new());
     let (is_creating_new_collection, set_is_creating_new_collection) = signal(false);
 
-    let x = device_ctx.get::<pilatus_emulation_camera::ParamsImpex<PilatusWrapperSettings>>();
+    let params_impex =
+        device_ctx.get::<pilatus_emulation_camera::ParamsImpex<PilatusWrapperSettings>>();
+
+    let file = params_impex.map(|x| x.file.clone(), |x, file| x.file = file);
+    let file_active = file.map(|x| x.active.clone(), |x, active| x.active = active);
+    let active_collection = file_active.map(
+        |x| {
+            if let ActiveRecipeImpex::Named(n) = x {
+                Some(n.to_value())
+            } else {
+                None
+            }
+        },
+        |x, name| match (x, name) {
+            (ActiveRecipeImpex::Named(cur), Some(new_x)) => {
+                cur.set_explicit(new_x);
+            }
+            _ => logging::debug_error!("Setting expected to work here"),
+        },
+    );
+
     let upload_action =
         Action::new_local(move |(collection_name, file): &(Name, web_sys::File)| {
             let collection_name = collection_name.clone();
@@ -234,14 +257,24 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                 let(name)
                                             >
                                                 {
-                                                    let name_clone = name.clone();
-                                                    let name_for_drop = name.clone();
-                                                    let name_for_delete = name.clone();
-                                                    let upload_action_clone = upload_action.clone();
-                                                    let delete_action_clone = delete_action.clone();
+                                                    let (name, _set_name) = signal(name.clone());
+
+                                                    let is_active = Signal::derive(move || {
+                                                        active_collection.get().as_ref() == Some(&name.read().deref())
+                                                    });
+
+
                                                     view! {
                                                         <li
-                                                            style="padding: 10px; margin: 4px 0; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;"
+                                                            style=move || {
+                                                                let active = is_active.get();
+                                                                format!(
+                                                                    "padding: 10px; margin: 4px 0; background: {}; border: 2px {} {}; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;",
+                                                                    if active { "#e8f5e9" } else { "#f0f0f0" },
+                                                                    if active { "solid" } else { "dashed" },
+                                                                    if active { "#4caf50" } else { "#ccc" }
+                                                                )
+                                                            }
                                                             on:dragover=move |ev| {
                                                                 ev.prevent_default();
                                                                 if let Some(target) = ev.target() {
@@ -254,8 +287,11 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                             on:dragleave=move |ev| {
                                                                 if let Some(target) = ev.target() {
                                                                     if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                                        let _ = elem.style().set_property("background", "#f0f0f0");
-                                                                        let _ = elem.style().set_property("border-color", "#ccc");
+                                                                        let active = is_active.get_untracked();
+                                                                        let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
+                                                                        let border = if active { "#4caf50" } else { "#ccc" };
+                                                                        let _ = elem.style().set_property("background", bg);
+                                                                        let _ = elem.style().set_property("border-color", border);
                                                                     }
                                                                 }
                                                             }
@@ -263,14 +299,17 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                                 ev.prevent_default();
                                                                 if let Some(target) = ev.target() {
                                                                     if let Ok(elem) = target.dyn_into::<web_sys::HtmlElement>() {
-                                                                        let _ = elem.style().set_property("background", "#f0f0f0");
-                                                                        let _ = elem.style().set_property("border-color", "#ccc");
+                                                                        let active = is_active.get_untracked();
+                                                                        let bg = if active { "#e8f5e9" } else { "#f0f0f0" };
+                                                                        let border = if active { "#4caf50" } else { "#ccc" };
+                                                                        let _ = elem.style().set_property("background", bg);
+                                                                        let _ = elem.style().set_property("border-color", border);
                                                                     }
                                                                 }
                                                                 if let Some(dt) = ev.data_transfer() {
                                                                     if let Some(files) = dt.files() {
                                                                         if let Some(file) = files.get(0) {
-                                                                            upload_action_clone.dispatch_local((name_for_drop.clone(), file));
+                                                                            upload_action.dispatch_local((name.get(), file));
                                                                         }
                                                                     }
                                                                 }
@@ -278,19 +317,41 @@ pub fn PilatusEngineeringView() -> impl IntoView {
                                                         >
                                                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                                                    <span style="font-size: 18px; opacity: 0.4;">"📁"</span>
-                                                                    <span style="font-weight: 500;">{name_clone.to_string()}</span>
+                                                                    {move || {
+                                                                        if is_active.get() {
+                                                                            view! { <span style="font-size: 18px; color: #4caf50;">"✓"</span> }.into_any()
+                                                                        } else {
+                                                                            view! { <span style="font-size: 18px; opacity: 0.4;">"📁"</span> }.into_any()
+                                                                        }
+                                                                    }}
+                                                                    <span style="font-weight: 500;">{move|| name.read().to_string() }</span>
                                                                 </div>
-                                                                <button
-                                                                    on:click=move |ev| {
-                                                                        ev.stop_propagation();
-                                                                        delete_action_clone.dispatch_local(name_for_delete.clone());
-                                                                    }
-                                                                    style="background: transparent; border: none; cursor: pointer; padding: 4px; font-size: 16px; opacity: 0.5; transition: opacity 0.2s;"
-                                                                    title="Delete collection"
-                                                                >
-                                                                    "🗑️"
-                                                                </button>
+                                                                <div style="display: flex; align-items: center; gap: 4px;">
+                                                                    {move || {
+                                                                        (!is_active.get()).then(|| view! {
+                                                                            <button
+                                                                                on:click=move |ev| {
+                                                                                    ev.stop_propagation();
+                                                                                    active_collection.set(Some(name.get()));
+                                                                                }
+                                                                                style="background: #4caf50; border: none; cursor: pointer; padding: 4px 8px; font-size: 11px; color: white; border-radius: 4px; transition: opacity 0.2s;"
+                                                                                title="Activate this collection"
+                                                                            >
+                                                                                "Activate"
+                                                                            </button>
+                                                                        })
+                                                                    }}
+                                                                    <button
+                                                                        on:click=move |ev| {
+                                                                            ev.stop_propagation();
+                                                                            delete_action.dispatch_local(name.get());
+                                                                        }
+                                                                        style="background: transparent; border: none; cursor: pointer; padding: 4px; font-size: 16px; opacity: 0.5; transition: opacity 0.2s;"
+                                                                        title="Delete collection"
+                                                                    >
+                                                                        "🗑️"
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </li>
                                                     }

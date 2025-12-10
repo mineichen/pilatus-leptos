@@ -69,6 +69,16 @@ impl<T> PilatusPrimitiveValue<T> {
         }
     }
 
+    /// Returns a reference to the inner value
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    /// Consumes self and returns the inner value
+    pub fn into_inner(self) -> T {
+        self.value
+    }
+
     pub fn make_explicit(&mut self) {
         // When transitioning from Implicit to explicit, choose Explicit over Variable
         if let PilatusPrimitiveValueKind::Implicit = self.kind {
@@ -235,6 +245,11 @@ impl<T: ImpexPrimitive, TW: WrapperSettings> Impex<TW> for PilatusPrimitiveValue
             self.kind = PilatusPrimitiveValueKind::Implicit;
         }
         self.value = v;
+    }
+}
+impl<T: ImpexPrimitive + Clone> PilatusPrimitiveValue<T> {
+    pub fn to_value(&self) -> T {
+        self.value.clone()
     }
 }
 

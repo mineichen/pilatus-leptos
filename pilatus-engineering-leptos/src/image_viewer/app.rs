@@ -5,7 +5,7 @@ use egui_pixels::{
     ImageViewerInteraction, Tool, ToolContext,
 };
 use futures::channel::{mpsc, oneshot};
-use image_buffer::Image;
+use imbuf::Image;
 use leptos::logging::debug_log;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;

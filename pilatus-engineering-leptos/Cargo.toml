@@ -12,7 +12,7 @@ futures.workspace = true
 gloo-events.workspace = true
 gloo-net.workspace = true
 gloo-timers.workspace = true
-image-buffer = { git = "https://github.com/mineichen/image-buffer.git", branch = "main" }
+imbuf.workspace = true
 js-sys.workspace = true
 leptos.workspace = true
 pin-project-lite = "0.2"

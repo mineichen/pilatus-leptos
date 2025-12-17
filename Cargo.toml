@@ -5,7 +5,7 @@ members = [
     "app-backend",
     "pilatus-leptos",
     "pilatus-engineering-leptos",
-    "pilatus-examples-leptos", 
+    "pilatus-examples-leptos",
     "pilatus-emulation-camera-leptos"]
 
 [workspace.package]
@@ -17,6 +17,7 @@ anyhow = "1"
 axum = "0.8"
 egui = "0.33"
 egui-pixels = { git = "https://github.com/mineichen/egui-pixels" }
+#egui-pixels = { path = "../egui-pixels/egui-pixels" }
 eframe = "0.33"
 futures = "0.3"
 gloo-events = "0.2"
@@ -24,6 +25,7 @@ gloo-net = "0.6"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
 image = { version = "0.25", default-features = false }
+imbuf = { git = "https://github.com/mineichen/image-buffer.git", branch = "vtable_per_channel" }
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"
@@ -38,6 +40,7 @@ pilatus-leptos = { path = "pilatus-leptos" }
 pilatus-examples-leptos = { path = "pilatus-examples-leptos"}
 pilatus-emulation-camera = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-engineering-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-tick = { git = "https://github.com/mineichen/pilatus.git" }
 reactive_graph = "0.2"
 reactive_stores = "0.3"
@@ -49,13 +52,13 @@ thiserror = "2"
 web-sys = "0.3"
 
 
-#[patch."https://github.com/mineichen/pilatus.git"]
-#pilatus = { path = "../pilatus/pilatus" }
-#pilatus-rt = { path = "../pilatus/pilatus-rt" }
-#pilatus-axum = { path = "../pilatus/pilatus-axum" }
-#pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
-#pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
-#pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
-#pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
-#pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
-#pilatus-tick = { path = "../pilatus/examples/tick" }
+# [patch."https://github.com/mineichen/pilatus.git"]
+# pilatus = { path = "../pilatus/pilatus" }
+# pilatus-rt = { path = "../pilatus/pilatus-rt" }
+# pilatus-axum = { path = "../pilatus/pilatus-axum" }
+# pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
+# pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
+# pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
+# pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
+# pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
+# pilatus-tick = { path = "../pilatus/examples/tick" }

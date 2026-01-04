@@ -4,7 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    fenix.url = "github:nix-community/fenix";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, fenix, ... }:
@@ -20,11 +23,10 @@
         devShells.default = pkgs.mkShell {
           buildInputs = [
             rust
+            pkgs.just
             pkgs.trunk
             pkgs.tailwindcss_4
-            pkgs.cargo-leptos
             pkgs.sass
-            pkgs.wasm-pack
           ];
 
           shellHook = ''

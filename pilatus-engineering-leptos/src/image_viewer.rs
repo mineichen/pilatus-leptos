@@ -105,5 +105,12 @@ pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
 }
 
 fn now_millis() -> f64 {
-    js_sys::Date::now()
+    #[cfg(target_arch = "wasm32")]
+    {
+        js_sys::Date::now()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        panic!("now_millis() is only supported on wasm32")
+    }
 }

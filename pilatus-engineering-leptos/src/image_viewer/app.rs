@@ -9,8 +9,8 @@ use imbuf::Image;
 use leptos::logging::debug_log;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
-
 pub struct EframeImageViewer {
+    #[cfg(target_arch = "wasm32")]
     _runner: eframe::WebRunner,
     command_send: futures::channel::mpsc::Sender<ChangeItem>,
     ctx: egui::Context,
@@ -18,30 +18,40 @@ pub struct EframeImageViewer {
 
 impl EframeImageViewer {
     pub async fn create(canvas: web_sys::HtmlCanvasElement) -> anyhow::Result<Self> {
-        let (sender, receiver) = futures::channel::mpsc::channel(1);
-        let web_options = eframe::WebOptions::default();
-        let runner = eframe::WebRunner::new();
-        let ctx = std::rc::Rc::new(std::cell::Cell::new(None));
-        let ctx_start = ctx.clone();
-        runner
-            .start(
-                canvas,
-                web_options,
-                Box::new(move |cc| {
-                    leptos::logging::log!("App creation callback called - eframe instance created");
-                    ctx_start.set(Some(cc.egui_ctx.clone()));
-                    Ok(Box::new(App::new(&cc.egui_ctx, receiver)))
-                }),
-            )
-            .await
-            .map_err(|e| anyhow::anyhow!("Couldn't start {e:?}"))?;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = canvas;
+            panic!("EframeImageViewer::create() is only supported on wasm32")
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let (sender, receiver) = futures::channel::mpsc::channel(1);
+            let web_options = eframe::WebOptions::default();
+            let runner = eframe::WebRunner::new();
+            let ctx = std::rc::Rc::new(std::cell::Cell::new(None));
+            let ctx_start = ctx.clone();
+            runner
+                .start(
+                    canvas,
+                    web_options,
+                    Box::new(move |cc| {
+                        leptos::logging::log!(
+                            "App creation callback called - eframe instance created"
+                        );
+                        ctx_start.set(Some(cc.egui_ctx.clone()));
+                        Ok(Box::new(App::new(&cc.egui_ctx, receiver)))
+                    }),
+                )
+                .await
+                .map_err(|e| anyhow::anyhow!("Couldn't start {e:?}"))?;
 
-        // It is normal for start() to return after initialization... The eventloop continues
-        Ok(Self {
-            ctx: ctx.take().unwrap(),
-            _runner: runner,
-            command_send: sender,
-        })
+            // It is normal for start() to return after initialization... The eventloop continues
+            Ok(Self {
+                ctx: ctx.take().unwrap(),
+                _runner: runner,
+                command_send: sender,
+            })
+        }
     }
     pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>) {
         let (r_send, r_recv) = oneshot::channel();

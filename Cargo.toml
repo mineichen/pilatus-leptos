@@ -52,6 +52,13 @@ thiserror = "2"
 web-sys = "0.3"
 
 
+# Optimize pilatus-engineering-leptos even in debug mode for better performance
+[profile.dev.package.pilatus-engineering-leptos]
+opt-level = 2
+
+[profile.dev.package.egui-pixels]
+opt-level = 2
+
 # [patch."https://github.com/mineichen/pilatus.git"]
 # pilatus = { path = "../pilatus/pilatus" }
 # pilatus-rt = { path = "../pilatus/pilatus-rt" }

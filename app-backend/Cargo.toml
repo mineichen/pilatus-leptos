@@ -6,9 +6,9 @@ edition.workspace = true
 [dependencies]
 minfac = "0.1"
 pilatus = { git = "https://github.com/mineichen/pilatus.git"}
-pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git", features = ["engineering"] }
+pilatus-axum-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-rt = { git = "https://github.com/mineichen/pilatus.git"}
 pilatus-tick-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt.workspace = true
-pilatus-engineering-rt.workspace = true
+pilatus-engineering-rt = { workspace = true, features = ["axum"] }
 image = { workspace = true, features = ["tiff"] }

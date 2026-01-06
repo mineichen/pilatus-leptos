@@ -340,12 +340,9 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                 provide_context(device_context.clone());
 
                 // Start WebSocket listener for recipe changes
-                //#[cfg(not(feature = "ssr"))]
-                {
-                    leptos::task::spawn_local(async move {
-                        start_recipe_stream_listener(device_context, set_error_signal).await;
-                    });
-                }
+                leptos::task::spawn_local(async move {
+                    start_recipe_stream_listener(device_context, set_error_signal).await;
+                });
 
                 const DEBOUNCE_DURATION: Duration = Duration::from_millis(250);
 

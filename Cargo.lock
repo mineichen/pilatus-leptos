@@ -226,7 +226,6 @@ checksum = "1384d3fe1eecb464229fcf6eebb72306591c56bf27b373561489458a7c73027d"
 dependencies = [
  "futures",
  "thiserror 2.0.17",
- "tokio",
  "wasm-bindgen-futures",
 ]
 
@@ -241,14 +240,10 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "app",
- "axum",
  "console_error_panic_hook",
  "leptos",
- "leptos_axum",
  "leptos_meta",
  "leptos_router",
- "minfac",
  "pilatus",
  "pilatus-emulation-camera-leptos",
  "pilatus-engineering-leptos",
@@ -256,7 +251,6 @@ dependencies = [
  "pilatus-leptos",
  "thaw",
  "thaw_utils",
- "tokio",
 ]
 
 [[package]]
@@ -641,7 +635,6 @@ dependencies = [
  "matchit",
  "memchr",
  "mime",
- "multer",
  "percent-encoding",
  "pin-project-lite",
  "serde_core",
@@ -1617,15 +1610,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "encoding_rs"
-version = "0.8.35"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75030f3c4f45dafd7586dd6780965a8c7e8e285a5ecb86713e63a79c5b2766f3"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "endi"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2409,13 +2393,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8714ae4adeaa846d838f380fbd72f049197de629948f91bf045329e0cf0a283"
 dependencies = [
  "futures",
- "js-sys",
  "once_cell",
  "or_poisoned",
  "pin-project-lite",
  "serde",
  "throw_error",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -2698,15 +2680,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71dd52191aae121e8611f1e8dc3e324dd0dd1dee1e6dd91d10ee07a3cfb4d9d8"
 
 [[package]]
-name = "inventory"
-version = "0.3.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc61209c082fbeb19919bee74b176221b27223e27b65d781eb91af24eb1fb46e"
-dependencies = [
- "rustversion",
-]
-
-[[package]]
 name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2810,7 +2783,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f9569fc37575a5d64c0512145af7630bf651007237ef67a8a77328199d315bb"
 dependencies = [
  "any_spawner",
- "base64 0.22.1",
  "cfg-if",
  "either_of",
  "futures",
@@ -2824,7 +2796,6 @@ dependencies = [
  "oco_ref 0.2.1",
  "or_poisoned",
  "paste",
- "rand 0.9.2",
  "reactive_graph",
  "rustc-hash 2.1.1",
  "rustc_version",
@@ -2878,30 +2849,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
-]
-
-[[package]]
-name = "leptos_axum"
-version = "0.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0caa95760f87f3067e05025140becefdbdfd36cbc2adac4519f06e1f1edf4af"
-dependencies = [
- "any_spawner",
- "axum",
- "dashmap",
- "futures",
- "hydration_context",
- "leptos",
- "leptos_integration_utils",
- "leptos_macro",
- "leptos_meta",
- "leptos_router",
- "parking_lot",
- "server_fn",
- "tachys",
- "tokio",
- "tower",
- "tower-http",
 ]
 
 [[package]]
@@ -2970,21 +2917,6 @@ dependencies = [
  "serde",
  "syn 2.0.113",
  "walkdir",
-]
-
-[[package]]
-name = "leptos_integration_utils"
-version = "0.8.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13cccc9305df53757bae61bf15641bfa6a667b5f78456ace4879dfe0591ae0e8"
-dependencies = [
- "futures",
- "hydration_context",
- "leptos",
- "leptos_config",
- "leptos_meta",
- "leptos_router",
- "reactive_graph",
 ]
 
 [[package]]
@@ -3063,7 +2995,6 @@ dependencies = [
  "leptos",
  "leptos_router_macro",
  "or_poisoned",
- "percent-encoding",
  "reactive_graph",
  "rustc_version",
  "send_wrapper",
@@ -3351,23 +3282,6 @@ checksum = "ac9557c559cd6fc9867e122e20d2cbefc9ca29d80d027a8e39310920ed2f0a97"
 dependencies = [
  "num-traits",
  "pxfm",
-]
-
-[[package]]
-name = "multer"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83e87776546dc87511aa5ee218730c92b666d7264ab6ed41f9d215af9cd5224b"
-dependencies = [
- "bytes",
- "encoding_rs",
- "futures-util",
- "http",
- "httparse",
- "memchr",
- "mime",
- "spin",
- "version_check",
 ]
 
 [[package]]
@@ -4211,7 +4125,6 @@ dependencies = [
  "leptos_reactive",
  "leptos_router",
  "pilatus",
- "pilatus-leptos",
  "reactive_graph",
  "reactive_stores 0.3.1",
  "serde",
@@ -4219,7 +4132,6 @@ dependencies = [
  "thaw",
  "thaw_utils",
  "thiserror 2.0.17",
- "tokio",
  "uuid",
  "web-sys",
 ]
@@ -5121,7 +5033,6 @@ version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "353d02fa2886cd8dae0b8da0965289fa8f2ecc7df633d1ce965f62fdf9644d29"
 dependencies = [
- "axum",
  "base64 0.22.1",
  "bytes",
  "const-str",
@@ -5130,9 +5041,6 @@ dependencies = [
  "futures",
  "gloo-net",
  "http",
- "http-body-util",
- "hyper",
- "inventory",
  "js-sys",
  "pin-project-lite",
  "rustc_version",
@@ -5144,9 +5052,6 @@ dependencies = [
  "server_fn_macro_default",
  "thiserror 2.0.17",
  "throw_error",
- "tokio",
- "tower",
- "tower-layer",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -5351,12 +5256,6 @@ dependencies = [
  "libc",
  "windows-sys 0.60.2",
 ]
-
-[[package]]
-name = "spin"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spirv"
@@ -5577,7 +5476,6 @@ dependencies = [
  "cfg-if",
  "chrono",
  "leptos",
- "leptos_meta",
  "reactive_stores 0.2.5",
  "send_wrapper",
  "wasm-bindgen",

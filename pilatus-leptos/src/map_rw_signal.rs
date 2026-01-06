@@ -11,7 +11,6 @@ use leptos::tachys::hydration::Cursor;
 use leptos::tachys::reactive_graph::RenderEffectState;
 use leptos::tachys::reactive_graph::bind::IntoSplitSignal;
 use leptos::tachys::renderer::types::Element;
-use leptos::tachys::ssr::StreamBuilder;
 use leptos::tachys::view::Mountable;
 use leptos::tachys::view::Position;
 use leptos::tachys::view::PositionState;
@@ -347,25 +346,26 @@ where
         value.to_html_with_buf(buf, position, escape, mark_branches, extra_attrs)
     }
 
-    fn to_html_async_with_buf<const OUT_OF_ORDER: bool>(
-        self,
-        buf: &mut StreamBuilder,
-        position: &mut Position,
-        escape: bool,
-        mark_branches: bool,
-        extra_attrs: Vec<AnyAttribute>,
-    ) where
-        Self: Sized,
-    {
-        let value = self.get();
-        value.to_html_async_with_buf::<OUT_OF_ORDER>(
-            buf,
-            position,
-            escape,
-            mark_branches,
-            extra_attrs,
-        );
-    }
+    // only needed for SSR, but we don't use it
+    // fn to_html_async_with_buf<const OUT_OF_ORDER: bool>(
+    //     self,
+    //     buf: &mut leptos::tachys::ssr::StreamBuilder,
+    //     position: &mut Position,
+    //     escape: bool,
+    //     mark_branches: bool,
+    //     extra_attrs: Vec<AnyAttribute>,
+    // ) where
+    //     Self: Sized,
+    // {
+    //     let value = self.get();
+    //     value.to_html_async_with_buf::<OUT_OF_ORDER>(
+    //         buf,
+    //         position,
+    //         escape,
+    //         mark_branches,
+    //         extra_attrs,
+    //     );
+    // }
 
     fn hydrate<const FROM_SERVER: bool>(
         self,

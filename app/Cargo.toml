@@ -16,7 +16,11 @@ pilatus.workspace = true
 thaw.workspace = true
 thaw_utils.workspace = true
 pilatus-leptos.workspace = true
-pilatus-examples-leptos = { path = "../pilatus-examples-leptos" }
+pilatus-examples-leptos = { path = "../pilatus-examples-leptos", optional = true }
 pilatus-engineering-leptos = { path = "../pilatus-engineering-leptos" }
 pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos" }
+
+[features]
+examples = ["pilatus-examples-leptos"]
+
 

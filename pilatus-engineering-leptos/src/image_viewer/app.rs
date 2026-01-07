@@ -66,7 +66,8 @@ impl EframeImageViewer {
                     masks: Vec::new(),
                 },
                 ctx,
-            );
+            )
+            .expect("Image is never too big");
             debug_log!("Replaced image state");
             r_send.send(()).ok();
         }));
@@ -90,7 +91,7 @@ pub struct App {
 impl App {
     pub fn new(ctx: &egui::Context, receiver: mpsc::Receiver<ChangeItem>) -> Self {
         let image = ImageData::chessboard().next().unwrap();
-        let image_state = ImageStateLoaded::from_image_data(image, ctx);
+        let image_state = ImageStateLoaded::from_image_data(image, ctx).unwrap();
         Self {
             image_state,
             viewer: ImageViewer::default(),

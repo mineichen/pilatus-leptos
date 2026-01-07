@@ -46,6 +46,13 @@ where
                                         path=leptos_router::path!("/device/:device_id")
                                         view=DeviceView
                                         children=ToChildren::to_children(move || (
+                                            #[cfg(feature = "examples")]
+                                            NestedRoute::new(StaticSegment("greeter"), pilatus_examples_leptos::Greeter),
+                                            #[cfg(feature = "examples")]
+                                            NestedRoute::new(
+                                                StaticSegment("manual_tick"),
+                                                pilatus_examples_leptos::ManualTick,
+                                            ),
                                             NestedRoute::new(
                                                 StaticSegment("engineering-emulation-camera"),
                                                 PilatusEngineeringView,

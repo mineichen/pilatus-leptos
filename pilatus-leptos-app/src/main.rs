@@ -1,6 +1,6 @@
-use app::App;
 use leptos::prelude::*;
 use leptos_router::{NestedRoute, StaticSegment};
+use pilatus_leptos_app::App;
 
 pub fn main() {
     use leptos::{logging, mount};
@@ -12,15 +12,7 @@ pub fn main() {
 
 #[component]
 fn RootApp() -> impl IntoView {
-    #[cfg(feature = "pilatus-examples-leptos")]
-    let extra_device_routes = (
-        NestedRoute::new(StaticSegment("greeter"), pilatus_examples_leptos::Greeter),
-        NestedRoute::new(
-            StaticSegment("manual_tick"),
-            pilatus_examples_leptos::ManualTick,
-        ),
-    );
-    #[cfg(not(feature = "pilatus-examples-leptos"))]
+    // Empty tuple doesn't work, as it matches and doesn't forward to JsonDeviceView, but the Page-Default
     let extra_device_routes = (NestedRoute::new(
         StaticSegment("__inexistend_device_id"),
         || (),

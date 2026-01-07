@@ -1,9 +1,9 @@
 [workspace]
 resolver = "3"
 members = [
-    "app",
     "app-backend",
     "pilatus-leptos",
+    "pilatus-leptos-app",
     "pilatus-engineering-leptos",
     "pilatus-examples-leptos",
     "pilatus-emulation-camera-leptos"]

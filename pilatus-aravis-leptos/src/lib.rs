@@ -23,10 +23,10 @@ pub fn AravisView() -> impl IntoView {
     });
 
     let image_url = Signal::derive(move || {
-        format!(
+        Some(format!(
             "ws://localhost:4123/api/image/subscribe?format=Raw&device_id={}",
             device_id.read().deref()
-        )
+        ))
     });
     view! {
         <div>

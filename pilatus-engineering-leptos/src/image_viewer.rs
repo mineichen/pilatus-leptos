@@ -10,8 +10,9 @@ pub use app::EframeImageViewer;
 
 #[component]
 pub fn ImageViewerComponent(
-    #[prop(optional)] url: Option<Signal<String>>,
+    url: Signal<Option<String>>,
     #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
+    #[prop(optional)] set_url: Option<SignalSetter<String>>,
 ) -> impl IntoView {
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter viewer");
@@ -36,7 +37,14 @@ pub fn ImageViewerComponent(
         if let Some(ignore_device_id) = maybe_ignore_device_id {
             device_ids.retain(|x| x != &ignore_device_id);
         }
-        anyhow::Ok(device_ids.iter().map(build_device_url).collect())
+        let available = device_ids.iter().map(build_device_url).collect::<Vec<_>>();
+        if let Some(set_url) = set_url
+            && url.read_untracked().is_none()
+            && !available.is_empty()
+        {
+            set_url.set(available[0].clone());
+        }
+        anyhow::Ok(available)
     });
     Effect::new(move |_| {
         leptos::logging::log!("Before read canvas");

@@ -2257,7 +2257,7 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2764,7 +2764,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.58.0",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -2965,7 +2965,7 @@ checksum = "e7c5cedc30da3a610cac6b4ba17597bdf7152cf974e8aab3afb3d54455e371c8"
 [[package]]
 name = "impex"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#d8f91be992d561cc16a745329b0b09bcde689287"
+source = "git+https://github.com/mineichen/impex#e191b2b9af8b8536c81964f8e78b3c22b4c0a985"
 dependencies = [
  "impex_derive",
  "serde",
@@ -2974,7 +2974,7 @@ dependencies = [
 [[package]]
 name = "impex_derive"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/impex#d8f91be992d561cc16a745329b0b09bcde689287"
+source = "git+https://github.com/mineichen/impex#e191b2b9af8b8536c81964f8e78b3c22b4c0a985"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4325,7 +4325,7 @@ checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "approx",
@@ -4399,7 +4399,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -4418,7 +4418,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -4445,7 +4445,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "impex",
  "pilatus",
@@ -4471,7 +4471,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -4493,7 +4493,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "approx",
@@ -4537,7 +4537,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "axum",
@@ -4625,7 +4625,7 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4652,7 +4652,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "impex",
  "pilatus",
@@ -4662,7 +4662,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#9150cdbd3b136c35925e9ea9f82353d728e52662"
+source = "git+https://github.com/mineichen/pilatus.git#9a967f5ff24a24a05897f1623b957b8867bd9de0"
 dependencies = [
  "anyhow",
  "futures",
@@ -5029,7 +5029,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
 dependencies = [
  "rand_chacha",
- "rand_core 0.9.4",
+ "rand_core 0.9.5",
 ]
 
 [[package]]
@@ -5039,7 +5039,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.9.4",
+ "rand_core 0.9.5",
 ]
 
 [[package]]
@@ -5050,9 +5050,9 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 
 [[package]]
 name = "rand_core"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa"
+checksum = "76afc826de14238e6e8c374ddcc1fa19e374fd8dd986b0d2af0d02377261d83c"
 dependencies = [
  "getrandom",
 ]
@@ -6153,30 +6153,30 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.44"
+version = "0.3.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91e7d9e3bb61134e77bde20dd4825b97c010155709965fedf0f49bb138e52a9d"
+checksum = "f9e442fc33d7fdb45aa9bfeb312c095964abdf596f7567261062b2a7107aaabd"
 dependencies = [
  "deranged",
  "itoa",
  "num-conv",
  "powerfmt",
- "serde",
+ "serde_core",
  "time-core",
  "time-macros",
 ]
 
 [[package]]
 name = "time-core"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40868e7c1d2f0b8d73e4a8c7f0ff63af4f6d19be117e90bd73eb1d62cf831c6b"
+checksum = "8b36ee98fd31ec7426d599183e8fe26932a8dc1fb76ddb6214d05493377d34ca"
 
 [[package]]
 name = "time-macros"
-version = "0.2.24"
+version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30cfb0125f12d9c277f35663a0a33f8c30190f4e4574868a330595412d34ebf3"
+checksum = "71e552d1249bf61ac2a52db88179fd0673def1e1ad8243a00d9ec9ed71fee3dd"
 dependencies = [
  "num-conv",
  "time-core",
@@ -6393,9 +6393,9 @@ dependencies = [
 
 [[package]]
 name = "tower"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d039ad9159c98b70ecfd540b2573b97f7f52c3e8d9f8ad57a24b916a536975f9"
+checksum = "ebe5ef63511595f1344e2d5cfa636d973292adc0eec1f0ad45fae9f0851ab1d4"
 dependencies = [
  "futures-core",
  "futures-util",
@@ -7374,6 +7374,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows-core"
+version = "0.62.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb"
+dependencies = [
+ "windows-implement 0.60.2",
+ "windows-interface 0.59.3",
+ "windows-link 0.2.1",
+ "windows-result 0.4.1",
+ "windows-strings 0.5.1",
+]
+
+[[package]]
 name = "windows-future"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7469,6 +7482,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows-result"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5"
+dependencies = [
+ "windows-link 0.2.1",
+]
+
+[[package]]
 name = "windows-strings"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7485,6 +7507,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56e6c93f3a0c3b36176cb1327a4958a0353d5d166c2a35cb268ace15e91d3b57"
 dependencies = [
  "windows-link 0.1.3",
+]
+
+[[package]]
+name = "windows-strings"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091"
+dependencies = [
+ "windows-link 0.2.1",
 ]
 
 [[package]]
@@ -8084,9 +8115,9 @@ dependencies = [
 
 [[package]]
 name = "zmij"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac93432f5b761b22864c774aac244fa5c0fd877678a4c37ebf6cf42208f9c9ec"
+checksum = "bd8f3f50b848df28f887acb68e41201b5aea6bc8a8dacc00fb40635ff9a72fea"
 
 [[package]]
 name = "zune-core"

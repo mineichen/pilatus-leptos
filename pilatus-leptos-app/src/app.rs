@@ -6,7 +6,6 @@ use leptos_router::{
     StaticSegment,
     components::{A, ParentRoute, Route, Router, Routes},
 };
-use pilatus_emulation_camera_leptos::PilatusEngineeringView;
 use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{Button, ButtonSize, ConfigProvider, Layout, LayoutHeader, LayoutSider};
 
@@ -47,15 +46,21 @@ where
                                         view=DeviceView
                                         children=ToChildren::to_children(move || (
                                             #[cfg(feature = "examples")]
-                                            NestedRoute::new(StaticSegment("greeter"), pilatus_examples_leptos::Greeter),
+                                            NestedRoute::new(StaticSegment("pilatus-greeter"), pilatus_examples_leptos::Greeter),
                                             #[cfg(feature = "examples")]
                                             NestedRoute::new(
-                                                StaticSegment("manual_tick"),
+                                                StaticSegment("pilatus-manual-tick"),
                                                 pilatus_examples_leptos::ManualTick,
                                             ),
+                                            #[cfg(feature = "emulation-camera")]
                                             NestedRoute::new(
-                                                StaticSegment("engineering-emulation-camera"),
-                                                PilatusEngineeringView,
+                                                StaticSegment("pilatus-emulation-camera"),
+                                                pilatus_emulation_camera_leptos::EngineeringView,
+                                            ),
+                                            #[cfg(feature = "aravis")]
+                                            NestedRoute::new(
+                                                StaticSegment("pilatus-aravis"),
+                                                pilatus_aravis_leptos::AravisView,
                                             ),
                                             extra_device_routes.clone(),
                                             NestedRoute::new(leptos_router::path!("/:device_type"), JsonDeviceView),

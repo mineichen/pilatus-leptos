@@ -15,10 +15,13 @@ thaw.workspace = true
 thaw_utils.workspace = true
 pilatus-leptos.workspace = true
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos", optional = true }
-pilatus-engineering-leptos = { path = "../pilatus-engineering-leptos" }
-pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos" }
+pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos", optional = true }
+pilatus-aravis-leptos = { path = "../pilatus-aravis-leptos", optional = true }
 
 [features]
+default = ["aravis", "emulation-camera"]
+aravis = ["pilatus-aravis-leptos"]
+emulation-camera = ["pilatus-emulation-camera-leptos"]
 examples = ["pilatus-examples-leptos"]
 
 

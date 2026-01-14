@@ -9,13 +9,13 @@ use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
 use wasm_bindgen::JsCast;
 
 #[component]
-pub fn PilatusEngineeringView() -> impl IntoView {
+pub fn EngineeringView() -> impl IntoView {
     let device_ctx = expect_context::<DeviceContext>();
     let device_id = Signal::derive(move || device_ctx.infos.read().device_id);
 
     let collections = LocalResource::new(move || async move {
         let id = device_id.get();
-        let url = format!("/api/engineering/emulation-camera/collection?device_id={id}");
+        let url = format!("/api/pilatus-emulation-camera/collection?device_id={id}");
         gloo_net::http::Request::get(&url)
             .send()
             .await
@@ -54,7 +54,7 @@ pub fn PilatusEngineeringView() -> impl IntoView {
     let upload_action =
         Action::new_local(move |(collection_name, file): &(Name, web_sys::File)| {
             let collection_name = collection_name.clone();
-            let file = file.clone();
+            let file = web_sys::File::clone(file);
             async move {
                 let file_name = file.name();
 
@@ -66,7 +66,7 @@ pub fn PilatusEngineeringView() -> impl IntoView {
 
                 let id = device_id.get_untracked();
                 let url = format!(
-                    "/api/engineering/emulation-camera/collection/{}/{}?device_id={}",
+                    "/api/pilatus-emulation-camera/collection/{}/{}?device_id={}",
                     collection_name, image_name, id
                 );
 
@@ -89,7 +89,7 @@ pub fn PilatusEngineeringView() -> impl IntoView {
         async move {
             let id = device_id.get_untracked();
             let url = format!(
-                "/api/engineering/emulation-camera/collection/{}?device_id={}",
+                "/api/pilatus-emulation-camera/collection/{}?device_id={}",
                 collection_name, id
             );
 

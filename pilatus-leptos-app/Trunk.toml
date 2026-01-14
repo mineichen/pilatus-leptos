@@ -3,6 +3,7 @@ watch = [
     "../pilatus-leptos",
     ".",
     "../pilatus-engineering-leptos",
+    "../pilatus-aravis-leptos",
     "../pilatus-examples-leptos",
     "../pilatus-emulation-camera-leptos"
 ]

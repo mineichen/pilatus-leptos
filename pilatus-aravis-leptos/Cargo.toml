@@ -1,0 +1,16 @@
+[package]
+name = "pilatus-aravis-leptos"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gloo-net.workspace = true
+js-sys.workspace = true
+leptos.workspace = true
+pilatus.workspace = true
+pilatus-aravis.workspace = true
+pilatus-leptos.workspace = true
+pilatus-engineering-leptos = { path = "../pilatus-engineering-leptos" }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { workspace = true, features = ["File", "FileList", "HtmlElement", "DragEvent", "DataTransfer"] }

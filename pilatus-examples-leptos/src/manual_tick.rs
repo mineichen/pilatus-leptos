@@ -7,7 +7,7 @@ use thaw::{Button, SpinButton};
 #[component]
 pub fn ManualTick() -> impl IntoView {
     let increment = Action::new_local(|_| async {
-        gloo_net::http::Request::put("/api/manual/increment")
+        gloo_net::http::Request::put("/api/pilatus-manual-tick/increment")
             .send()
             .map_err(|e| e.to_string())
             .and_then(|r| async move {

@@ -27,7 +27,7 @@ pub fn Greeter() -> impl IntoView {
             if name.is_empty() {
                 return Err("Name mustn't be empty".into());
             }
-            gloo_net::http::Request::get(&format!("/api/greeter/greet/{name}"))
+            gloo_net::http::Request::get(&format!("/api/pilatus-greeter/greet/{name}"))
                 .send()
                 .map_err(|e| e.to_string())
                 .and_then(|r| async move {

@@ -1,17 +1,43 @@
-mod app;
-
-pub use app::EframeImageViewer;
-
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use leptos::html::Canvas;
 use leptos::prelude::*;
+use pilatus::device::DeviceId;
+
+mod app;
+
+pub use app::EframeImageViewer;
 
 #[component]
-pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
+pub fn ImageViewerComponent(
+    #[prop(optional)] url: Option<Signal<String>>,
+    #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
+) -> impl IntoView {
     let canvas_ref = NodeRef::<Canvas>::new();
+    leptos::logging::log!("Enter viewer");
     let (viewer, set_viewer) = signal_local::<Option<EframeImageViewer>>(None);
 
+    let available = LocalResource::new(move || async move {
+        let Some(maybe_ignored_device_id) = list_all_but else {
+            return Ok(Vec::new());
+        };
+        let mut device_ids: Vec<DeviceId> =
+            gloo_net::http::Request::get("/api/image/list/subscribe")
+                .send()
+                .await?
+                .json()
+                .await?;
+        let maybe_ignore_device_id = maybe_ignored_device_id.try_get().and_then(|x| x);
+        leptos::logging::log!(
+            "Possibilities: {device_ids:?}, ignore: {:?}",
+            maybe_ignored_device_id
+        );
+
+        if let Some(ignore_device_id) = maybe_ignore_device_id {
+            device_ids.retain(|x| x != &ignore_device_id);
+        }
+        anyhow::Ok(device_ids.iter().map(build_device_url).collect())
+    });
     Effect::new(move |_| {
         leptos::logging::log!("Before read canvas");
         if let Some(canvas) = canvas_ref.get()
@@ -30,61 +56,68 @@ pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
         }
     });
 
-    let stream = LocalResource::new({
-        move || {
+    let stream = LocalResource::new(move || {
+        async move {
             let ws_url = url.get();
-            async move {
-                let mut ws = crate::ws_suspend::SuspensibleWebSocket::new(ws_url)?;
-                leptos::logging::debug_log!("Suspensible WebSocket created");
+            let ws_url = match ws_url {
+                Some(x) => x,
+                None => match &*available.read() {
+                    Some(Ok(x)) if !x.is_empty() => x[0].clone(),
+                    Some(Err(e)) => return Err(anyhow::anyhow!("{e}")),
+                    _ => return Ok(()),
+                },
+            };
 
-                let mut last = now_millis();
-                while let Some(message_result) = ws.next().await {
-                    let bytes = match message_result {
-                        Ok(Message::Bytes(bytes)) => bytes,
-                        Ok(_other) => {
-                            // Ignore unexpected message types for this viewer.
-                            continue;
-                        }
-                        Err(crate::ws_suspend::SuspensibleError::Suspended) => {
-                            leptos::logging::log!(
-                                "Image WebSocket suspended; will reopen once resumed"
-                            );
-                            continue;
-                        }
-                        Err(crate::ws_suspend::SuspensibleError::WebSocket(err)) => {
-                            leptos::logging::error!("WebSocket error: {:?}", err);
-                            return Err(err);
-                        }
-                    };
+            let mut ws = crate::ws_suspend::SuspensibleWebSocket::new(ws_url)?;
+            leptos::logging::debug_log!("Suspensible WebSocket created");
 
-                    let viewer_opt = viewer.try_read();
-                    let Some(active) = viewer_opt.as_deref() else {
-                        leptos::logging::debug_log!("Viewer state not accessible yet");
+            let mut last = now_millis();
+            while let Some(message_result) = ws.next().await {
+                let bytes = match message_result {
+                    Ok(Message::Bytes(bytes)) => bytes,
+                    Ok(_other) => {
+                        // Ignore unexpected message types for this viewer.
                         continue;
-                    };
-                    let Some(viewer) = active else {
-                        leptos::logging::debug_log!("Viewer is not ready to display images");
-                        continue;
-                    };
-
-                    let now = now_millis();
-                    leptos::logging::log!(
-                        "Forward image to viewer {} at {:?}ms",
-                        bytes.len(),
-                        now - last
-                    );
-                    last = now;
-
-                    if let Some(image) = crate::decode::parse(&bytes)? {
-                        viewer.replace_image(image).await;
-                    } else {
-                        leptos::logging::log!("No image in this frame");
                     }
-                }
+                    Err(crate::ws_suspend::SuspensibleError::Suspended) => {
+                        leptos::logging::log!(
+                            "Image WebSocket suspended; will reopen once resumed"
+                        );
+                        continue;
+                    }
+                    Err(crate::ws_suspend::SuspensibleError::WebSocket(err)) => {
+                        leptos::logging::error!("WebSocket error: {:?}", err);
+                        return Err(err);
+                    }
+                };
 
-                leptos::logging::log!("WebSocket connection closed");
-                anyhow::Ok(())
+                let viewer_opt = viewer.try_read();
+                let Some(active) = viewer_opt.as_deref() else {
+                    leptos::logging::debug_log!("Viewer state not accessible yet");
+                    continue;
+                };
+                let Some(viewer) = active else {
+                    leptos::logging::debug_log!("Viewer is not ready to display images");
+                    continue;
+                };
+
+                let now = now_millis();
+                leptos::logging::log!(
+                    "Forward image to viewer {} at {:?}ms",
+                    bytes.len(),
+                    now - last
+                );
+                last = now;
+
+                if let Some(image) = crate::decode::parse(&bytes)? {
+                    viewer.replace_image(image).await;
+                } else {
+                    leptos::logging::log!("No image in this frame");
+                }
             }
+
+            leptos::logging::log!("WebSocket connection closed");
+            anyhow::Ok(())
         }
     });
 
@@ -102,6 +135,10 @@ pub fn ImageViewerComponent(url: Signal<String>) -> impl IntoView {
             })
         } }
     }
+}
+
+fn build_device_url(device_id: &DeviceId) -> String {
+    format!("ws://localhost:4123/api/image/subscribe?format=Raw&device_id={device_id}")
 }
 
 fn now_millis() -> f64 {

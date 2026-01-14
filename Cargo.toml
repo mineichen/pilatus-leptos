@@ -1,12 +1,23 @@
 [workspace]
 resolver = "3"
 members = [
+    "pilatus-aravis-leptos",
     "app-backend",
     "pilatus-leptos",
     "pilatus-leptos-app",
     "pilatus-engineering-leptos",
     "pilatus-examples-leptos",
-    "pilatus-emulation-camera-leptos"]
+    "pilatus-emulation-camera-leptos"
+]
+
+default-members = [
+    "pilatus-aravis-leptos",
+    "pilatus-leptos",
+    "pilatus-leptos-app",
+    "pilatus-engineering-leptos",
+    "pilatus-examples-leptos",
+    "pilatus-emulation-camera-leptos"
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -35,6 +46,8 @@ leptos_meta = "0.8"
 leptos_forge_utils_leptos = "0.6"
 minfac = "0.1"
 pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
+pilatus-aravis = { git = "https://github.com/mineichen/pilatus-aravis.git" }
+pilatus-aravis-rt = { git = "https://github.com/mineichen/pilatus-aravis.git" }
 pilatus-axum = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-leptos = { path = "pilatus-leptos" }
 pilatus-examples-leptos = { path = "pilatus-examples-leptos"}
@@ -69,3 +82,7 @@ opt-level = 2
 # pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
 # pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
 # pilatus-tick = { path = "../pilatus/examples/tick" }
+
+[patch."https://github.com/mineichen/pilatus-aravis.git"]
+pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
+pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"

@@ -1,10 +1,10 @@
 [parallel]
-dev: dev-frontend dev-backend
+dev: devf devb
 
-dev-frontend:
+devf:
     @cd {{justfile_directory()}}/pilatus-leptos-app && trunk serve --features examples
 
-dev-backend:
+devb:
     @cd {{justfile_directory()}}/app-backend && cargo run --target x86_64-unknown-linux-gnu --release
 
 test:

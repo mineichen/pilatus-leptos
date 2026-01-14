@@ -1,4 +1,7 @@
-use std::num::NonZeroU32;
+use std::{
+    num::{NonZeroU8, NonZeroU16, NonZeroU32},
+    sync::Arc,
+};
 
 use anyhow::{Context, anyhow};
 use leptos::logging::{debug_log, log};
@@ -42,13 +45,14 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
     let align_bytes = (image_buf_start - size_without_image_data) as u32;
 
     // +0 is reserved
-    let (kind, width, image_buf_len, height) = read_raw(input, size, image_buf_start, align_bytes)?;
+    let (kind, pixel_size, channel_size, width, image_buf_len, height) =
+        read_raw(input, size, image_buf_start, align_bytes)?;
 
     let pixels = &input[image_buf_start + 8..image_buf_start + 8 + image_buf_len as usize];
 
-    match kind {
-        0 => {
-            log!("Encode u8");
+    match (kind, pixel_size.get(), channel_size.get()) {
+        (0, 1, 1) => {
+            log!("Encode u8 {pixel_size:?}");
 
             Ok(Some(egui_pixels::RgbImageInterleaved::new_arc(
                 pixels.iter().map(|&c| [c; 3]).collect(),
@@ -56,7 +60,19 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
                 height,
             )))
         }
-        1 => {
+        (0, 3, 1) => {
+            let pixels: Arc<[[u8; 3]]> =
+                pixels.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
+            log!(
+                "Encode rgb8interleaved {}, {width}/{height}",
+                pixels.len() * 3
+            );
+
+            Ok(Some(egui_pixels::RgbImageInterleaved::new_arc(
+                pixels, width, height,
+            )))
+        }
+        (1, 1, 1) => {
             // pixels //16bit
             //     .chunks_exact(2)
             //     .enumerate()
@@ -73,7 +89,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
             log!("Encode u16");
             Ok(None)
         }
-        x => Err(anyhow::anyhow!("Unkonwn image format {x}")),
+        x => Err(anyhow::anyhow!("Unkonwn image format {x:?}")),
     }
 }
 
@@ -85,9 +101,21 @@ fn read_raw(
     size: u32,
     image_buf_start: usize,
     align_bytes: u32,
-) -> anyhow::Result<(u8, std::num::NonZero<u32>, u32, std::num::NonZero<u32>)> {
+) -> anyhow::Result<(
+    u8,
+    NonZeroU8,
+    NonZeroU16,
+    std::num::NonZero<u32>,
+    u32,
+    std::num::NonZero<u32>,
+)> {
+    let pixel_size = NonZeroU8::new(input[image_buf_start]).ok_or_else(|| anyhow!("pixel_size must be > 0... The Backend seems to be newer than the frontend (this was previously reserved space)"))?;
     let kind = input[image_buf_start + 1];
-    let _channels = u16::from_le_bytes(array(&input[image_buf_start + 2..image_buf_start + 4]));
+    let channel_size = NonZeroU16::new(u16::from_le_bytes(array(
+        &input[image_buf_start + 2..image_buf_start + 4],
+    )))
+    .context("channel_size must be > 0")?;
+
     let width: NonZeroU32 =
         u32::from_le_bytes(array(&input[image_buf_start + 4..image_buf_start + 8]))
             .try_into()
@@ -98,9 +126,9 @@ fn read_raw(
         1 => image_buf_len / 2,
         _ => return Err(anyhow!("Unknown kind {kind}")),
     };
-    let height: NonZeroU32 = (pixel_count / width).try_into()?;
+    let height: NonZeroU32 = (pixel_count / width / pixel_size.get() as u32).try_into()?;
     if pixel_count % width != 0 {
         return Err(anyhow!("Expected remainer of 0 {pixel_count}h {width}w"));
     }
-    Ok((kind, width, image_buf_len, height))
+    Ok((kind, pixel_size, channel_size, width, image_buf_len, height))
 }

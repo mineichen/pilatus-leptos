@@ -1,4 +1,4 @@
-use egui::{InnerResponse, Sense};
+use egui::{InnerResponse, Sense, epaint::color};
 
 use egui_pixels::{
     ClearTool, ImageData, ImageId, ImageLoadOk, ImageStateLoaded, ImageViewer,
@@ -143,7 +143,8 @@ impl eframe::App for App {
                                 egui::Frame::popup(ui.style())
                                     .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
                                     .show(ui, |ui| {
-                                        ui.label(format!("x: {} y: {}", x, y));
+                                        ui.add(egui::Label::new(format!("x: {}", x)).extend());
+                                        ui.add(egui::Label::new(format!("y: {}", y)).extend());
                                     });
                             });
                     }

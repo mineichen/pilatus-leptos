@@ -12,6 +12,7 @@ use pilatus::device::DeviceId;
 mod app;
 
 pub use app::EframeImageViewer;
+use thaw::Button;
 
 #[component]
 pub fn ImageViewerComponent(
@@ -22,6 +23,7 @@ pub fn ImageViewerComponent(
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter viewer");
     let (viewer, set_viewer) = signal_local::<Option<EframeImageViewer>>(None);
+    let (canvas_class, set_canvas_class) = signal(None as Option<&'static str>);
 
     let available = LocalResource::new(move || async move {
         let Some(maybe_ignored_device_id) = list_all_but else {
@@ -139,7 +141,11 @@ pub fn ImageViewerComponent(
         <canvas
             node_ref=canvas_ref
             style="height: 500px; width: 100%; background-color: black;"
+            class=canvas_class
         />
+        <Button on_click= move|_| set_canvas_class.set(Some("fullscreen"))>
+            "Fullscreen"
+        </Button>
         { move || {
             stream.read().as_ref()?.as_ref().err().map(move|e| view! {
                 <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">

@@ -8,3 +8,11 @@ body {
 h1 {
     font-size: 2em;
 }
+
+canvas.fullscreen {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    height: 100% !important;
+}

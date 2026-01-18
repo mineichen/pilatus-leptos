@@ -143,8 +143,8 @@ impl eframe::App for App {
                                 egui::Frame::popup(ui.style())
                                     .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
                                     .show(ui, |ui| {
-                                        ui.add(egui::Label::new(format!("x: {}", x)).extend());
-                                        ui.add(egui::Label::new(format!("y: {}", y)).extend());
+                                        ui.add(egui::Label::new(format!("x: {x}")).extend());
+                                        ui.add(egui::Label::new(format!("y: {y}")).extend());
                                     });
                             });
                     }

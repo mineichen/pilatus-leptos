@@ -36,7 +36,7 @@ gloo-net = "0.6"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
 image = { version = "0.25", default-features = false }
-imbuf = { git = "https://github.com/mineichen/image-buffer.git", branch = "vtable_per_channel" }
+imbuf = { git = "https://github.com/mineichen/image-buffer.git" }
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"
@@ -83,6 +83,6 @@ opt-level = 2
 # pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
 # pilatus-tick = { path = "../pilatus/examples/tick" }
 
-[patch."https://github.com/mineichen/pilatus-aravis.git"]
-pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
-pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
+#[patch."https://github.com/mineichen/pilatus-aravis.git"]
+#pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
+#pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"

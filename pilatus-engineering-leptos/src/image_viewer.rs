@@ -1,4 +1,9 @@
-use futures::StreamExt;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
+use futures::future::{BoxFuture, LocalBoxFuture};
+use futures::{FutureExt, StreamExt};
 use gloo_net::websocket::Message;
 use leptos::html::Canvas;
 use leptos::prelude::*;
@@ -54,6 +59,7 @@ pub fn ImageViewerComponent(
             leptos::reactive::spawn_local(async move {
                 match EframeImageViewer::create(canvas).await {
                     Ok(viewer) => {
+                        leptos::logging::log!("Setting viewer for this instance");
                         set_viewer.set(Some(viewer));
                     }
                     Err(e) => {

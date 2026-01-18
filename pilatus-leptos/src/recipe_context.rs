@@ -16,7 +16,7 @@ pub mod list;
 
 pub use list::RecipeInfo;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct DeviceInfos {
     pub device_id: DeviceId,
     pub name: pilatus::Name,

@@ -6,6 +6,7 @@ use thaw::{Button, SpinButton};
 
 #[component]
 pub fn ManualTick() -> impl IntoView {
+    leptos::logging::log!("Create ManualTickComponent");
     let increment = Action::new_local(|_| async {
         gloo_net::http::Request::put("/api/pilatus-manual-tick/increment")
             .send()

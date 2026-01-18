@@ -8,6 +8,7 @@ use thaw::{Button, Input};
 
 #[component]
 pub fn Greeter() -> impl IntoView {
+    leptos::logging::log!("Create GreeterComponent");
     let device_context = expect_context::<DeviceContext>();
     let data = device_context.get::<GreeterParamsImpex<PilatusWrapperSettings>>();
     let lang = data.map_leaf(

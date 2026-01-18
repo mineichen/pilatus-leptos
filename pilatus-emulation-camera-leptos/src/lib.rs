@@ -9,13 +9,14 @@ use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
 use wasm_bindgen::JsCast;
 
 #[component]
-pub fn EngineeringView() -> impl IntoView {
+pub fn EmulationCameraView() -> impl IntoView {
+    leptos::logging::log!("Create EmulationCameraView");
     let device_ctx = expect_context::<DeviceContext>();
-    let device_id = Signal::derive(move || device_ctx.infos.read().device_id);
+    let device_id = device_ctx.infos.device_id;
 
     let collections = LocalResource::new(move || async move {
-        let id = device_id.get();
-        let url = format!("/api/pilatus-emulation-camera/collection?device_id={id}");
+        leptos::logging::log!("ChangeDeviceId: {device_id}");
+        let url = format!("/api/pilatus-emulation-camera/collection?device_id={device_id}");
         gloo_net::http::Request::get(&url)
             .send()
             .await
@@ -64,10 +65,9 @@ pub fn EngineeringView() -> impl IntoView {
                     .map(|(name, _)| name)
                     .unwrap_or(&file_name);
 
-                let id = device_id.get_untracked();
                 let url = format!(
                     "/api/pilatus-emulation-camera/collection/{}/{}?device_id={}",
-                    collection_name, image_name, id
+                    collection_name, image_name, device_id
                 );
 
                 upload_file(&url, file).await.map(|_| file_name.clone())
@@ -75,22 +75,21 @@ pub fn EngineeringView() -> impl IntoView {
         });
 
     // Effect to refresh collections after successful upload to a new collection
-    Effect::new(move |_| {
-        if let Some(Ok(_)) = upload_action.value().get()
-            && is_creating_new_collection.get()
-        {
-            collections.refetch();
-            set_is_creating_new_collection.set(false);
-        }
-    });
+    // Effect::new(move |_| {
+    //     if let Some(Ok(_)) = upload_action.value().get()
+    //         && is_creating_new_collection.get()
+    //     {
+    //         collections.refetch();
+    //         set_is_creating_new_collection.set(false);
+    //     }
+    // });
 
     let delete_action = Action::new_local(move |collection_name: &Name| {
         let collection_name = collection_name.clone();
         async move {
-            let id = device_id.get_untracked();
             let url = format!(
                 "/api/pilatus-emulation-camera/collection/{}?device_id={}",
-                collection_name, id
+                collection_name, device_id
             );
 
             gloo_net::http::Request::delete(&url)
@@ -103,11 +102,11 @@ pub fn EngineeringView() -> impl IntoView {
     });
 
     // Effect to refresh collections after successful deletion
-    Effect::new(move |_| {
-        if let Some(Ok(_)) = delete_action.value().get() {
-            collections.refetch();
-        }
-    });
+    // Effect::new(move |_| {
+    //     if let Some(Ok(_)) = delete_action.value().get() {
+    //         collections.refetch();
+    //     }
+    // });
 
     let confirm_new_collection = move || {
         let name_str = new_collection_name.get_untracked();
@@ -132,7 +131,7 @@ pub fn EngineeringView() -> impl IntoView {
     let image_url = Signal::derive(move || {
         Some(format!(
             "ws://localhost:4123/api/image/subscribe?format=Raw&device_id={}",
-            device_id.read().deref()
+            device_id
         ))
     });
     view! {

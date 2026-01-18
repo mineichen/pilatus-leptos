@@ -8,7 +8,7 @@ use pilatus_leptos::{DeviceContext, JsonDeviceView};
 #[component]
 pub fn AravisView() -> impl IntoView {
     let device_ctx = expect_context::<DeviceContext>();
-    let device_id = Signal::derive(move || device_ctx.infos.read().device_id);
+    let device_id = Signal::derive(move || device_ctx.infos.device_id);
 
     let cameras = LocalResource::new(move || async move {
         let id = device_id.get();

@@ -55,7 +55,7 @@ where
                                             #[cfg(feature = "emulation-camera")]
                                             NestedRoute::new(
                                                 StaticSegment("pilatus-emulation-camera"),
-                                                pilatus_emulation_camera_leptos::EngineeringView,
+                                                pilatus_emulation_camera_leptos::EmulationCameraView,
                                             ),
                                             #[cfg(feature = "aravis")]
                                             NestedRoute::new(

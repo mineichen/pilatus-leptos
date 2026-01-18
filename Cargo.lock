@@ -1674,10 +1674,10 @@ dependencies = [
 [[package]]
 name = "egui-pixels"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/egui-pixels#137ded70366eb94ab5c816963dfc6160e0bd6356"
+source = "git+https://github.com/mineichen/egui-pixels#c32b5cce72ef986c064160d49451daada7c422b1"
 dependencies = [
  "egui",
- "imbuf 0.2.0 (git+https://github.com/mineichen/image-buffer.git)",
+ "imbuf",
  "itertools",
  "log",
  "num-traits",
@@ -2938,14 +2938,6 @@ name = "imagesize"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edcd27d72f2f071c64249075f42e205ff93c9a4c5f6c6da53e79ed9f9832c285"
-
-[[package]]
-name = "imbuf"
-version = "0.2.0"
-source = "git+https://github.com/mineichen/image-buffer.git#bbb50c7a8ea87149b8c3c63411c52d7547817a6f"
-dependencies = [
- "thiserror 2.0.18",
-]
 
 [[package]]
 name = "imbuf"
@@ -4384,7 +4376,7 @@ dependencies = [
  "aravis",
  "aravis-sys",
  "futures",
- "imbuf 0.2.0 (git+https://github.com/mineichen/imbuf.git)",
+ "imbuf",
  "minfac",
  "pilatus",
  "pilatus-aravis",
@@ -4479,7 +4471,7 @@ dependencies = [
  "chrono",
  "futures",
  "image",
- "imbuf 0.2.0 (git+https://github.com/mineichen/imbuf.git)",
+ "imbuf",
  "minfac",
  "pilatus",
  "pilatus-axum",
@@ -4500,7 +4492,7 @@ dependencies = [
  "approx",
  "bytes",
  "futures",
- "imbuf 0.2.0 (git+https://github.com/mineichen/imbuf.git)",
+ "imbuf",
  "jpeg-encoder",
  "pilatus",
  "pilatus-axum",
@@ -4525,7 +4517,7 @@ dependencies = [
  "gloo-events",
  "gloo-net",
  "gloo-timers",
- "imbuf 0.2.0 (git+https://github.com/mineichen/image-buffer.git)",
+ "imbuf",
  "js-sys",
  "leptos",
  "pilatus",
@@ -4546,7 +4538,7 @@ dependencies = [
  "chrono",
  "futures",
  "image",
- "imbuf 0.2.0 (git+https://github.com/mineichen/imbuf.git)",
+ "imbuf",
  "minfac",
  "pilatus",
  "pilatus-axum",

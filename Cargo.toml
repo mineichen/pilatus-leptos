@@ -36,7 +36,7 @@ gloo-net = "0.6"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
 image = { version = "0.25", default-features = false }
-imbuf = { git = "https://github.com/mineichen/image-buffer.git" }
+imbuf = { git = "https://github.com/mineichen/imbuf.git" }
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"

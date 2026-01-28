@@ -1,17 +1,14 @@
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-
-use futures::future::{BoxFuture, LocalBoxFuture};
-use futures::{FutureExt, StreamExt};
+use futures::StreamExt;
 use gloo_net::websocket::Message;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
 
 mod app;
+mod single;
 
 pub use app::EframeImageViewer;
+pub use single::SingleImageViewerComponent;
 use thaw::Button;
 
 #[component]

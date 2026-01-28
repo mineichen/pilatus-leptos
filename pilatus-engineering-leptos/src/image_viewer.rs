@@ -1,3 +1,4 @@
+use egui_pixels::Tools;
 use futures::StreamExt;
 use gloo_net::websocket::Message;
 use leptos::html::Canvas;
@@ -16,6 +17,7 @@ pub fn ImageViewerComponent(
     url: Signal<Option<String>>,
     #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
+    #[prop(optional)] mut tools: Option<Tools>,
 ) -> impl IntoView {
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter viewer");
@@ -55,8 +57,9 @@ pub fn ImageViewerComponent(
         if let Some(canvas) = canvas_ref.get()
             && viewer.read_untracked().is_none()
         {
+            let tools = tools.take().unwrap_or_default();
             leptos::reactive::spawn_local(async move {
-                match EframeImageViewer::create(canvas).await {
+                match EframeImageViewer::create(canvas, tools).await {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
                         set_viewer.set(Some(viewer));

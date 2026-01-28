@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, anyhow};
 use leptos::logging::{debug_log, log};
 
-pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterleaved<u8>>> {
+pub fn parse(input: &[u8]) -> anyhow::Result<Option<imbuf::Image<[u8; 3], 1>>> {
     if input.len() < 8 {
         return Err(anyhow!("Header is {} bytes long", input.len()));
     }
@@ -54,7 +54,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
         (0, 1, 1) => {
             log!("Encode u8 {pixel_size:?}");
 
-            Ok(Some(egui_pixels::RgbImageInterleaved::new_arc(
+            Ok(Some(imbuf::Image::<[u8; 3], 1>::new_arc(
                 pixels.iter().map(|&c| [c; 3]).collect(),
                 width,
                 height,
@@ -68,7 +68,7 @@ pub fn parse(input: &[u8]) -> anyhow::Result<Option<egui_pixels::RgbImageInterle
                 pixels.len() * 3
             );
 
-            Ok(Some(egui_pixels::RgbImageInterleaved::new_arc(
+            Ok(Some(imbuf::Image::<[u8; 3], 1>::new_arc(
                 pixels, width, height,
             )))
         }

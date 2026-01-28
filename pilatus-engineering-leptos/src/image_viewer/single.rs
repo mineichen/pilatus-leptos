@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use egui_pixels::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 
@@ -7,7 +8,11 @@ pub use crate::image_viewer::app::EframeImageViewer;
 use thaw::Button;
 
 #[component]
-pub fn SingleImageViewerComponent(url: Signal<Option<String>>) -> impl IntoView {
+pub fn SingleImageViewerComponent(
+    url: Signal<Option<String>>,
+    #[prop(optional)] mut tools: Option<Tools>,
+    #[prop(optional)] primary: Option<Signal<String>>,
+) -> impl IntoView {
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter single image viewer");
     let (viewer, set_viewer) = signal_local::<Option<EframeImageViewer>>(None);
@@ -18,8 +23,9 @@ pub fn SingleImageViewerComponent(url: Signal<Option<String>>) -> impl IntoView 
         if let Some(canvas) = canvas_ref.get()
             && viewer.read_untracked().is_none()
         {
+            let tools = tools.take().unwrap_or_default();
             leptos::reactive::spawn_local(async move {
-                match EframeImageViewer::create(canvas).await {
+                match EframeImageViewer::create(canvas, tools).await {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
                         set_viewer.set(Some(viewer));
@@ -31,6 +37,14 @@ pub fn SingleImageViewerComponent(url: Signal<Option<String>>) -> impl IntoView 
             });
         }
     });
+
+    if let Some(primary) = primary {
+        Effect::new(move || {
+            if let Some(viewer) = viewer.read().deref() {
+                viewer.set_primary(primary.get());
+            }
+        });
+    }
 
     let image_fetch = LocalResource::new(move || async move {
         let Some(fetch_url) = url.get() else {

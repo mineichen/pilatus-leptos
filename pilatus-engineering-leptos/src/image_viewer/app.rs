@@ -1,10 +1,13 @@
 use egui::{InnerResponse, Sense, epaint::color};
 
 use egui_pixels::{
-    ClearTool, ImageData, ImageId, ImageLoadOk, ImageStateLoaded, ImageViewer,
-    ImageViewerInteraction, Tool, ToolContext,
+    ClearTool, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded, ImageViewer,
+    ImageViewerInteraction, Tool, ToolContext, ToolFactory, Tools,
 };
-use futures::channel::{mpsc, oneshot};
+use futures::{
+    SinkExt,
+    channel::{mpsc, oneshot},
+};
 use imbuf::Image;
 use leptos::logging::debug_log;
 
@@ -17,7 +20,7 @@ pub struct EframeImageViewer {
 }
 
 impl EframeImageViewer {
-    pub async fn create(canvas: web_sys::HtmlCanvasElement) -> anyhow::Result<Self> {
+    pub async fn create(canvas: web_sys::HtmlCanvasElement, tools: Tools) -> anyhow::Result<Self> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = canvas;
@@ -39,7 +42,7 @@ impl EframeImageViewer {
                             "App creation callback called - eframe instance created"
                         );
                         ctx_start.set(Some(cc.egui_ctx.clone()));
-                        Ok(Box::new(App::new(&cc.egui_ctx, receiver)))
+                        Ok(Box::new(App::new(tools, receiver)))
                     }),
                 )
                 .await
@@ -53,21 +56,36 @@ impl EframeImageViewer {
             })
         }
     }
+    pub fn set_primary(&self, name: String) {
+        let enqueue = self
+            .command_send
+            .clone()
+            .try_send(Box::new(move |app, ctx| {
+                let mut primary = app.state.tools.primary();
+                let (Some(idx), ImageState::Loaded(loaded)) = (
+                    primary.tool_names().position(|x| x == &name),
+                    &app.state.image_state,
+                ) else {
+                    return;
+                };
+                primary.set_idx(idx, &loaded.image);
+            }));
+        if !enqueue.is_ok() {
+            leptos::logging::error!("Unable to queue set_primary");
+        }
+    }
     pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>) {
         let (r_send, r_recv) = oneshot::channel();
         let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
-            app.image_state = ImageStateLoaded::from_image_data(
-                ImageData {
-                    id: ImageId::from("foo"),
-                    image: ImageLoadOk {
-                        original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
-                        adjust,
-                    },
-                    masks: Vec::new(),
+            app.state.image_state.set_image_data(ImageData {
+                id: ImageId::from("foo"),
+                image: ImageLoadOk {
+                    original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
+                    adjust,
                 },
-                ctx,
-            )
-            .expect("Image is never too big");
+                masks: Vec::new(),
+            });
+            ctx.request_repaint();
             debug_log!("Replaced image state");
             r_send.send(()).ok();
         }));
@@ -82,20 +100,14 @@ impl EframeImageViewer {
 }
 
 pub struct App {
-    image_state: ImageStateLoaded,
-    viewer: ImageViewer,
-    tool: Box<dyn Tool>,
+    state: egui_pixels::State,
     receiver: mpsc::Receiver<ChangeItem>,
 }
 
 impl App {
-    pub fn new(ctx: &egui::Context, receiver: mpsc::Receiver<ChangeItem>) -> Self {
-        let image = ImageData::chessboard().next().unwrap();
-        let image_state = ImageStateLoaded::from_image_data(image, ctx).unwrap();
+    pub fn new(tools: Tools, receiver: mpsc::Receiver<ChangeItem>) -> Self {
         Self {
-            image_state,
-            viewer: ImageViewer::default(),
-            tool: Box::new(ClearTool::default()),
+            state: egui_pixels::State::new(tools),
             receiver,
         }
     }
@@ -114,23 +126,13 @@ impl eframe::App for App {
                         Some(ImageViewerInteraction {
                             original_image_size: _,
                             cursor_image_pos,
+                            ..
                         }),
                     response,
-                } = self
-                    .viewer
-                    .ui(ui, self.image_state.sources(ui.ctx()), Some(Sense::click()))
+                } = self.state.ui(ui)
                 {
                     // Store the image rect before response is moved
                     let image_rect = response.rect;
-
-                    if let Some(cursor_image_pos) = cursor_image_pos {
-                        self.tool.handle_interaction(ToolContext::new(
-                            &mut self.image_state,
-                            response,
-                            cursor_image_pos,
-                            ctx,
-                        ));
-                    }
 
                     // Overlay pixel coordinates on top of the image
                     if let Some((x, y)) = cursor_image_pos {

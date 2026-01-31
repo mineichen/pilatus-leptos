@@ -6,6 +6,7 @@ use std::{
 use anyhow::{Context, anyhow};
 use leptos::logging::{debug_log, log};
 
+/// Returns `Ok(None)` for MissingFrame error
 pub fn parse(input: &[u8]) -> anyhow::Result<Option<imbuf::Image<[u8; 3], 1>>> {
     if input.len() < 8 {
         return Err(anyhow!("Header is {} bytes long", input.len()));

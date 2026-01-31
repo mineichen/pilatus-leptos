@@ -90,8 +90,8 @@ where
         let mut last = js_sys::Date::now();
 
         while let Some(result) = stream.next().await {
-            let bytes = match result {
-                Ok(bytes) => bytes,
+            let image = match result {
+                Ok(image) => image,
                 Err(e) => {
                     leptos::logging::error!("Error receiving image: {}", e);
                     break;
@@ -108,26 +108,11 @@ where
             #[cfg(target_arch = "wasm32")]
             {
                 let now = js_sys::Date::now();
-                leptos::logging::log!(
-                    "Forward image to viewer {} at {:?}ms",
-                    bytes.len(),
-                    now - last
-                );
+                leptos::logging::log!("Forward image to viewer {image:?} at {:?}ms", now - last);
                 last = now;
             }
 
-            match crate::decode::parse(&bytes) {
-                Ok(Some(image)) => {
-                    viewer_ref.replace_image(image).await;
-                }
-                Ok(None) => {
-                    leptos::logging::log!("No image in this frame");
-                }
-                Err(e) => {
-                    leptos::logging::error!("Error decoding image: {}", e);
-                    break;
-                }
-            }
+            viewer_ref.replace_image(image).await;
         }
 
         leptos::logging::log!("Image stream closed");

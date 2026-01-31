@@ -1,8 +1,7 @@
 use std::ops::Deref;
 
 use leptos::prelude::*;
-use pilatus::Name;
-use pilatus_engineering_leptos::ImageViewerComponent;
+use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
 use pilatus_leptos::{DeviceContext, JsonDeviceView};
 
 #[component]
@@ -32,7 +31,7 @@ pub fn AravisView() -> impl IntoView {
         <div>
             <h1>"Pilatus Engineering with canvas"</h1>
             <div>
-                <ImageViewerComponent url=image_url/>
+                <ImageViewerComponent url=image_url provider=WebSocketImageProvider/>
                 <div>
                     <h3>"Camera"</h3>
                     <table style="width: 100%;">

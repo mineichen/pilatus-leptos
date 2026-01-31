@@ -1,13 +1,7 @@
-use egui::{InnerResponse, Sense, epaint::color};
+use egui::InnerResponse;
 
-use egui_pixels::{
-    ClearTool, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded, ImageViewer,
-    ImageViewerInteraction, Tool, ToolContext, ToolFactory, Tools,
-};
-use futures::{
-    SinkExt,
-    channel::{mpsc, oneshot},
-};
+use egui_pixels::{ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, Tools};
+use futures::channel::{mpsc, oneshot};
 use imbuf::Image;
 use leptos::logging::debug_log;
 
@@ -60,7 +54,7 @@ impl EframeImageViewer {
         let enqueue = self
             .command_send
             .clone()
-            .try_send(Box::new(move |app, ctx| {
+            .try_send(Box::new(move |app, _ctx| {
                 let mut primary = app.state.tools.primary();
                 let (Some(idx), ImageState::Loaded(loaded)) = (
                     primary.tool_names().position(|x| x == &name),
@@ -119,37 +113,28 @@ impl eframe::App for App {
             x(self, ctx)
         }
         egui::CentralPanel::default()
-            .frame(egui::Frame::new().fill(egui::Color32::TRANSPARENT))
+            .frame(egui::Frame::new()) // Removes padding
             .show(ctx, |ui| {
-                if let InnerResponse {
-                    inner:
-                        Some(ImageViewerInteraction {
-                            original_image_size: _,
-                            cursor_image_pos,
-                            ..
-                        }),
-                    response,
-                } = self.state.ui(ui)
+                let viewer_result = self.state.ui(ui);
+                if let Some(ImageViewerInteraction {
+                    cursor_image_pos: Some((x, y)),
+                    ..
+                }) = viewer_result.inner
                 {
-                    // Store the image rect before response is moved
-                    let image_rect = response.rect;
-
-                    // Overlay pixel coordinates on top of the image
-                    if let Some((x, y)) = cursor_image_pos {
-                        let offset_pos = egui::pos2(image_rect.max.x - 5.0, image_rect.max.y - 5.0);
-                        egui::Area::new(egui::Id::new("pixel_coords_overlay"))
-                            .fixed_pos(offset_pos)
-                            .pivot(egui::Align2::RIGHT_BOTTOM)
-                            .order(egui::Order::Foreground)
-                            .show(ctx, |ui| {
-                                egui::Frame::popup(ui.style())
-                                    .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
-                                    .show(ui, |ui| {
-                                        ui.add(egui::Label::new(format!("x: {x}")).extend());
-                                        ui.add(egui::Label::new(format!("y: {y}")).extend());
-                                    });
-                            });
-                    }
+                    let image_rect = viewer_result.response.rect;
+                    let offset_pos = egui::pos2(image_rect.max.x - 5.0, image_rect.max.y - 5.0);
+                    egui::Area::new(egui::Id::new("pixel_coords_overlay"))
+                        .fixed_pos(offset_pos)
+                        .pivot(egui::Align2::RIGHT_BOTTOM)
+                        .order(egui::Order::Foreground)
+                        .show(ctx, |ui| {
+                            egui::Frame::popup(ui.style())
+                                .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
+                                .show(ui, |ui| {
+                                    ui.add(egui::Label::new(format!("x: {x}")).extend());
+                                    ui.add(egui::Label::new(format!("y: {y}")).extend());
+                                });
+                        });
                 }
             });
     }

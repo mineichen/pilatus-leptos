@@ -4,7 +4,7 @@ use leptos::logging::debug_error;
 use leptos::prelude::*;
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
-use pilatus_engineering_leptos::ImageViewerComponent;
+use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
 use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
 use wasm_bindgen::JsCast;
 
@@ -29,7 +29,7 @@ pub fn EmulationCameraView() -> impl IntoView {
     let (show_new_collection_dialog, set_show_new_collection_dialog) = signal(false);
     let (pending_file, set_pending_file) = signal_local::<Option<web_sys::File>>(None);
     let (new_collection_name, set_new_collection_name) = signal(String::new());
-    let (is_creating_new_collection, set_is_creating_new_collection) = signal(false);
+    let (_is_creating_new_collection, set_is_creating_new_collection) = signal(false);
 
     let params_impex =
         device_ctx.get::<pilatus_emulation_camera::ParamsImpex<PilatusWrapperSettings>>();
@@ -139,7 +139,7 @@ pub fn EmulationCameraView() -> impl IntoView {
             <h1>"Pilatus Engineering with canvas"</h1>
             <div style="display: flex; gap: 20px;">
                 <div style="flex: 1;">
-                    <ImageViewerComponent url=image_url/>
+                    <ImageViewerComponent url=image_url provider=WebSocketImageProvider/>
                 </div>
                 <div style="width: 200px;">
                     <h3>"Collections"</h3>

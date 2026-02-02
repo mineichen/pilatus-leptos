@@ -90,7 +90,7 @@ where
         let mut last = js_sys::Date::now();
 
         while let Some(result) = stream.next().await {
-            let image = match result {
+            let (image, masks) = match result {
                 Ok(image) => image,
                 Err(e) => {
                     leptos::logging::error!("Error receiving image: {}", e);
@@ -112,7 +112,7 @@ where
                 last = now;
             }
 
-            viewer_ref.replace_image(image).await;
+            viewer_ref.replace_image(image, masks).await;
         }
 
         leptos::logging::log!("Image stream closed");

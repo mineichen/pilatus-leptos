@@ -1,10 +1,9 @@
 use futures::{Stream, StreamExt, TryStreamExt};
 use gloo_net::websocket::Message;
-use imbuf::Image;
 use pilatus::device::DeviceId;
 use std::pin::Pin;
 
-use crate::decode::parse;
+use crate::{decode::parse, image_viewer::provider::ImageProviderStreamItem};
 
 use super::provider::ImageProvider;
 
@@ -12,9 +11,7 @@ use super::provider::ImageProvider;
 pub struct WebSocketImageProvider;
 
 impl ImageProvider for WebSocketImageProvider {
-    fn image_stream(
-        url: String,
-    ) -> Pin<Box<dyn Stream<Item = anyhow::Result<Image<[u8; 3], 1>>> + 'static>> {
+    fn image_stream(url: String) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         let state = crate::ws_suspend::SuspensibleWebSocket::new(url).map_err(Some);
 
         Box::pin(
@@ -50,7 +47,7 @@ impl ImageProvider for WebSocketImageProvider {
                 }
             })
             // Remove MissingFrames error
-            .try_filter_map(|x| async move { Ok(x) }),
+            .try_filter_map(|x| async move { Ok(x.map(|image| (image, Vec::new()))) }),
         )
     }
 

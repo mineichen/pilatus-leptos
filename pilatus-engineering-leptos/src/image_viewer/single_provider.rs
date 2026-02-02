@@ -1,8 +1,7 @@
 use futures::Stream;
-use imbuf::Image;
 use std::pin::Pin;
 
-use crate::decode::parse;
+use crate::{decode::parse, image_viewer::provider::ImageProviderStreamItem};
 
 use super::provider::ImageProvider;
 
@@ -10,9 +9,7 @@ use super::provider::ImageProvider;
 pub struct SingleImageProvider;
 
 impl ImageProvider for SingleImageProvider {
-    fn image_stream(
-        url: String,
-    ) -> Pin<Box<dyn Stream<Item = anyhow::Result<Image<[u8; 3], 1>>> + 'static>> {
+    fn image_stream(url: String) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         Box::pin(futures::stream::once(async move {
             leptos::logging::log!("Fetching image from: {}", url);
 
@@ -28,8 +25,12 @@ impl ImageProvider for SingleImageProvider {
 
             leptos::logging::log!("Received {} bytes from HTTP", bytes.len());
 
-            parse(&bytes)?
-                .ok_or_else(|| anyhow::anyhow!("HTTP-Response doesn't return skipped frames"))
+            match parse(&bytes)? {
+                Some(img) => Ok((img, Vec::new())),
+                None => Err(anyhow::anyhow!(
+                    "HTTP-Response doesn't return skipped frames"
+                )),
+            }
         }))
     }
 

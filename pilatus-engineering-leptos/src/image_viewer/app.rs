@@ -1,6 +1,8 @@
 use egui::InnerResponse;
 
-use egui_pixels::{ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, Tools};
+use egui_pixels::{
+    ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, PixelArea, Tools,
+};
 use futures::channel::{mpsc, oneshot};
 use imbuf::Image;
 use leptos::logging::debug_log;
@@ -68,7 +70,7 @@ impl EframeImageViewer {
             leptos::logging::error!("Unable to queue set_primary");
         }
     }
-    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>) {
+    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>, masks: Vec<PixelArea>) {
         let (r_send, r_recv) = oneshot::channel();
         let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
             app.state.image_state.set_image_data(ImageData {
@@ -77,7 +79,7 @@ impl EframeImageViewer {
                     original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
                     adjust,
                 },
-                masks: Vec::new(),
+                masks,
             });
             ctx.request_repaint();
             debug_log!("Replaced image state");

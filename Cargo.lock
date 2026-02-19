@@ -4474,6 +4474,8 @@ dependencies = [
  "pilatus-emulation-camera",
  "pilatus-engineering-leptos",
  "pilatus-leptos",
+ "thaw",
+ "thaw_utils",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

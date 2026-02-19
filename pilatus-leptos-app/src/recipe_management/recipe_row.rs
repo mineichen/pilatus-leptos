@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use pilatus_leptos::{RecipeContext, RecipeInfo};
-use thaw::{Button, ButtonSize};
+use thaw::{Button, ButtonAppearance, ButtonSize};
 
 use super::recipe_tags::RecipeTags;
 
@@ -32,15 +32,15 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
     });
 
     view! {
-        <tr style="border-bottom: 1px solid #e0e0e0;">
-            <td style="padding: 12px;">
-                <span style="font-weight: 500;">{move || recipe.read().id.to_string()}</span>
+        <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+            <td class="px-4 py-3">
+                <span class="font-medium text-white">{move || recipe.read().id.to_string()}</span>
             </td>
-            <td style="padding: 12px;">
+            <td class="px-4 py-3">
                 <RecipeTags recipe_memo=recipe />
             </td>
-            <td style="padding: 12px;">
-                <span style="color: #666;">
+            <td class="px-4 py-3">
+                <span class="text-slate-400">
                     {move || {
                         recipe
                             .read()
@@ -49,21 +49,20 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                             .format("%Y-%m-%d %H:%M")
                             .to_string()
                     }}
-
                 </span>
             </td>
-            <td style="padding: 12px;">
-                <span
-                    style:color=move || if is_active.get() { "#10b981" } else { "#6b7280" }
-                    style:font-weight="600"
-                >
+            <td class="px-4 py-3">
+                <span class=move || {
+                    if is_active.get() { "text-emerald-400 font-medium" } else { "text-slate-500" }
+                }>
                     {move || if is_active.get() { "● Active" } else { "○ Inactive" }}
                 </span>
             </td>
-            <td style="padding: 12px;">
-                <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
-                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+            <td class="px-4 py-3">
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-2 items-center">
                         <Button
+                            appearance=ButtonAppearance::Primary
                             size=ButtonSize::Small
                             disabled=is_active
                             on:click=move |_| {
@@ -74,14 +73,13 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                         </Button>
                         {move || {
                             activate_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
-                                view! {
-                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
-                                }
+                                view! { <span class="text-red-400 text-xs">{format!("Error: {}", e)}</span> }
                             })
                         }}
                     </div>
-                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                    <div class="flex gap-2 items-center">
                         <Button
+                            appearance=ButtonAppearance::Secondary
                             size=ButtonSize::Small
                             on:click=move |_| {
                                 duplicate_action.dispatch(());
@@ -91,14 +89,13 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                         </Button>
                         {move || {
                             duplicate_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
-                                view! {
-                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
-                                }
+                                view! { <span class="text-red-400 text-xs">{format!("Error: {}", e)}</span> }
                             })
                         }}
                     </div>
-                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                    <div class="flex gap-2 items-center">
                         <Button
+                            appearance=ButtonAppearance::Subtle
                             size=ButtonSize::Small
                             disabled=is_active
                             on:click=move |_| {
@@ -109,9 +106,7 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                         </Button>
                         {move || {
                             delete_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
-                                view! {
-                                    <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
-                                }
+                                view! { <span class="text-red-400 text-xs">{format!("Error: {}", e)}</span> }
                             })
                         }}
                     </div>

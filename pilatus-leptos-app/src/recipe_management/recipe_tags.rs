@@ -3,7 +3,7 @@ use std::str::FromStr;
 use leptos::prelude::*;
 use pilatus::Name;
 use pilatus_leptos::{RecipeContext, RecipeInfo};
-use thaw::{Button, ButtonSize, Input, Tag};
+use thaw::{Button, ButtonAppearance, ButtonSize, Input, Tag};
 
 #[component]
 pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
@@ -42,8 +42,8 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
     });
 
     view! {
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap gap-1">
                 {move || {
                     recipe_memo
                         .get()
@@ -55,10 +55,10 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                             let tag_str = tag.to_string();
                             view! {
                                 <Tag>
-                                    <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span class="inline-flex items-center gap-1">
                                         <span>{tag_str.clone()}</span>
                                         <button
-                                            style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 14px; padding: 0; margin-left: 4px; line-height: 1; display: inline-flex; align-items: center;"
+                                            class="text-red-400 hover:text-red-300 ml-1 text-sm"
                                             on:click=move |ev| {
                                                 ev.stop_propagation();
                                                 set_tag_to_remove.set(Some(tag_name.clone()));
@@ -72,24 +72,24 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                         })
                         .collect_view()
                 }}
-
             </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
+            <div class="flex gap-2 items-center">
                 <Input
                     value=thaw_utils::Model::from(new_tag_input)
                     placeholder="New tag..."
-                    attr:style="max-width: 150px;"
+                    attr:class="max-w-[150px]"
                 />
                 <Button
+                    appearance=ButtonAppearance::Secondary
                     size=ButtonSize::Small
                     on:click=move |_| {
                         add_tag_to_recipe.dispatch(());
                     }
                 >
-                    "+ Add Tag"
+                    "+ Add"
                 </Button>
             </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
+            <div class="text-red-400 text-xs">
                 {move || {
                     add_tag_to_recipe
                         .value()
@@ -104,29 +104,30 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                         .as_ref()
                         .and_then(|r| r.as_ref().err().map(|e| format!("Error: {e}")))
                 }}
-
             </div>
             {move || {
                 tag_to_remove.get().map(|tag_name| {
                     let tag_str = tag_name.to_string();
                     view! {
-                        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                            <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                <h3 style="margin-top: 0;">"Remove Tag?"</h3>
-                                <p style="margin: 16px 0;">{format!("Are you sure you want to remove the tag \"{}\"?", tag_str)}</p>
-                                <div style="margin-top: 20px; display: flex; gap: 8px; justify-content: flex-end;">
-                                    <Button on:click=move |_| set_tag_to_remove.set(None)>
+                        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                            <div class="bg-slate-800 rounded-xl p-6 min-w-[300px] border border-slate-700 shadow-xl">
+                                <h3 class="text-lg font-semibold text-white mt-0">"Remove Tag?"</h3>
+                                <p class="text-slate-400 my-4">{format!("Remove tag \"{}\"?", tag_str)}</p>
+                                <div class="mt-4 flex gap-2 justify-end">
+                                    <Button
+                                        appearance=ButtonAppearance::Subtle
+                                        on:click=move |_| set_tag_to_remove.set(None)
+                                    >
                                         "Cancel"
                                     </Button>
-                                    <div style="background-color: #dc3545; border-color: #dc3545;">
-                                        <Button
-                                            on:click=move |_| {
-                                                remove_tag_action.dispatch(tag_name.clone());
-                                            }
-                                        >
-                                            "Remove"
-                                        </Button>
-                                    </div>
+                                    <Button
+                                        appearance=ButtonAppearance::Primary
+                                        on:click=move |_| {
+                                            remove_tag_action.dispatch(tag_name.clone());
+                                        }
+                                    >
+                                        "Remove"
+                                    </Button>
                                 </div>
                             </div>
                         </div>

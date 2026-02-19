@@ -57,6 +57,8 @@
               name = "isolated-env";
               paths = packages ++ [
                 pkgs.bashInteractive
+                pkgs.ripgrep
+                pkgs.git
                 pkgs.opencode
                 pkgs.coreutils
                 (pkgs.writeScriptBin "entrypoint.sh" ''

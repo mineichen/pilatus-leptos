@@ -1,12 +1,12 @@
 @import "tailwindcss";
-@import "tailwindcss/preflight";
 
-body {
-    background: #999;
+@theme {
+    --color-slate-850: #1a2234;
+    --color-slate-950: #0a0f1a;
 }
 
-h1 {
-    font-size: 2em;
+html, body {
+    @apply h-full w-full overflow-hidden bg-slate-900;
 }
 
 canvas.fullscreen {

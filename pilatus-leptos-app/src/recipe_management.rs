@@ -3,7 +3,7 @@ mod recipe_tags;
 
 use leptos::prelude::*;
 use pilatus_leptos::RecipeContext;
-use thaw::Button;
+use thaw::{Button, ButtonAppearance};
 
 use self::recipe_row::{RecipeRow, RecipeRowProps};
 
@@ -13,7 +13,6 @@ pub fn RecipeManagement() -> impl IntoView {
     let ctx_create = ctx.clone();
     let ctx_commit = ctx.clone();
 
-    // Get real recipes from context - returns Memo<Vec<RecipeInfo>>
     let recipes = ctx.list_recipes();
     let recipe_ids =
         move || recipes.with(|x| x.iter().map(|info| info.id.clone()).collect::<Vec<_>>());
@@ -30,75 +29,93 @@ pub fn RecipeManagement() -> impl IntoView {
     });
 
     view! {
-        <div style="padding: 20px;">
-        <h1 style="padding-bottom: 20px;">"Recipe Management"</h1>
+        <div class="space-y-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white mb-1">"Recipe Management"</h1>
+                <p class="text-slate-400">"Create and manage recipes for your devices."</p>
+            </div>
 
-        <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #e0e0e0;">
-                        <th style="text-align: left; padding: 12px; font-weight: 600;">"Recipe Name"</th>
-                        <th style="text-align: left; padding: 12px; font-weight: 600;">"Tags"</th>
-                        <th style="text-align: left; padding: 12px; font-weight: 600;">"Created Date"</th>
-                        <th style="text-align: left; padding: 12px; font-weight: 600;">"Status"</th>
-                        <th style="text-align: center; padding: 12px; font-weight: 600;">"Actions"</th>
-                    </tr>
-                </thead>
-                    <tbody>
-                        <For
-                            each=recipe_ids
-                            key=|id| id.clone()
-                            let(id)>
-                            {
-                                let recipe = Memo::new(move |_| {
-                                    recipes.with(|x| x.iter().find(|x|x.id == id).cloned()).unwrap()
-                                });
-
-                                move || {
-                                    RecipeRow(RecipeRowProps {
-                                        recipe
-                                    })
-
-                                }
+            <div class="bg-slate-800 rounded-xl border border-slate-700">
+                <div class="p-4 border-b border-slate-700 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-white">"Recipes"</h2>
+                    <div class="flex gap-2">
+                        <Button
+                            appearance=ButtonAppearance::Primary
+                            on:click=move |_| {
+                                create_action.dispatch(());
                             }
-                        </For>
-                    </tbody>
-                </table>
-                <div style="display: flex; gap: 8px; align-items: center; margin-top: 16px;">
-                    <Button class="mt-4" on:click=move |_| {
-                        create_action.dispatch(());
-                    }>
-                        "Create Recipe"
-                    </Button>
-                    {move || {
-                        create_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
-                            view! {
-                                <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
-                            }
-                        })
-                    }}
-                    {move || {
-                        if has_active_changes.get() {
-                            view! {
-                                <>
-                                    <Button class="mt-4" on:click=move |_| {
-                                        commit_action.dispatch(());
-                                    }>
-                                        "Commit changes"
+                        >
+                            "Create Recipe"
+                        </Button>
+                        {move || {
+                            if has_active_changes.get() {
+                                view! {
+                                    <Button
+                                        appearance=ButtonAppearance::Secondary
+                                        on:click=move |_| {
+                                            commit_action.dispatch(());
+                                        }
+                                    >
+                                        "Commit Changes"
                                     </Button>
-                                    {move || {
-                                        commit_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
-                                            view! {
-                                                <span style="color: #dc3545; font-size: 12px;">{format!("Error: {}", e)}</span>
-                                            }
-                                        })
-                                    }}
-                                </>
-                            }.into_any()
-                        } else {
-                            ().into_any()
+                                }.into_any()
+                            } else {
+                                ().into_any()
+                            }
+                        }}
+                    </div>
+                </div>
+
+                {move || {
+                    create_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                        view! {
+                            <div class="mx-4 mt-4 px-4 py-2 rounded-lg bg-red-900/50 border border-red-700 text-red-200">
+                                {format!("Error: {}", e)}
+                            </div>
                         }
-                    }}
+                    })
+                }}
+
+                {move || {
+                    commit_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                        view! {
+                            <div class="mx-4 mt-4 px-4 py-2 rounded-lg bg-red-900/50 border border-red-700 text-red-200">
+                                {format!("Error: {}", e)}
+                            </div>
+                        }
+                    })
+                }}
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-700">
+                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Name"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Tags"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Created"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Status"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Actions"</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <For
+                                each=recipe_ids
+                                key=|id| id.clone()
+                                let(id)>
+                                {
+                                    let recipe = Memo::new(move |_| {
+                                        recipes.with(|x| x.iter().find(|x|x.id == id).cloned()).unwrap()
+                                    });
+
+                                    move || {
+                                        RecipeRow(RecipeRowProps {
+                                            recipe
+                                        })
+                                    }
+                                }
+                            </For>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

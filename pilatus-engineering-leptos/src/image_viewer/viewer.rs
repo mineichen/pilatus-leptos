@@ -3,7 +3,7 @@ use futures::StreamExt;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
-use thaw::Button;
+use wasm_bindgen::JsCast;
 
 use crate::image_viewer::app::ChangeListener;
 
@@ -25,7 +25,6 @@ where
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
-    let (canvas_class, set_canvas_class) = signal(None as Option<&'static str>);
 
     let available = LocalResource::new(move || async move {
         let Some(maybe_ignored_device_id) = list_all_but else {
@@ -106,10 +105,11 @@ where
                 }
             };
 
-            let guard = viewer.try_read();
-            let Some(viewer_ref) = guard.as_deref().and_then(|v| v.as_ref()) else {
+            let Some(guard) = viewer.try_read() else {
+                break;
+            };
+            let Some(viewer_ref) = guard.as_ref() else {
                 leptos::logging::debug_log!("Viewer is not ready to display images");
-
                 continue;
             };
 
@@ -126,14 +126,58 @@ where
         leptos::logging::log!("Image stream closed");
     });
 
+    let (is_fullscreen, set_is_fullscreen) = signal(false);
+
+    Effect::new(move |_| {
+        if is_fullscreen.get() {
+            if let Some(parent) = canvas_ref.get().and_then(|c| c.parent_element()) {
+                let _ = parent
+                    .dyn_ref::<web_sys::HtmlElement>()
+                    .map(|el| el.focus());
+            }
+        }
+    });
+
     view! {
-        <canvas
-            node_ref=canvas_ref
-            style="height: 500px; width: 100%; background-color: black;"
-            class=canvas_class
-        />
-        <Button on_click= move|_| set_canvas_class.set(Some("fullscreen"))>
-            "Fullscreen"
-        </Button>
+        <div
+            class=move || if is_fullscreen.get() { "fixed inset-0 z-50 bg-black" } else { "relative" }
+            tabindex=0
+            on:keydown=move |e: web_sys::KeyboardEvent| {
+                if e.key() == "Escape" && is_fullscreen.get_untracked() {
+                    set_is_fullscreen.set(false);
+                }
+            }
+        >
+            <canvas
+                node_ref=canvas_ref
+                style=move || if is_fullscreen.get() { "height: 100%; width: 100%; background-color: black;" } else { "height: 500px; width: 100%; background-color: black;" }
+            />
+            {move || (!is_fullscreen.get()).then(|| view! {
+                <button
+                    class="absolute bottom-2 left-2 p-2 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors"
+                    title="Fullscreen"
+                    on:click=move |_| set_is_fullscreen.set(true)
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+                        <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                        <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                    </svg>
+                </button>
+            })}
+            {move || is_fullscreen.get().then(|| view! {
+                <button
+                    class="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors"
+                    title="Close"
+                    on:click=move |_| set_is_fullscreen.set(false)
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18"/>
+                        <path d="M6 6l12 12"/>
+                    </svg>
+                </button>
+            })}
+        </div>
     }
 }

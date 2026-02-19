@@ -1,5 +1,3 @@
-use egui::InnerResponse;
-
 use egui_pixels::{
     ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage, PixelArea,
     Tools,
@@ -125,7 +123,7 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Ok(Some(x)) = self.receiver.try_next() {
+        if let Ok(x) = self.receiver.try_recv() {
             x(self, ctx)
         }
         if let ImageState::Loaded(loaded) = &mut self.state.image_state {

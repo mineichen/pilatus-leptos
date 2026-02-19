@@ -5,6 +5,8 @@ use leptos::prelude::*;
 use pilatus::device::DeviceId;
 use thaw::Button;
 
+use crate::image_viewer::app::ChangeListener;
+
 use super::{ImageProvider, app::EframeImageViewer};
 
 #[component]
@@ -15,6 +17,7 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
     #[prop(optional)] mut tools: Option<Tools>,
     #[prop(optional)] primary: Option<Signal<String>>,
+    #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
 ) -> impl IntoView
 where
     T: ImageProvider,
@@ -53,8 +56,13 @@ where
             && viewer.read_untracked().is_none()
         {
             let tools = tools.take().unwrap_or_default();
+            let listener = tool_change_listener.take().unwrap_or_else(|| {
+                Box::new(|_masks| {
+                    leptos::logging::log!("Change tool stuff");
+                })
+            });
             leptos::reactive::spawn_local(async move {
-                match EframeImageViewer::create(canvas, tools).await {
+                match EframeImageViewer::create(canvas, tools, listener).await {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
                         set_viewer.set(Some(viewer));

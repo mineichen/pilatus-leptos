@@ -1,13 +1,16 @@
 use egui::InnerResponse;
 
 use egui_pixels::{
-    ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, PixelArea, Tools,
+    ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage, PixelArea,
+    Tools,
 };
 use futures::channel::{mpsc, oneshot};
 use imbuf::Image;
 use leptos::logging::debug_log;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
+pub(super) type ChangeListener = Box<dyn FnMut(&MaskImage)>;
+
 pub struct EframeImageViewer {
     #[cfg(target_arch = "wasm32")]
     _runner: eframe::WebRunner,
@@ -16,7 +19,12 @@ pub struct EframeImageViewer {
 }
 
 impl EframeImageViewer {
-    pub async fn create(canvas: web_sys::HtmlCanvasElement, tools: Tools) -> anyhow::Result<Self> {
+    #[allow(unused_variables)]
+    pub async fn create(
+        canvas: web_sys::HtmlCanvasElement,
+        tools: Tools,
+        change_listener: ChangeListener,
+    ) -> anyhow::Result<Self> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = canvas;
@@ -38,7 +46,7 @@ impl EframeImageViewer {
                             "App creation callback called - eframe instance created"
                         );
                         ctx_start.set(Some(cc.egui_ctx.clone()));
-                        Ok(Box::new(App::new(tools, receiver)))
+                        Ok(Box::new(App::new(tools, receiver, change_listener)))
                     }),
                 )
                 .await
@@ -98,13 +106,19 @@ impl EframeImageViewer {
 pub struct App {
     state: egui_pixels::State,
     receiver: mpsc::Receiver<ChangeItem>,
+    change_listener: ChangeListener,
 }
 
 impl App {
-    pub fn new(tools: Tools, receiver: mpsc::Receiver<ChangeItem>) -> Self {
+    pub fn new(
+        tools: Tools,
+        receiver: mpsc::Receiver<ChangeItem>,
+        change_listener: ChangeListener,
+    ) -> Self {
         Self {
             state: egui_pixels::State::new(tools),
             receiver,
+            change_listener,
         }
     }
 }
@@ -113,6 +127,12 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if let Ok(Some(x)) = self.receiver.try_next() {
             x(self, ctx)
+        }
+        if let ImageState::Loaded(loaded) = &mut self.state.image_state {
+            if loaded.masks.is_dirty() {
+                (self.change_listener)(&loaded.masks);
+                loaded.masks.mark_not_dirty();
+            }
         }
         egui::CentralPanel::default()
             .frame(egui::Frame::new()) // Removes padding

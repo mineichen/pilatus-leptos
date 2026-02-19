@@ -73,11 +73,10 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                         .collect_view()
                 }}
             </div>
-            <div class="flex gap-2 items-center">
+            <div class="flex gap-2 items-center bg-slate-800 ">
                 <Input
                     value=thaw_utils::Model::from(new_tag_input)
-                    placeholder="New tag..."
-                    attr:class="max-w-[150px]"
+                    placeholder="Enter new tag"
                 />
                 <Button
                     appearance=ButtonAppearance::Secondary

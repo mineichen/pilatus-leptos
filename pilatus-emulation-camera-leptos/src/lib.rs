@@ -6,7 +6,7 @@ use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
 use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
-use thaw::{Button, ButtonAppearance, Input};
+use thaw::{Button, ButtonAppearance, Field, Input};
 
 #[component]
 pub fn EmulationCameraView() -> impl IntoView {
@@ -291,15 +291,13 @@ pub fn EmulationCameraView() -> impl IntoView {
 
             {move || show_new_collection_dialog.get().then(|| view! {
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div class="rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl" style="background: var(--colorNeutralBackground1);">
-                        <h3 class="text-lg font-semibold mt-0 mb-2">"Create New Collection"</h3>
-                        <p class="text-slate-400 text-sm mb-4">"Enter a name for the new collection:"</p>
+                    <div class="bg-slate-800 rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl">
+                        <h3 class="text-lg font-semibold text-white mt-0 mb-4">"Create New Collection"</h3>
                         <Input
                             value=thaw_utils::Model::from(new_collection_name)
-                            placeholder="Collection name"
-                            attr:class="w-full mb-4"
+                            placeholder="Enter collection name"
                         />
-                        <div class="flex gap-2 justify-end">
+                        <div class="flex gap-2 justify-end mt-4">
                             <Button
                                 appearance=ButtonAppearance::Subtle
                                 on:click=move |_| cancel_new_collection()

@@ -102,20 +102,26 @@ pub fn VariableInput<
         {move || {
             show_var_dialog.get().then(move|| {
                 view! {
-                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                        <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px;">
-                            <h3>"Create Variable Reference"</h3>
+                    <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                        <div class="rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl" style="background: var(--colorNeutralBackground1);">
+                            <h3 class="text-lg font-semibold text-white mt-0 mb-4">"Create Variable Reference"</h3>
                             <Field label="Variable Name">
                                 <Input
                                     value=new_var_name
                                     placeholder="Enter variable name"
                                 />
                             </Field>
-                            <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-                                <Button on:click=move |_| set_show_var_dialog.set(false)>
+                            <div class="flex gap-2 justify-end mt-4">
+                                <Button
+                                    appearance=thaw::ButtonAppearance::Subtle
+                                    on:click=move |_| set_show_var_dialog.set(false)
+                                >
                                     "Cancel"
                                 </Button>
-                                <Button on:click=convert_to_var>
+                                <Button
+                                    appearance=thaw::ButtonAppearance::Primary
+                                    on:click=convert_to_var
+                                >
                                     "Create Variable"
                                 </Button>
                             </div>

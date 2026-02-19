@@ -129,12 +129,12 @@ where
     let (is_fullscreen, set_is_fullscreen) = signal(false);
 
     Effect::new(move |_| {
-        if is_fullscreen.get() {
-            if let Some(parent) = canvas_ref.get().and_then(|c| c.parent_element()) {
-                let _ = parent
-                    .dyn_ref::<web_sys::HtmlElement>()
-                    .map(|el| el.focus());
-            }
+        if is_fullscreen.get()
+            && let Some(parent) = canvas_ref
+                .get()
+                .and_then(|c| c.parent_element()?.dyn_into::<web_sys::HtmlElement>().ok())
+        {
+            parent.focus();
         }
     });
 

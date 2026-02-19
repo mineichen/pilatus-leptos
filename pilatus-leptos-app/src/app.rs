@@ -1,11 +1,11 @@
 use leptos::children::ToChildren;
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, Title};
-use leptos_router::{
-    components::{ParentRoute, Route, Router, Routes, A},
-    StaticSegment,
-};
+use leptos_meta::{Title, provide_meta_context};
 use leptos_router::{MatchNestedRoutes, NestedRoute};
+use leptos_router::{
+    StaticSegment,
+    components::{A, ParentRoute, Route, Router, Routes},
+};
 use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{ConfigProvider, Theme};
 

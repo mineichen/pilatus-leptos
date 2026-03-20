@@ -17,10 +17,18 @@
             stable.toolchain
             targets.wasm32-unknown-unknown.stable.rust-std
           ];
-          env = {
-            LD_LIBRARY_PATH = "${pkgs.openssl.out}/lib:${pkgs.aravis.lib}/lib:${pkgs.glib.out}/lib";
-            PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.glib.dev}/lib/pkgconfig";
-            CC = "${pkgs.clang}/bin/clang";
+          envVars = {
+            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+              pkgs.openssl
+              pkgs.aravis
+              pkgs.glib
+              pkgs.clang
+            ];
+            PKG_CONFIG_PATH = pkgs.lib.makeSearchPath "lib/pkgconfig" [
+              pkgs.openssl.dev
+              pkgs.glib.dev
+              pkgs.aravis.dev
+            ];
             SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
           };
           packages = [
@@ -41,20 +49,18 @@
             rustc --version && cargo --version && trunk --version && tailwindcss --version
           '';
           policy = pkgs.writeText "policy.json" ''{"default":[{"type":"insecureAcceptAnything"}]}'';
-          envSetup = pkgs.lib.concatStringsSep "\n"
-            (pkgs.lib.mapAttrsToList (k: v: "export ${k}=${v}") env);
+          containername = "pilatus-leptos-isolated-dev";
         in
         {
-          devShells.default = pkgs.mkShell {
+          devShells.default = pkgs.mkShell({
             buildInputs = packages;
-            inherit (env) LD_LIBRARY_PATH PKG_CONFIG_PATH;
             shellHook = greet;
-          };
+          } // envVars);
           packages.isolated = pkgs.dockerTools.buildImage {
-            name = "isolated-dev";
+            name = containername;
             tag = "latest";
             copyToRoot = pkgs.buildEnv {
-              name = "isolated-env";
+              name = containername;
               paths = packages ++ [
                 pkgs.bashInteractive
                 pkgs.ripgrep
@@ -63,7 +69,6 @@
                 pkgs.coreutils
                 (pkgs.writeScriptBin "entrypoint.sh" ''
                   #!${pkgs.bashInteractive}/bin/bash
-                  ${envSetup}
                   ${greet}
                   exec ${pkgs.bashInteractive}/bin/bash
                 '')
@@ -71,15 +76,15 @@
               pathsToLink = [ "/bin" "/lib" "/include" "/share" ];
             };
             config = {
-              Env = pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") env ++ [ "HOME=/root" ];
+              Env = pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") envVars ++ [ "HOME=/root" ];
               Cmd = [ "/bin/entrypoint.sh" ];
               WorkingDir = "/workspace";
             };
           };
           apps.isolated = {
             type = "app";
-            program = toString (pkgs.writeShellScript "run-isolated" ''
-
+            program = toString (pkgs.writeShellScript containername ''
+              ${pkgs.podman}/bin/podman rmi ${containername} || true
               ${pkgs.podman}/bin/podman load \
                 --signature-policy ${policy} \
                 --input ${inputs.self.packages.${system}.isolated}
@@ -88,7 +93,7 @@
                 --tmpfs /tmp \
                 -v "..:/workspace:z" \
                 -e HOME=/root \
-                isolated-dev:latest /bin/entrypoint.sh
+                ${containername}:latest /bin/entrypoint.sh
             '');
           };
         };

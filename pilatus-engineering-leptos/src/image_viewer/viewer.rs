@@ -1,5 +1,7 @@
-use egui_pixels::Tools;
-use futures::StreamExt;
+use std::rc::Rc;
+
+use futures::{FutureExt, StreamExt};
+use imanot::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
@@ -22,6 +24,8 @@ pub fn ImageViewerComponent<T>(
 where
     T: ImageProvider,
 {
+    let provider_error = provider.error();
+    let provider = Rc::new(provider);
     let canvas_ref = NodeRef::<Canvas>::new();
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
@@ -58,6 +62,7 @@ where
             let listener = tool_change_listener.take().unwrap_or_else(|| {
                 Box::new(|_masks| {
                     leptos::logging::log!("Change tool stuff");
+                    std::future::ready(Ok(())).boxed()
                 })
             });
             leptos::reactive::spawn_local(async move {
@@ -81,49 +86,55 @@ where
         });
     }
     // Start the image stream processing when URL changes
-    let _image_acquisition = LocalResource::new(move || async move {
-        let ws_url = url.get();
-        let ws_url = match ws_url {
-            Some(x) => x,
-            None => match &*available.read() {
-                Some(Ok(x)) if !x.is_empty() => x[0].clone(),
-                _ => return,
-            },
-        };
-
-        let mut stream = T::image_stream(ws_url);
-
-        #[cfg(target_arch = "wasm32")]
-        let mut last = js_sys::Date::now();
-
-        while let Some(result) = stream.next().await {
-            let (image, masks) = match result {
-                Ok(image) => image,
-                Err(e) => {
-                    leptos::logging::error!("Error receiving image: {}", e);
-                    break;
-                }
+    let _image_acquisition = LocalResource::new(move || {
+        let provider = provider.clone();
+        async move {
+            let ws_url = url.get();
+            let ws_url = match ws_url {
+                Some(x) => x,
+                None => match &*available.read() {
+                    Some(Ok(x)) if !x.is_empty() => x[0].clone(),
+                    _ => return,
+                },
             };
 
-            let Some(guard) = viewer.try_read() else {
-                break;
-            };
-            let Some(viewer_ref) = guard.as_ref() else {
-                leptos::logging::debug_log!("Viewer is not ready to display images");
-                continue;
-            };
+            let mut stream = provider.image_stream(ws_url);
 
             #[cfg(target_arch = "wasm32")]
-            {
-                let now = js_sys::Date::now();
-                leptos::logging::log!("Forward image to viewer {image:?} at {:?}ms", now - last);
-                last = now;
+            let mut last = js_sys::Date::now();
+
+            while let Some(result) = stream.next().await {
+                let (image, masks) = match result {
+                    Ok(image) => image,
+                    Err(e) => {
+                        leptos::logging::error!("Error receiving image: {}", e);
+                        break;
+                    }
+                };
+
+                let Some(guard) = viewer.try_read() else {
+                    break;
+                };
+                let Some(viewer_ref) = guard.as_ref() else {
+                    leptos::logging::debug_log!("Viewer is not ready to display images");
+                    continue;
+                };
+
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let now = js_sys::Date::now();
+                    leptos::logging::log!(
+                        "Forward image to viewer {image:?} at {:?}ms",
+                        now - last
+                    );
+                    last = now;
+                }
+
+                viewer_ref.replace_image(image, masks).await;
             }
 
-            viewer_ref.replace_image(image, masks).await;
+            leptos::logging::log!("Image stream closed");
         }
-
-        leptos::logging::log!("Image stream closed");
     });
 
     let (is_fullscreen, set_is_fullscreen) = signal(false);
@@ -134,7 +145,10 @@ where
                 .get()
                 .and_then(|c| c.parent_element()?.dyn_into::<web_sys::HtmlElement>().ok())
         {
-            parent.focus();
+            parent
+                .focus()
+                .inspect_err(|_| leptos::logging::error!("Cannot set focus"))
+                .ok();
         }
     });
 
@@ -148,6 +162,9 @@ where
                 }
             }
         >
+            {move || provider_error.read().as_ref().err().map(|e| {
+                format!("Error: {e}")
+            })}
             <canvas
                 node_ref=canvas_ref
                 style=move || if is_fullscreen.get() { "height: 100%; width: 100%; background-color: black;" } else { "height: 500px; width: 100%; background-color: black;" }

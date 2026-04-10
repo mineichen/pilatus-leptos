@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use leptos::prelude::*;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
-use pilatus_leptos::{DeviceContext, JsonDeviceView};
+use pilatus_leptos::{DeviceContext, JsonDeviceView, ws_url_base};
 
 #[component]
 pub fn AravisView() -> impl IntoView {
@@ -23,7 +23,8 @@ pub fn AravisView() -> impl IntoView {
 
     let image_url = Signal::derive(move || {
         Some(format!(
-            "ws://localhost:4123/api/image/subscribe?format=Raw&device_id={}",
+            "{}/api/image/subscribe?format=Raw&device_id={}",
+            ws_url_base(),
             device_id.read().deref()
         ))
     });
@@ -31,7 +32,7 @@ pub fn AravisView() -> impl IntoView {
         <div>
             <h1>"Pilatus Engineering with canvas"</h1>
             <div>
-                <ImageViewerComponent url=image_url provider=WebSocketImageProvider/>
+                <ImageViewerComponent url=image_url provider=WebSocketImageProvider::default() />
                 <div>
                     <h3>"Camera"</h3>
                     <table style="width: 100%;">

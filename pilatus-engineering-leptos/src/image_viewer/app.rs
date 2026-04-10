@@ -1,13 +1,18 @@
-use egui_pixels::{
-    ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage, PixelArea,
-    Tools,
+use chrono::DateTime;
+use futures::{
+    channel::{mpsc, oneshot},
+    future::LocalBoxFuture,
 };
-use futures::channel::{mpsc, oneshot};
+use imanot::{
+    AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage,
+    PixelArea, Tools,
+};
 use imbuf::Image;
-use leptos::logging::debug_log;
+use leptos::logging::{debug_log, warn};
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
-pub(super) type ChangeListener = Box<dyn FnMut(&MaskImage)>;
+pub(super) type ChangeListener =
+    Box<dyn FnMut(&MaskImage) -> LocalBoxFuture<'static, anyhow::Result<()>>>;
 
 pub struct EframeImageViewer {
     #[cfg(target_arch = "wasm32")]
@@ -65,14 +70,14 @@ impl EframeImageViewer {
             .try_send(Box::new(move |app, _ctx| {
                 let mut primary = app.state.tools.primary();
                 let (Some(idx), ImageState::Loaded(loaded)) = (
-                    primary.tool_names().position(|x| x == &name),
+                    primary.tool_names().position(|x| x == name),
                     &app.state.image_state,
                 ) else {
                     return;
                 };
                 primary.set_idx(idx, &loaded.image);
             }));
-        if !enqueue.is_ok() {
+        if enqueue.is_err() {
             leptos::logging::error!("Unable to queue set_primary");
         }
     }
@@ -82,7 +87,7 @@ impl EframeImageViewer {
             app.state.image_state.set_image_data(ImageData {
                 id: ImageId::from("foo"),
                 image: ImageLoadOk {
-                    original: egui_pixels::OriginalImage::Rgb8(adjust.clone()),
+                    original: imanot::OriginalImage::Rgb8(adjust.clone()),
                     adjust,
                 },
                 masks,
@@ -102,21 +107,24 @@ impl EframeImageViewer {
 }
 
 pub struct App {
-    state: egui_pixels::State,
+    state: imanot::State,
     receiver: mpsc::Receiver<ChangeItem>,
     change_listener: ChangeListener,
+    change_listener_task: Option<(imanot::AsyncTask<anyhow::Result<()>>, i64)>,
 }
 
 impl App {
+    #[cfg(target_arch = "wasm32")]
     pub fn new(
         tools: Tools,
         receiver: mpsc::Receiver<ChangeItem>,
         change_listener: ChangeListener,
     ) -> Self {
         Self {
-            state: egui_pixels::State::new(tools),
+            state: imanot::State::new(tools),
             receiver,
             change_listener,
+            change_listener_task: None,
         }
     }
 }
@@ -128,8 +136,33 @@ impl eframe::App for App {
         }
         if let ImageState::Loaded(loaded) = &mut self.state.image_state {
             if loaded.masks.is_dirty() {
-                (self.change_listener)(&loaded.masks);
                 loaded.masks.mark_not_dirty();
+                let time = chrono::Utc::now()
+                    .signed_duration_since(DateTime::UNIX_EPOCH)
+                    .num_seconds();
+
+                web_sys::console::log_1(
+                    &format!("Dirty {}", self.change_listener_task.is_some()).into(),
+                );
+                if let Some((_task, start_time)) = &mut self.change_listener_task {
+                    warn!(
+                        "Still waiting for previous toolchain-change-future to finish (since {}s)... Change is ignored",
+                        time - *start_time
+                    );
+                } else {
+                    self.change_listener_task =
+                        Some((AsyncTask::new((self.change_listener)(&loaded.masks)), time));
+                }
+            }
+            if let Some((task, _)) = &mut self.change_listener_task {
+                if let Some(x) = task.data() {
+                    self.change_listener_task = None;
+                    if let Err(e) = x {
+                        leptos::logging::error!("Error in change_listner: {e}");
+                    }
+                } else {
+                    ctx.request_repaint_after_secs(0.5);
+                }
             }
         }
         egui::CentralPanel::default()

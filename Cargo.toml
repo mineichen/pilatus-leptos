@@ -26,9 +26,8 @@ edition = "2024"
 [workspace.dependencies]
 anyhow = "1"
 axum = "0.8"
+chrono = "0.4"
 egui = "0.33"
-egui-pixels = { git = "https://github.com/mineichen/egui-pixels" }
-#egui-pixels = { path = "../egui-pixels/egui-pixels" }
 eframe = "0.33"
 futures = "0.3"
 gloo-events = "0.2"
@@ -36,7 +35,9 @@ gloo-net = "0.6"
 gloo-timers = "0.3"
 gloo-utils = "0.2"
 image = { version = "0.25", default-features = false }
-imbuf = { git = "https://github.com/mineichen/imbuf.git" }
+imbuf = "0.3"
+imanot = { git = "https://github.com/mineichen/imanot.git" }
+imask = { git = "https://github.com/mineichen/imask.git" }
 impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"
@@ -53,6 +54,7 @@ pilatus-leptos = { path = "pilatus-leptos" }
 pilatus-examples-leptos = { path = "pilatus-examples-leptos"}
 pilatus-emulation-camera = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-emulation-camera-rt = { git = "https://github.com/mineichen/pilatus.git" }
+pilatus-engineering = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-engineering-rt = { git = "https://github.com/mineichen/pilatus.git" }
 pilatus-tick = { git = "https://github.com/mineichen/pilatus.git" }
 reactive_graph = "0.2"
@@ -69,7 +71,7 @@ web-sys = "0.3"
 [profile.dev.package.pilatus-engineering-leptos]
 opt-level = 2
 
-[profile.dev.package.egui-pixels]
+[profile.dev.package.imanot]
 opt-level = 2
 
 # [patch."https://github.com/mineichen/pilatus.git"]
@@ -83,6 +85,15 @@ opt-level = 2
 # pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
 # pilatus-tick = { path = "../pilatus/examples/tick" }
 
-#[patch."https://github.com/mineichen/pilatus-aravis.git"]
-#pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
-#pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
+# [patch."https://github.com/mineichen/pilatus-aravis.git"]
+# pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
+# pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
+
+# [patch."https://github.com/mineichen/imask.git"]
+# imask.path = "../imask"
+
+# [patch."https://github.com/mineichen/imanot.git"]
+# imanot.path = "../imanot/imanot"
+
+# [patch.crates-io]
+# imbuf.path = "../imbuf"

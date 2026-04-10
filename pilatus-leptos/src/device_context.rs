@@ -6,7 +6,7 @@ use leptos_router::hooks::use_params_map;
 use pilatus::device::DeviceId;
 
 use leptos_router::components::Outlet;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Clone)]
 pub struct DeviceContext {
@@ -57,7 +57,7 @@ pub fn DeviceView() -> impl IntoView {
     view! {
         { move|| {
 
-            if let Some(infos) = delayed_infos.get().take() {
+            if let Some(infos) = delayed_infos.get() {
                 leptos::logging::log!("DeviceInfos changed {infos:?}");
                 let name = infos.name.to_string();
                 provide_context(DeviceContext { infos });

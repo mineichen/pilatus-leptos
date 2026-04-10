@@ -5,8 +5,8 @@ use leptos::prelude::*;
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
-use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings};
-use thaw::{Button, ButtonAppearance, Field, Input};
+use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings, ws_url_base};
+use thaw::{Button, ButtonAppearance, Input};
 
 #[component]
 pub fn EmulationCameraView() -> impl IntoView {
@@ -124,7 +124,8 @@ pub fn EmulationCameraView() -> impl IntoView {
 
     let image_url = Signal::derive(move || {
         Some(format!(
-            "ws://localhost:4123/api/image/subscribe?format=Raw&device_id={}",
+            "{}/api/image/subscribe?format=Raw&device_id={}",
+            ws_url_base(),
             device_id
         ))
     });
@@ -138,7 +139,7 @@ pub fn EmulationCameraView() -> impl IntoView {
 
             <div class="flex gap-6">
                 <div class="flex-1 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                    <ImageViewerComponent url=image_url provider=WebSocketImageProvider/>
+                    <ImageViewerComponent url=image_url provider=WebSocketImageProvider::default()/>
                 </div>
 
                 <div class="w-72 flex flex-col">

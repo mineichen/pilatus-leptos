@@ -1,11 +1,11 @@
 use leptos::children::ToChildren;
 use leptos::prelude::*;
-use leptos_meta::{Title, provide_meta_context};
-use leptos_router::{MatchNestedRoutes, NestedRoute};
+use leptos_meta::{provide_meta_context, Title};
 use leptos_router::{
+    components::{ParentRoute, Route, Router, Routes, A},
     StaticSegment,
-    components::{A, ParentRoute, Route, Router, Routes},
 };
+use leptos_router::{MatchNestedRoutes, NestedRoute};
 use pilatus_leptos::{DeviceView, JsonDeviceView, ProvideDeviceContext};
 use thaw::{ConfigProvider, Theme};
 
@@ -23,11 +23,12 @@ where
         <ConfigProvider theme=RwSignal::new(Theme::dark())>
             <ProvideDeviceContext>
                 <Router>
-                <div class="flex h-full bg-slate-900 text-slate-100">
+                <div class="flex h-screen bg-slate-900 text-slate-100">
                     <aside class="w-64 bg-slate-950 border-r border-slate-700 flex flex-col shrink-0 py-4">
                         <div class="px-6 mb-4">
                             <h1 class="text-xl font-bold text-white">"Pilatus"</h1>
                             <p class="text-xs text-slate-500 mt-1">"Industrial Control"</p>
+                            <img src="/api/logo" alt="Logo" class="mt-2" />
                         </div>
                         <Nav />
                         <div class="px-3 mt-auto pt-4 border-t border-slate-700 mx-3">

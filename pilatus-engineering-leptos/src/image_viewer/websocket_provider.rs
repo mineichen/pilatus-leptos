@@ -1,21 +1,39 @@
+use std::pin::Pin;
+
 use futures::{Stream, StreamExt, TryStreamExt};
 use gloo_net::websocket::Message;
+use leptos::prelude::{ReadSignal, RwSignal, Set, SignalSetter};
 use pilatus::device::DeviceId;
-use std::pin::Pin;
+use pilatus_engineering::image::StreamImageError;
+use pilatus_leptos::ws_url_base;
 
 use crate::{decode::parse, image_viewer::provider::ImageProviderStreamItem};
 
 use super::provider::ImageProvider;
 
 #[derive(Clone)]
-pub struct WebSocketImageProvider;
+#[non_exhaustive]
+pub struct WebSocketImageProvider {
+    pub error: RwSignal<Result<(), String>>,
+}
+
+impl Default for WebSocketImageProvider {
+    fn default() -> Self {
+        Self {
+            error: RwSignal::new(Ok(())),
+        }
+    }
+}
 
 impl ImageProvider for WebSocketImageProvider {
-    fn image_stream(url: String) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
+    fn image_stream(
+        &self,
+        url: String,
+    ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         let state = crate::ws_suspend::SuspensibleWebSocket::new(url).map_err(Some);
-
+        let error_signal = self.error.clone();
         Box::pin(
-            futures::stream::unfold(state, |ws_result| async move {
+            futures::stream::unfold(state, move |ws_result| async move {
                 let mut ws = match ws_result {
                     Ok(ws) => ws,
                     Err(e) => return e.map(|e| (Err(e), Err(None))),
@@ -23,7 +41,28 @@ impl ImageProvider for WebSocketImageProvider {
                 loop {
                     match ws.next().await {
                         Some(Ok(Message::Bytes(bytes))) => {
-                            return Some((parse(&bytes), Ok(ws)));
+                            return Some(match parse(&bytes) {
+                                Ok(Ok(mut i)) => {
+                                    let areas = super::super::decode::extract_from_extensions(
+                                        &mut i.extensions,
+                                        128,
+                                        [0, 0, 255],
+                                    );
+                                    error_signal.set(Ok(()));
+
+                                    (Ok(Some((i.image, areas))), Ok(ws))
+                                }
+                                #[expect(deprecated)]
+                                Ok(Err(StreamImageError::MissedItems(_))) => continue,
+                                Ok(Err(StreamImageError::ProcessingError { image, error })) => {
+                                    leptos::logging::log!("Processing Error");
+                                    error_signal.set(Err(error.to_string()));
+
+                                    (Ok(Some((image, Vec::new()))), Ok(ws))
+                                }
+                                Ok(Err(e)) => (Err(e.into()), Ok(ws)),
+                                Err(e) => (Err(e.into()), Ok(ws)),
+                            });
                         }
                         Some(Ok(_other)) => {
                             // Ignore unexpected message types, continue loop
@@ -47,7 +86,7 @@ impl ImageProvider for WebSocketImageProvider {
                 }
             })
             // Remove MissingFrames error
-            .try_filter_map(|x| async move { Ok(x.map(|image| (image, Vec::new()))) }),
+            .try_filter_map(|x| std::future::ready(Ok(x))),
         )
     }
 
@@ -68,8 +107,14 @@ impl ImageProvider for WebSocketImageProvider {
             available.collect()
         })
     }
+    fn error(&self) -> ReadSignal<Result<(), String>> {
+        self.error.read_only()
+    }
 }
 
 fn build_device_url(device_id: DeviceId) -> String {
-    format!("ws://localhost:4122/api/image/subscribe?format=Raw&device_id={device_id}")
+    format!(
+        "{}/api/image/subscribe?format=Raw&device_id={device_id}",
+        ws_url_base()
+    )
 }

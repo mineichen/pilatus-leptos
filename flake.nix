@@ -31,7 +31,7 @@
             ];
             SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
           };
-          packages = [
+          commonBuildInputs = [
             rust
             pkgs.clang
             pkgs.pkg-config
@@ -59,7 +59,7 @@
         in
         {
           devShells.default = pkgs.mkShell({
-            buildInputs = packages;
+            buildInputs = commonBuildInputs;
             shellHook = greet;
           } // envVars);
           packages.isolated-build = pkgs.dockerTools.buildImage {
@@ -67,7 +67,7 @@
             tag = "latest";
             copyToRoot = pkgs.buildEnv {
               name = containername;
-              paths = packages ++ [
+              paths = commonBuildInputs ++ [
                 pkgs.bashInteractive
                 pkgs.ripgrep
                 pkgs.git
@@ -101,12 +101,12 @@
             type = "app";
             program = toString (pkgs.writeShellScript "run-isolated" ''
               set -euo pipefail
-              if ! ${pkgs.podman}/bin/podman image exists ${containername}:latest 2>/dev/null; then
-                echo "Image ${containername}:latest not found."
-                echo "Please build and load it first with:"
-                echo "  nix run .#isolated-build"
-                exit 1
-              fi
+              #if ! ${pkgs.podman}/bin/podman image exists ${containername}:latest 2>/dev/null; then
+              #  echo "Image ${containername}:latest not found."
+              #  echo "Please build and load it first with:"
+              #  echo "  nix run .#isolated-build"
+              #  exit 1
+              #fi
               ${podmanRun}
             '');
           };

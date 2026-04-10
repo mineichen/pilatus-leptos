@@ -5,17 +5,21 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+chrono.workspace = true
 eframe.workspace = true
 egui.workspace = true
-egui-pixels.workspace = true
 futures.workspace = true
 gloo-events.workspace = true
 gloo-net.workspace = true
 gloo-timers.workspace = true
+imanot.workspace = true
+imask.workspace = true
 imbuf.workspace = true
 js-sys.workspace = true
 leptos.workspace = true
 pilatus.workspace = true
+pilatus-engineering.workspace = true
+pilatus-leptos.workspace = true
 pin-project-lite = "0.2"
 thiserror.workspace = true
 thaw.workspace = true

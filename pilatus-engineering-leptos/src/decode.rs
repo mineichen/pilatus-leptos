@@ -1,135 +1,94 @@
-use std::{
-    num::{NonZeroU8, NonZeroU16, NonZeroU32},
-    sync::Arc,
-};
+use std::ops::Range;
 
-use anyhow::{Context, anyhow};
-use leptos::logging::{debug_log, log};
+use anyhow::Context;
+use imanot::PixelArea;
+use imask::{SortedRanges, SortedRangesMap};
+use imbuf::{DynamicImageChannel, ImageChannel};
+use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, StreamImageError};
 
 /// Returns `Ok(None)` for MissingFrame error
-pub fn parse(input: &[u8]) -> anyhow::Result<Option<imbuf::Image<[u8; 3], 1>>> {
-    if input.len() < 8 {
-        return Err(anyhow!("Header is {} bytes long", input.len()));
-    }
-
-    const MISSING_FRAME_ERROR: u8 = 16;
-
-    match input[0] {
-        0 => {}
-        MISSING_FRAME_ERROR => return Ok(None),
-        x => {
-            return Err(anyhow!("Stream item with error: {}", x));
-        }
-    }
-    let meta_len = u32::from_le_bytes(array(&input[4..8]));
-
-    let meta_bytes = input.get(8..meta_len as usize + 8).ok_or_else(|| {
-        anyhow!(
-            "Metadata out of bounds. expected: {}, remaining-input: {}",
-            meta_len,
-            input.len(),
-        )
-    })?;
-    debug_log!("Meta: {:?}", String::from_utf8_lossy(meta_bytes));
-    let size_without_image_data: usize = 4 + 4 + meta_len as usize + 4;
-    //let metadata = dbg!(&input.get(ok_header_len..ok_header_len + 10));
-    if input.len() < size_without_image_data + 12 {
-        return Err(anyhow!("Before image is not long enouth: {}", input.len()));
-    }
-
-    let size = u32::from_le_bytes(array(
-        &input[size_without_image_data - 4..size_without_image_data],
-    ));
-
-    // align to 8byte
-    let image_buf_start = (size_without_image_data + 7) & !7;
-    let align_bytes = (image_buf_start - size_without_image_data) as u32;
-
-    // +0 is reserved
-    let (kind, pixel_size, channel_size, width, image_buf_len, height) =
-        read_raw(input, size, image_buf_start, align_bytes)?;
-
-    let pixels = &input[image_buf_start + 8..image_buf_start + 8 + image_buf_len as usize];
-
-    match (kind, pixel_size.get(), channel_size.get()) {
-        (0, 1, 1) => {
-            log!("Encode u8 {pixel_size:?}");
-
-            Ok(Some(imbuf::Image::<[u8; 3], 1>::new_arc(
-                pixels.iter().map(|&c| [c; 3]).collect(),
-                width,
-                height,
-            )))
-        }
-        (0, 3, 1) => {
-            let pixels: Arc<[[u8; 3]]> =
-                pixels.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
-            log!(
-                "Encode rgb8interleaved {}, {width}/{height}",
-                pixels.len() * 3
-            );
-
-            Ok(Some(imbuf::Image::<[u8; 3], 1>::new_arc(
-                pixels, width, height,
-            )))
-        }
-        (1, 1, 1) => {
-            // pixels //16bit
-            //     .chunks_exact(2)
-            //     .enumerate()
-            //     .map(|(pos, x)| InstanceData {
-            //         position: Vec3::new(
-            //             (pos as isize / width.get() as isize - height_offset) as f32 * SCALE,
-            //             u16::from_le_bytes(array(x)) as f32 * SCALE * 0.01,
-            //             (pos as isize % width.get() as isize - width_offset) as f32 * SCALE,
-            //         ),
-            //         scale: settings.scale,
-            //         color: [0.5, 0.5, 0.5, 0.5],
-            //     })
-            //     .collect();
-            log!("Encode u16");
-            Ok(None)
-        }
-        x => Err(anyhow::anyhow!("Unkonwn image format {x:?}")),
-    }
-}
-
-fn array<T: Copy, const N: usize>(slice: &[T]) -> [T; N] {
-    slice.try_into().expect("incorrect_length")
-}
-fn read_raw(
+/// Inefficient image buffer copy is tolerated, as imanot is expected to change to DynamicImage for it's original image soon
+pub fn parse(
     input: &[u8],
-    size: u32,
-    image_buf_start: usize,
-    align_bytes: u32,
-) -> anyhow::Result<(
-    u8,
-    NonZeroU8,
-    NonZeroU16,
-    std::num::NonZero<u32>,
-    u32,
-    std::num::NonZero<u32>,
-)> {
-    let pixel_size = NonZeroU8::new(input[image_buf_start]).ok_or_else(|| anyhow!("pixel_size must be > 0... The Backend seems to be newer than the frontend (this was previously reserved space)"))?;
-    let kind = input[image_buf_start + 1];
-    let channel_size = NonZeroU16::new(u16::from_le_bytes(array(
-        &input[image_buf_start + 2..image_buf_start + 4],
-    )))
-    .context("channel_size must be > 0")?;
-
-    let width: NonZeroU32 =
-        u32::from_le_bytes(array(&input[image_buf_start + 4..image_buf_start + 8]))
-            .try_into()
-            .context("width")?;
-    let image_buf_len = size - 8 - align_bytes;
-    let pixel_count = match kind {
-        0 => image_buf_len,
-        1 => image_buf_len / 2,
-        _ => return Err(anyhow!("Unknown kind {kind}")),
-    };
-    let height: NonZeroU32 = (pixel_count / width / pixel_size.get() as u32).try_into()?;
-    if pixel_count % width != 0 {
-        return Err(anyhow!("Expected remainer of 0 {pixel_count}h {width}w"));
+) -> anyhow::Result<
+    Result<ImageWithMeta<imbuf::Image<[u8; 3], 1>>, StreamImageError<imbuf::Image<[u8; 3], 1>>>,
+> {
+    let time_before = chrono::Utc::now().timestamp_millis();
+    leptos::logging::log!("before pilatus-engineering::decode {time_before}");
+    let decoded = pilatus_engineering::image::decode(input)?;
+    leptos::logging::log!(
+        "pilatus-engineering::decode took {:?}ms",
+        chrono::Utc::now().timestamp_millis() - time_before
+    );
+    match decoded {
+        Ok(img) => {
+            let meta = img.meta;
+            let ext = img.extensions;
+            let image = extract_rgb(img.image)?;
+            let mut image_with_meta = ImageWithMeta::with_meta(image, meta);
+            image_with_meta.extensions = ext;
+            Ok(Ok(image_with_meta))
+        }
+        #[expect(deprecated)]
+        Err(StreamImageError::MissedItems(x)) => Ok(Err(StreamImageError::MissedItems(x))),
+        Err(StreamImageError::ProcessingError { image, error }) => {
+            Ok(Err(StreamImageError::ProcessingError {
+                image: extract_rgb(image).context("Extract ProcessingError image")?,
+                error,
+            }))
+        }
+        Err(e) => Err(e.into()),
     }
-    Ok((kind, pixel_size, channel_size, width, image_buf_len, height))
+}
+
+fn extract_rgb(
+    img: imbuf::DynamicImage,
+) -> anyhow::Result<imbuf::ImageChannels<[ImageChannel<[u8; 3]>; 1]>> {
+    let first = img.first();
+    let image = match (first, first.pixel_elements().get(), img.len()) {
+        (DynamicImageChannel::U8(ch), 1, 1) => imbuf::Image::<[u8; 3], 1>::new_arc(
+            ch.buffer_flat().iter().map(|&c| [c; 3]).collect(),
+            ch.width(),
+            ch.height(),
+        ),
+        (DynamicImageChannel::U8(_), 3, 1) => {
+            imbuf::Image::<[u8; 3], 1>::try_from(img).expect("Checked dimensions in match")
+        }
+        // (DynamicImageChannel::U16(_), 1, 1) => {
+        // pixels //16bit
+        //     .chunks_exact(2)
+        //     .enumerate()
+        //     .map(|(pos, x)| InstanceData {
+        //         position: Vec3::new(
+        //             (pos as isize / width.get() as isize - height_offset) as f32 * SCALE,
+        //             u16::from_le_bytes(array(x)) as f32 * SCALE * 0.01,
+        //             (pos as isize % width.get() as isize - width_offset) as f32 * SCALE,
+        //         ),
+        //         scale: settings.scale,
+        //         color: [0.5, 0.5, 0.5, 0.5],
+        //     })
+        //     .collect();
+        //     log!("Encode u16");
+        //     Ok(None)
+        // }
+        x => return Err(anyhow::anyhow!("Unkonwn image format {x:?}")),
+    };
+    Ok(image)
+}
+pub fn extract_from_extensions(
+    extensions: &mut AnyMultiMap,
+    opacity: u8,
+    color: [u8; 3],
+) -> Vec<PixelArea> {
+    extensions
+        .iter::<SortedRanges<u64, u64>>()
+        .map(|x| {
+            let ranges = SortedRangesMap::try_from_ordered_iter(
+                x.iter::<Range<u32>>()
+                    .map(|x| (x, imanot::Meta::new(opacity))),
+            )
+            .expect("Always sorted and not empty");
+            PixelArea::from_ranges(ranges, color)
+        })
+        .collect()
 }

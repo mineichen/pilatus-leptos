@@ -5,7 +5,7 @@ use std::{
     task::{Context, Poll, Waker},
 };
 
-use futures::Stream;
+use futures_util::Stream;
 use gloo_events::EventListener;
 use gloo_net::websocket::{Message, futures::WebSocket};
 use gloo_timers::callback::Timeout;

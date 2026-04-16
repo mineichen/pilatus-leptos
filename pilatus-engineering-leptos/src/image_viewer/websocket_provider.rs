@@ -1,8 +1,8 @@
 use std::pin::Pin;
 
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures_util::{Stream, StreamExt, TryStreamExt, stream};
 use gloo_net::websocket::Message;
-use leptos::prelude::{ReadSignal, RwSignal, Set, SignalSetter};
+use leptos::prelude::{ReadSignal, RwSignal, Set};
 use pilatus::device::DeviceId;
 use pilatus_engineering::image::StreamImageError;
 use pilatus_leptos::ws_url_base;
@@ -33,7 +33,7 @@ impl ImageProvider for WebSocketImageProvider {
         let state = crate::ws_suspend::SuspensibleWebSocket::new(url).map_err(Some);
         let error_signal = self.error.clone();
         Box::pin(
-            futures::stream::unfold(state, move |ws_result| async move {
+            stream::unfold(state, move |ws_result| async move {
                 let mut ws = match ws_result {
                     Ok(ws) => ws,
                     Err(e) => return e.map(|e| (Err(e), Err(None))),

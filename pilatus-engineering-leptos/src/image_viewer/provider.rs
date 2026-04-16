@@ -1,4 +1,4 @@
-use futures::Stream;
+use futures_util::Stream;
 use imanot::PixelArea;
 use imbuf::Image;
 use leptos::prelude::ReadSignal;

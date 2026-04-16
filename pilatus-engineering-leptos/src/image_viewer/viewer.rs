@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use futures::{FutureExt, StreamExt};
+use futures_util::{FutureExt, StreamExt};
 use imanot::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::Deref, sync::Arc, time::Duration};
 
-use futures::StreamExt;
+use futures_util::StreamExt;
 use gloo_net::websocket::{Message, futures::WebSocket};
 use leptos::prelude::*;
 use pilatus::{

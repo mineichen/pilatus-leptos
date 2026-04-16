@@ -1,4 +1,4 @@
-use futures::Stream;
+use futures_util::{Stream, stream};
 use leptos::prelude::{ReadSignal, RwSignal};
 use std::pin::Pin;
 
@@ -25,7 +25,7 @@ impl ImageProvider for SingleImageProvider {
         &self,
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
-        Box::pin(futures::stream::once(async move {
+        Box::pin(stream::once(async move {
             leptos::logging::log!("Fetching image from: {}", url);
 
             let response = gloo_net::http::Request::get(&url)

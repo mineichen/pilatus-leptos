@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use anyhow::Context;
 use imanot::PixelArea;
-use imask::{SortedRanges, SortedRangesMap};
+use imask::{ImageDimension, ImaskSet, SortedRanges, SortedRangesMap};
 use imbuf::{DynamicImageChannel, ImageChannel};
 use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, StreamImageError};
 
@@ -83,9 +83,11 @@ pub fn extract_from_extensions(
     extensions
         .iter::<SortedRanges<u64, u64>>()
         .map(|x| {
+            let width = x.bounds().len_x();
+            let iter = x.iter_global_with::<Range<u32>>(width);
+            let roi = iter.bounds();
             let ranges = SortedRangesMap::try_from_ordered_iter(
-                x.iter::<Range<u32>>()
-                    .map(|x| (x, imanot::Meta::new(opacity))),
+                iter.map(|x| (x, imanot::Meta::new(opacity))).with_roi(roi),
             )
             .expect("Always sorted and not empty");
             PixelArea::from_ranges(ranges, color)

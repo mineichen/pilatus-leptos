@@ -4,10 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow = "1"
-futures-util = "0.3"
+anyhow.workspace = true
+futures-util.workspace = true
 gloo-net.workspace = true
-gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
+gloo-timers = { workspace = true, features = ["futures", "futures-core"] }
 leptos.workspace = true
 leptos_router.workspace = true
 leptos_forge_utils_leptos.workspace = true

@@ -1,8 +1,6 @@
 use chrono::DateTime;
-use futures::{
-    channel::{mpsc, oneshot},
-    future::LocalBoxFuture,
-};
+use futures_channel::{mpsc, oneshot};
+use futures_util::future::LocalBoxFuture;
 use imanot::{
     AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage,
     PixelArea, Tools,
@@ -17,7 +15,7 @@ pub(super) type ChangeListener =
 pub struct EframeImageViewer {
     #[cfg(target_arch = "wasm32")]
     _runner: eframe::WebRunner,
-    command_send: futures::channel::mpsc::Sender<ChangeItem>,
+    command_send: mpsc::Sender<ChangeItem>,
     ctx: egui::Context,
 }
 
@@ -35,7 +33,7 @@ impl EframeImageViewer {
         }
         #[cfg(target_arch = "wasm32")]
         {
-            let (sender, receiver) = futures::channel::mpsc::channel(1);
+            let (sender, receiver) = futures_channel::mpsc::channel(1);
             let web_options = eframe::WebOptions::default();
             let runner = eframe::WebRunner::new();
             let ctx = std::rc::Rc::new(std::cell::Cell::new(None));

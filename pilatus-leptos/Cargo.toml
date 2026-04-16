@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow = "1"
+anyhow.workspace = true
 gloo-net.workspace = true
-gloo-timers = { version = "0.3", features = ["futures", "futures-core"] }
+gloo-timers = { workspace = true, features = ["futures", "futures-core"] }
 impex.workspace = true
 leptos.workspace = true
 leptos_router.workspace = true
@@ -20,8 +20,8 @@ thaw.workspace = true
 thaw_utils.workspace = true
 thiserror.workspace = true
 uuid = "1"
-web-sys = { version = "0.3", features = ["Window", "Location"] }
-futures = "0.3"
+web-sys = { workspace = true, features = ["Window", "Location"] }
+futures-util.workspace = true
 
 [dev-dependencies]
 leptos_reactive = "0.6.15"

@@ -41,7 +41,7 @@ pub fn ManualTick() -> impl IntoView {
 
             <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
                 <h2 class="text-lg font-semibold text-white mb-4">"Counter Settings"</h2>
-                
+
                 <div class="flex items-center gap-4 mb-6">
                     <label class="text-slate-300 text-sm w-28">"Initial Count"</label>
                     <SpinButton<u32> value=initial_count step_page=1/>
@@ -56,7 +56,7 @@ pub fn ManualTick() -> impl IntoView {
                     >
                         "Increment"
                     </Button>
-                    
+
                     <div class="text-slate-400 text-sm">
                         {move || match increment.value().get() {
                             Some(Ok(count)) => view! {

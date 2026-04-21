@@ -6,8 +6,8 @@ use leptos::prelude::*;
 use pilatus_leptos::RecipeContext;
 use thaw::{Button, ButtonAppearance};
 
-use self::recipe_row::{RecipeRow, RecipeRowProps};
 use self::recipe_import::RecipeImport;
+use self::recipe_row::{RecipeRow, RecipeRowProps};
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {

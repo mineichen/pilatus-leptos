@@ -6,7 +6,7 @@ use leptos_router::hooks::use_params_map;
 use pilatus::device::DeviceId;
 
 use leptos_router::components::Outlet;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[derive(Clone)]
 pub struct DeviceContext {

@@ -50,7 +50,7 @@ pub fn Greeter() -> impl IntoView {
 
             <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
                 <h2 class="text-lg font-semibold text-white mb-4">"Settings"</h2>
-                
+
                 <div class="mb-6">
                     <label class="text-slate-300 text-sm block mb-2">"Language"</label>
                     <VariableInput
@@ -62,7 +62,7 @@ pub fn Greeter() -> impl IntoView {
 
             <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
                 <h2 class="text-lg font-semibold text-white mb-4">"Send Greeting"</h2>
-                
+
                 <div class="flex gap-3 mb-4">
                     <div class="flex-1">
                         <Input

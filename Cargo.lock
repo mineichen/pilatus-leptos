@@ -4770,6 +4770,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
+ "futures-channel",
+ "futures-util",
+ "gloo-net 0.7.0",
+ "js-sys",
  "leptos",
  "leptos_meta",
  "leptos_router",
@@ -4778,8 +4782,13 @@ dependencies = [
  "pilatus-emulation-camera-leptos",
  "pilatus-examples-leptos",
  "pilatus-leptos",
+ "serde",
+ "serde_json",
  "thaw",
  "thaw_utils",
+ "thiserror 2.0.18",
+ "wasm-streams",
+ "web-sys",
 ]
 
 [[package]]

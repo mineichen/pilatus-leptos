@@ -16,4 +16,8 @@ backend = "ws://localhost:4123/api/recipe/stream"
 ws = true
 
 [[proxy]]
+backend = "ws://localhost:4123/api/recipe/import"
+ws = true
+
+[[proxy]]
 backend = "ws://localhost:4123/api/image/subscribe"

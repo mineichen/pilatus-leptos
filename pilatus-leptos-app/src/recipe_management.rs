@@ -1,3 +1,4 @@
+mod recipe_import;
 mod recipe_row;
 mod recipe_tags;
 
@@ -6,6 +7,7 @@ use pilatus_leptos::RecipeContext;
 use thaw::{Button, ButtonAppearance};
 
 use self::recipe_row::{RecipeRow, RecipeRowProps};
+use self::recipe_import::RecipeImport;
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {
@@ -39,6 +41,7 @@ pub fn RecipeManagement() -> impl IntoView {
                 <div class="p-4 border-b border-slate-700 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-white">"Recipes"</h2>
                     <div class="flex gap-2">
+                        <RecipeImport />
                         <Button
                             appearance=ButtonAppearance::Primary
                             on:click=move |_| {

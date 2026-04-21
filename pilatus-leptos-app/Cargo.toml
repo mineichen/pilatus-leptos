@@ -6,22 +6,29 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+futures-channel.workspace = true
+futures-util.workspace = true
+gloo-net.workspace = true
+js-sys.workspace = true
 leptos = { workspace = true, features = ["csr"] }
 leptos_router.workspace = true
 console_error_panic_hook = "0.1"
 leptos_meta.workspace = true
 pilatus.workspace = true
-thaw.workspace = true
-thaw_utils.workspace = true
-pilatus-leptos.workspace = true
+pilatus-aravis-leptos = { path = "../pilatus-aravis-leptos", optional = true }
 pilatus-examples-leptos = { path = "../pilatus-examples-leptos", optional = true }
 pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos", optional = true }
-pilatus-aravis-leptos = { path = "../pilatus-aravis-leptos", optional = true }
+pilatus-leptos.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thaw.workspace = true
+thaw_utils.workspace = true
+thiserror.workspace = true
+wasm-streams.workspace = true
+web-sys = { workspace = true, features = ["FileReader", "FileList", "HtmlInputElement", "Window", "Location"] }
 
 [features]
 default = ["aravis", "emulation-camera"]
 aravis = ["pilatus-aravis-leptos"]
 emulation-camera = ["pilatus-emulation-camera-leptos"]
 examples = ["pilatus-examples-leptos"]
-
-

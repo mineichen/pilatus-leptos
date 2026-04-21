@@ -110,6 +110,15 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                             })
                         }}
                     </div>
+                    <div class="flex gap-2 items-center">
+                        <a
+                            href=move || format!("/api/recipe/{}/export", recipe.read().id)
+                            target="_blank"
+                            class="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded-md bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
+                        >
+                            "Export"
+                        </a>
+                    </div>
                 </div>
             </td>
         </tr>

@@ -71,20 +71,11 @@ pub fn EmulationCameraView() -> impl IntoView {
         });
 
     let delete_action = Action::new_local(move |collection_name: &Name| {
-        let collection_name = collection_name.clone();
-        async move {
-            let url = format!(
-                "/api/pilatus-emulation-camera/collection/{}?device_id={}",
-                collection_name, device_id
-            );
-
-            gloo_net::http::Request::delete(&url)
-                .send()
-                .await
-                .map_err(|e| format!("Delete failed: {:?}", e))?;
-
-            Ok::<(), String>(())
-        }
+        let url = format!(
+            "/api/pilatus-emulation-camera/collection/{}?device_id={}",
+            collection_name, device_id
+        );
+        fetch.delete(&url)
     });
 
     Effect::new(move |_| {

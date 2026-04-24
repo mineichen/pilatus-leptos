@@ -11,13 +11,13 @@ pub enum NotificationLevel {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct NotificationEntry {
+struct NotificationEntry {
     pub id: Uuid,
     pub message: String,
     pub level: NotificationLevel,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct NotificationContext {
     notifications: RwSignal<Vec<NotificationEntry>>,
 }
@@ -46,14 +46,6 @@ impl NotificationContext {
     pub fn error(&self, message: impl Into<String>, ttl: Duration) {
         self.push(NotificationLevel::Error, message, ttl);
     }
-}
-
-#[component]
-pub fn ProvideNotificationContext(children: Children) -> impl IntoView {
-    let notifications = RwSignal::new(Vec::<NotificationEntry>::new());
-    let ctx = NotificationContext { notifications };
-    provide_context(ctx);
-    children()
 }
 
 #[component]

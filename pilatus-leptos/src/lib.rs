@@ -1,4 +1,8 @@
+use leptos::prelude::*;
+use std::fmt::Display;
+
 mod device_context;
+mod fetch;
 mod impex_strategy;
 mod json_device;
 mod leaf_rw_signal;
@@ -7,9 +11,8 @@ mod notifications;
 mod recipe_context;
 mod variable_input;
 
-use std::fmt::Display;
-
 pub use device_context::*;
+pub use fetch::*;
 pub use impex_strategy::*;
 pub use json_device::*;
 pub use leaf_rw_signal::*;
@@ -36,4 +39,13 @@ pub fn ws_url_base() -> impl Display {
         .expect("Unable to get Location");
 
     UrlBase { host }
+}
+
+#[component]
+pub fn ProvidePilatusContext(children: Children) -> impl IntoView {
+    let notifications = NotificationContext::default();
+    let fetch = FetchApi::new(notifications.clone());
+    provide_context(fetch);
+    provide_context(notifications);
+    children()
 }

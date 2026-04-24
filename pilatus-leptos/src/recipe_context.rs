@@ -10,7 +10,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{MapRwSignal, NotificationContext, VariableChangeCtx};
+use crate::{FetchApi, MapRwSignal, VariableChangeCtx};
 
 pub mod list;
 
@@ -330,6 +330,7 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         }}
         {move || {
             recipes_resource.get().map(|recipes| {
+                let fetch: FetchApi = expect_context();
                 let device_context = RecipeContext::new(recipes, my_id);
                 let (ch_reader, ch_writer) = {
                     (
@@ -338,8 +339,6 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                     )
                 };
                 provide_context(device_context.clone());
-
-                let notification_ctx = expect_context::<NotificationContext>();
 
                 leptos::task::spawn_local(async move {
                     start_recipe_stream_listener(device_context, set_error_signal).await;
@@ -363,32 +362,11 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
                         } else {
                             leptos::logging::debug_log!("Sending update now ({device_id:?}): {:?}", change.params);
                             let url = format!("/api/recipe/{}/device/{device_id}/params?key={}", change.recipe_id, my_id);
-
-                            let result = async {
-
-                                let r = gloo_net::http::Request::put(&url)
-                                    .header("content-type", "application/json")
-                                    .body(
-                                        serde_json::json!( {
-                                            "parameters": change.params,
-                                            "variables": {}
-                                        })
-                                        .to_string(),
-                                    )?
-                                    .send()
-                                    .await?;
-                                if r.ok() {
-                                    Ok(())
-                                } else {
-                                    Err(anyhow::anyhow!("{:?}", r.text().await?))
-                                }
-                            }.await;
-
-                            if let Err(e) = result {
-                                let msg = format!("Failed to save params: {e}");
-                                leptos::logging::error!("{msg}");
-                                notification_ctx.error(msg, Duration::from_secs(2));
-                            }
+                            let body = &serde_json::json!( {
+                                "parameters": change.params,
+                                "variables": {}
+                            });
+                            fetch.put_json(&url, body).await.ok();
                         }
                     }
                     anyhow::Ok(())

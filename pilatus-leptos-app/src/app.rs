@@ -7,7 +7,7 @@ use leptos_router::{
     components::{A, ParentRoute, Route, Router, Routes},
 };
 use pilatus_leptos::{
-    DeviceView, JsonDeviceView, Notifications, ProvideDeviceContext, ProvideNotificationContext,
+    DeviceView, JsonDeviceView, Notifications, ProvideDeviceContext, ProvidePilatusContext,
 };
 use thaw::{ConfigProvider, Theme};
 
@@ -23,7 +23,7 @@ where
     view! {
         <Title text="Pilatus Control Panel"/>
         <ConfigProvider theme=RwSignal::new(Theme::dark())>
-            <ProvideNotificationContext>
+            <ProvidePilatusContext>
                 <ProvideDeviceContext>
                     <Router>
                     <div class="flex h-screen bg-slate-900 text-slate-100">
@@ -81,7 +81,7 @@ where
                 </Router>
                 </ProvideDeviceContext>
                 <Notifications />
-            </ProvideNotificationContext>
+            </ProvidePilatusContext>
         </ConfigProvider>
     }
 }

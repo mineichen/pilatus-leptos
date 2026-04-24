@@ -1,29 +1,26 @@
 use std::ops::Deref;
 
-use leptos::logging::debug_error;
 use leptos::prelude::*;
+use leptos::{either::Either, logging::debug_error};
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
-use pilatus_leptos::{DeviceContext, JsonDeviceView, PilatusWrapperSettings, ws_url_base};
+use pilatus_leptos::{
+    DeviceContext, FetchApi, JsonDeviceView, PilatusWrapperSettings, ws_url_base,
+};
 use thaw::{Button, ButtonAppearance, Input};
 
 #[component]
 pub fn EmulationCameraView() -> impl IntoView {
     leptos::logging::log!("Create EmulationCameraView");
     let device_ctx = expect_context::<DeviceContext>();
+    let fetch = expect_context::<FetchApi>();
     let device_id = device_ctx.infos.device_id;
 
     let collections = LocalResource::new(move || async move {
         leptos::logging::log!("ChangeDeviceId: {device_id}");
         let url = format!("/api/pilatus-emulation-camera/collection?device_id={device_id}");
-        gloo_net::http::Request::get(&url)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?
-            .json::<Vec<Name>>()
-            .await
-            .map_err(|e| e.to_string())
+        fetch.get::<Vec<Name>>(&url).await
     });
 
     let (show_new_collection_dialog, set_show_new_collection_dialog) = signal(false);
@@ -174,7 +171,10 @@ pub fn EmulationCameraView() -> impl IntoView {
                             {move || {
                                 collections.get().map(|result| {
                                     match result {
-                                        Ok(names) => view! {
+                                        Err(e) => Either::Left(view! {
+                                            <p class="text-red-400">"Error: " {e.to_string()}</p>
+                                        }),
+                                        Ok(names) => Either::Right(view! {
                                             <div class="space-y-2">
                                                 <For
                                                     each=move || names.clone()
@@ -273,10 +273,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                     <div class="text-slate-500 text-xs mt-1">"Drag & drop an image file here"</div>
                                                 </div>
                                             </div>
-                                        }.into_any(),
-                                        Err(e) => view! {
-                                            <p class="text-red-400">"Error: " {e.to_string()}</p>
-                                        }.into_any(),
+                                        }),
                                     }
                                 })
                             }}

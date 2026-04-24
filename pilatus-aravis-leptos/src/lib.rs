@@ -2,23 +2,17 @@ use std::ops::Deref;
 
 use leptos::prelude::*;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
-use pilatus_leptos::{DeviceContext, JsonDeviceView, ws_url_base};
+use pilatus_leptos::{DeviceContext, FetchApi, JsonDeviceView, ws_url_base};
 
 #[component]
 pub fn AravisView() -> impl IntoView {
     let device_ctx = expect_context::<DeviceContext>();
+    let fetch = expect_context::<FetchApi>();
     let device_id = Signal::derive(move || device_ctx.infos.device_id);
-
     let cameras = LocalResource::new(move || async move {
         let id = device_id.get();
         let url = format!("/api/pilatus-aravis/camera?device_id={id}");
-        gloo_net::http::Request::get(&url)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?
-            .json::<Vec<pilatus_aravis::DeviceInfo>>()
-            .await
-            .map_err(|e| e.to_string())
+        fetch.get::<Vec<pilatus_aravis::DeviceInfo>>(&url).await
     });
 
     let image_url = Signal::derive(move || {

@@ -1,5 +1,6 @@
 use futures_util::{Stream, stream};
 use leptos::prelude::{ReadSignal, RwSignal};
+use pilatus_leptos::FetchApi;
 use std::pin::Pin;
 
 use crate::{decode::parse, image_viewer::provider::ImageProviderStreamItem};
@@ -28,10 +29,8 @@ impl ImageProvider for SingleImageProvider {
         Box::pin(stream::once(async move {
             leptos::logging::log!("Fetching image from: {}", url);
 
-            let response = gloo_net::http::Request::get(&url)
-                .send()
-                .await
-                .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+            let fetch: FetchApi = leptos::prelude::expect_context();
+            let response = fetch.get_silent(&url).await?;
 
             let bytes = response
                 .binary()

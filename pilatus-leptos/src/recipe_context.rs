@@ -244,11 +244,11 @@ fn build_getter(device_id: Signal<DeviceId>) -> impl Fn(&Recipes) -> &Value {
 
 #[component]
 pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
+    let fetch: FetchApi = expect_context();
     let (error_signal, set_error_signal) = signal(None);
-    let recipes_resource =
-        LocalResource::new(
-            move || async move { load_recipes_until_success(set_error_signal).await },
-        );
+    let recipes_resource = LocalResource::new(move || async move {
+        load_recipes_until_success(fetch, set_error_signal).await
+    });
 
     let mut children = Some(children);
     let my_id = uuid::Uuid::new_v4();
@@ -462,13 +462,16 @@ async fn start_recipe_stream_listener(
             }
         }
 
-        ctx.set_root(load_recipes_until_success(set_error_signal).await);
+        ctx.set_root(load_recipes_until_success(ctx.fetch, set_error_signal).await);
     }
 }
 
-async fn load_recipes_until_success(error_signal: WriteSignal<Option<String>>) -> Recipes {
+async fn load_recipes_until_success(
+    fetch: FetchApi,
+    error_signal: WriteSignal<Option<String>>,
+) -> Recipes {
     loop {
-        match RecipeContext::load_recipes().await {
+        match RecipeContext::load_recipes(fetch).await {
             Ok(recipes) => {
                 error_signal.set(None);
                 return recipes;

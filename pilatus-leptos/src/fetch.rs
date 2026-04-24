@@ -2,7 +2,6 @@ use std::{sync::Arc, time::Duration};
 
 use futures_util::FutureExt;
 use gloo_net::http::Response;
-use leptos::prelude::RenderHtml;
 use serde::{Serialize, de::DeserializeOwned};
 use web_sys::wasm_bindgen::JsValue;
 
@@ -63,6 +62,24 @@ impl FetchApi {
         let request = gloo_net::http::Request::put(url).json(&payload);
         async move {
             let response = request?.send().await?;
+            Self::handle_http_error(response).await
+        }
+    }
+
+    pub fn put(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = FetchResult<Response>> + use<> {
+        self.put_silent(url).map(self.notify_callback())
+    }
+
+    pub fn put_silent(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = FetchResult<Response>> + use<> {
+        let request = gloo_net::http::Request::put(url);
+        async move {
+            let response = request.send().await?;
             Self::handle_http_error(response).await
         }
     }

@@ -1,5 +1,4 @@
-use crate::{DeviceInfos, RecipeContext};
-use anyhow::anyhow;
+use crate::{DeviceInfos, FetchApi, RecipeContext};
 use leptos::prelude::*;
 use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw, Recipes};
 
@@ -116,58 +115,26 @@ impl RecipeContext {
         }
         .seal()?;
 
-        let result = async {
-            gloo_net::http::Request::put(&url)
-                .header("content-type", "application/json")
-                .body(serde_json::to_string(&metadata)?)?
-                .send()
-                .await
-        }
-        .await;
+        self.fetch.put_json_silent(&url, &metadata).await?;
 
-        match result {
-            Ok(response) if response.ok() => {
-                // Update in place instead of replacing the entire root
-                root.update(|recipes| {
-                    if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
-                        leptos::logging::log!(
-                            "Updating tags in place: {:?} -> {:?}",
-                            recipe_mut.tags,
-                            tags
-                        );
-                        recipe_mut.tags = tags;
-                    }
-                });
-                Ok(())
+        root.update(|recipes| {
+            if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
+                leptos::logging::log!(
+                    "Updating tags in place: {:?} -> {:?}",
+                    recipe_mut.tags,
+                    tags
+                );
+                recipe_mut.tags = tags;
             }
-            Ok(response) => {
-                let error_msg = match response.text().await.as_deref() {
-                    Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                    Ok(body) => body.to_string(),
-                };
-                Err(anyhow::anyhow!("Failed to remove tag: {}", error_msg))
-            }
-            Err(e) => Err(anyhow::anyhow!("Failed to remove tag: {}", e)),
-        }
+        });
+        Ok(())
     }
 
     /// Delete a recipe
     /// This sends a DELETE request to the server and refreshes the recipe list
     pub async fn delete_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
         let url = format!("/api/recipe/{}", recipe_id);
-        let response = gloo_net::http::Request::delete(&url)
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to delete recipe: {}", e))?;
-
-        if !response.ok() {
-            let error_msg = match response.text().await.as_deref() {
-                Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                Ok(body) => body.to_string(),
-            };
-            return Err(anyhow::anyhow!("Failed to delete recipe: {}", error_msg));
-        }
-
+        self.fetch.delete(&url).await?;
         leptos::logging::log!("Recipe deleted successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -176,20 +143,7 @@ impl RecipeContext {
     /// This sends a PUT request to clone the recipe and refreshes the recipe list
     pub async fn duplicate_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
         let url = format!("/api/recipe/{}/clone", recipe_id);
-        let response = gloo_net::http::Request::put(&url)
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to clone recipe: {}", e))?;
-
-        if !response.ok() {
-            let error_msg = match response.text().await.as_deref() {
-                Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                Ok(body) => body.to_string(),
-            };
-            return Err(anyhow::anyhow!("Failed to clone recipe: {}", error_msg));
-        }
-
+        self.fetch.put(&url).await?;
         leptos::logging::log!("Recipe cloned successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -198,20 +152,7 @@ impl RecipeContext {
     /// This sends a PUT request to create a new default recipe and refreshes the recipe list
     pub async fn create_new_default_recipe(&self) -> Result<(), anyhow::Error> {
         let url = "/api/recipe/new_default";
-        let response = gloo_net::http::Request::put(url)
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to create recipe: {}", e))?;
-
-        if !response.ok() {
-            let error_msg = match response.text().await.as_deref() {
-                Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                Ok(body) => body.to_string(),
-            };
-            return Err(anyhow::anyhow!("Failed to create recipe: {}", error_msg));
-        }
-
+        self.fetch.put(url).await?;
         leptos::logging::log!("Recipe created successfully");
         Ok(())
     }
@@ -220,20 +161,7 @@ impl RecipeContext {
     /// This sends a PUT request to start the recipe and refreshes the recipe list
     pub async fn activate_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
         let url = format!("/api/recipe/start/{}", recipe_id);
-        let response = gloo_net::http::Request::put(&url)
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to activate recipe: {}", e))?;
-
-        if !response.ok() {
-            let error_msg = match response.text().await.as_deref() {
-                Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                Ok(body) => body.to_string(),
-            };
-            return Err(anyhow::anyhow!("Failed to activate recipe: {}", error_msg));
-        }
-
+        self.fetch.put(&url).await?;
         leptos::logging::log!("Recipe activated successfully: {:?}", recipe_id);
         Ok(())
     }
@@ -242,27 +170,13 @@ impl RecipeContext {
     /// This sends a PUT request to commit changes and refreshes the recipe list
     pub async fn commit_changes(&self) -> Result<(), anyhow::Error> {
         let url = "/api/recipe/commit";
-        let response = gloo_net::http::Request::put(url)
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to commit changes: {}", e))?;
-
-        if !response.ok() {
-            let error_msg = match response.text().await.as_deref() {
-                Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                Ok(body) => body.to_string(),
-            };
-            return Err(anyhow::anyhow!("Failed to commit changes: {}", error_msg));
-        }
-
-        // Refresh the recipe list from the server
+        self.fetch.put(url).await?;
         Ok(())
     }
 
     /// Refresh the recipe list from the server
     pub(crate) async fn refresh_recipes(&self) -> Result<(), anyhow::Error> {
-        let recipes = Self::load_recipes().await?;
+        let recipes = Self::load_recipes(self.fetch).await?;
 
         leptos::logging::debug_log!("Refresh recipes");
         self.set_root(recipes);
@@ -274,25 +188,9 @@ impl RecipeContext {
         self.valid_root.set(recipes);
     }
 
-    pub(super) async fn load_recipes() -> Result<Recipes, anyhow::Error> {
-        let response = gloo_net::http::Request::get("/api/recipe/get_all")
-            .header("content-type", "application/json")
-            .send()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to fetch recipes: {}", e))?;
-
-        if !response.ok() {
-            match response.text().await.as_deref() {
-                Ok("") | Err(_) => Err(anyhow!("HTTP {}", response.status())),
-                Ok(body) => Err(anyhow!("{body}")),
-            }
-        } else {
-            let active_state: pilatus::device::ActiveState = response
-                .json()
-                .await
-                .map_err(|e| anyhow::anyhow!("Failed to parse recipes: {}", e))?;
-
-            Ok(active_state.recipes)
-        }
+    pub(super) async fn load_recipes(fetch: FetchApi) -> Result<Recipes, anyhow::Error> {
+        let active_state: pilatus::device::ActiveState =
+            fetch.get_json_silent("/api/recipe/get_all").await?;
+        Ok(active_state.recipes)
     }
 }

@@ -5,7 +5,7 @@ use gloo_net::websocket::Message;
 use leptos::prelude::{ReadSignal, RwSignal, Set};
 use pilatus::device::DeviceId;
 use pilatus_engineering::image::StreamImageError;
-use pilatus_leptos::ws_url_base;
+use pilatus_leptos::{FetchApi, ws_url_base};
 
 use crate::{decode::parse, image_viewer::provider::ImageProviderStreamItem};
 
@@ -91,10 +91,9 @@ impl ImageProvider for WebSocketImageProvider {
     }
 
     async fn list_sources(ignored: Option<String>) -> anyhow::Result<Vec<String>> {
-        let available = gloo_net::http::Request::get("/api/image/list/subscribe")
-            .send()
-            .await?
-            .json::<Vec<DeviceId>>()
+        let fetch: FetchApi = leptos::prelude::expect_context();
+        let available = fetch
+            .get_json_silent::<Vec<DeviceId>>("/api/image/list/subscribe")
             .await?
             .into_iter()
             .map(build_device_url);

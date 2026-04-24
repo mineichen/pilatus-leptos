@@ -1,7 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
 use futures_util::FutureExt;
+use leptos::prelude::RenderHtml;
 use serde::{Serialize, de::DeserializeOwned};
+use web_sys::wasm_bindgen::JsValue;
 
 use crate::NotificationContext;
 
@@ -88,6 +90,28 @@ impl FetchApi {
             Ok(())
         }
     }
+
+    pub fn post(
+        &self,
+        url: &str,
+        payload: JsValue,
+    ) -> impl Future<Output = FetchResult<()>> + use<> {
+        self.post_silent(url, payload).map(self.notify_callback())
+    }
+
+    pub fn post_silent(
+        &self,
+        url: &str,
+        payload: JsValue,
+    ) -> impl Future<Output = FetchResult<()>> + use<> {
+        let request = gloo_net::http::Request::post(url).body(payload);
+        async move {
+            let response = request?.send().await?;
+            Self::handle_http_error(response).await?;
+            Ok(())
+        }
+    }
+
     pub fn delete(&self, url: &str) -> impl Future<Output = FetchResult<()>> + use<> {
         self.delete_silent(url).map(self.notify_callback())
     }

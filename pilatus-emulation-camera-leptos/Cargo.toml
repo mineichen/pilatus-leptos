@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+futures-util.workspace = true
 gloo-net.workspace = true
 js-sys.workspace = true
 leptos.workspace = true

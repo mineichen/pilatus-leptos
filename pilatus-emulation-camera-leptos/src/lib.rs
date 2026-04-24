@@ -1,14 +1,16 @@
 use std::ops::Deref;
 
+use futures_util::FutureExt;
 use leptos::prelude::*;
 use leptos::{either::Either, logging::debug_error};
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
 use pilatus_leptos::{
-    DeviceContext, FetchApi, JsonDeviceView, PilatusWrapperSettings, ws_url_base,
+    DeviceContext, FetchApi, FetchError, JsonDeviceView, PilatusWrapperSettings, ws_url_base,
 };
 use thaw::{Button, ButtonAppearance, Input};
+use wasm_bindgen_futures::JsFuture;
 
 #[component]
 pub fn EmulationCameraView() -> impl IntoView {
@@ -65,8 +67,14 @@ pub fn EmulationCameraView() -> impl IntoView {
                     "/api/pilatus-emulation-camera/collection/{}/{}?device_id={}",
                     collection_name, image_name, device_id
                 );
+                let array_buffer = JsFuture::from(file.array_buffer())
+                    .await
+                    .map_err(|e| FetchError::Other(format!("Failed to read file: {:?}", e)))?;
 
-                upload_file(&url, file).await.map(|_| file_name.clone())
+                fetch
+                    .post(&url, array_buffer)
+                    .await
+                    .map(|_| file_name.clone())
             }
         });
 
@@ -136,19 +144,21 @@ pub fn EmulationCameraView() -> impl IntoView {
                         <p class="text-xs text-slate-500 mb-4">"Drag images onto a collection or the drop zone below"</p>
 
                         {move || {
-                            upload_action.value().get().map(|result| {
-                                match result {
-                                    Ok(file_name) => view! {
-                                        <div class="px-3 py-2 mb-3 bg-emerald-900/50 border border-emerald-700 rounded-lg text-emerald-300 text-sm">
-                                            "✓ Uploaded " {file_name}
-                                        </div>
-                                    }.into_any(),
-                                    Err(e) => view! {
-                                        <div class="px-3 py-2 mb-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
-                                            "✗ " {e}
-                                        </div>
-                                    }.into_any(),
-                                }
+                            upload_action.value().get().map(|file_name| view! {
+                                <ErrorBoundary fallback =|errors| {
+                                    errors.get()
+                                        .into_iter()
+                                        .map(|(_, e)| {dbg!(&e); view! {
+                                            <div class="px-3 py-2 mb-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
+                                                "✗ " { e.to_string()}
+                                            </div>
+                                        }})
+                                        .collect::<Vec<_>>()
+                                }>
+                                    <div class="px-3 py-2 mb-3 bg-emerald-900/50 border border-emerald-700 rounded-lg text-emerald-300 text-sm">
+                                        "✓ Uploaded " {file_name}
+                                    </div>
+                                </ErrorBoundary>
                             })
                         }}
 
@@ -305,34 +315,4 @@ pub fn EmulationCameraView() -> impl IntoView {
             })}
         </div>
     }
-}
-
-async fn upload_file(url: &str, file: web_sys::File) -> Result<(), String> {
-    use js_sys::Uint8Array;
-    use wasm_bindgen_futures::JsFuture;
-
-    let array_buffer = JsFuture::from(file.array_buffer())
-        .await
-        .map_err(|e| format!("Failed to read file: {:?}", e))?;
-
-    let uint8_array = Uint8Array::new(&array_buffer);
-    let bytes = uint8_array.to_vec();
-
-    let response = gloo_net::http::Request::post(url)
-        .body(bytes)
-        .map_err(|e| format!("Request build error: {:?}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Upload failed: {:?}", e))?;
-
-    if !response.ok() {
-        let status = response.status();
-        let error_text = response
-            .text()
-            .await
-            .unwrap_or_else(|_| "Unknown error".to_string());
-        return Err(format!("HTTP {}: {}", status, error_text));
-    }
-
-    Ok(())
 }

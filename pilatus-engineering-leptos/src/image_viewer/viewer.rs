@@ -162,13 +162,17 @@ where
                 }
             }
         >
-            {move || provider_error.read().as_ref().err().map(|e| {
-                format!("Error: {e}")
-            })}
             <canvas
                 node_ref=canvas_ref
-                style=move || if is_fullscreen.get() { "height: 100%; width: 100%; background-color: black;" } else { "height: 500px; width: 100%; background-color: black;" }
+                style=move || if is_fullscreen.get() { "height: 100%; width: 100%; background-color: black;".to_string() } else { "height: 100%; min-height: 500px; width: 100%; background-color: black;".to_string() }
             />
+            {move || provider_error.read().as_ref().err().map(|e| {
+                view! {
+                    <div style="position: absolute; top: 8px; left: 8px; right: 8px; background-color: #dc2626; border: 1px solid #ef4444; border-radius: 0.375rem; padding: 0.5rem 0.75rem; color: white; font-size: 0.875rem;">
+                        {format!("Error: {e}")}
+                    </div>
+                }
+            })}
             {move || (!is_fullscreen.get()).then(|| view! {
                 <button
                     class="absolute bottom-2 left-2 p-2 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors"

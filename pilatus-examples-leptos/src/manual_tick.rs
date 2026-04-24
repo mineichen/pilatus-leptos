@@ -6,7 +6,7 @@ use thaw::{Button, ButtonAppearance, SpinButton};
 #[component]
 pub fn ManualTick() -> impl IntoView {
     leptos::logging::log!("Create ManualTickComponent");
-    let fetch = expect_context::<FetchApi>();
+    let fetch: FetchApi = expect_context();
     let increment = Action::new_local(move |_| async move {
         FetchResult::Ok(
             fetch
@@ -17,7 +17,7 @@ pub fn ManualTick() -> impl IntoView {
         )
     });
 
-    let device_context = expect_context::<DeviceContext>();
+    let device_context: DeviceContext = expect_context();
     let params = device_context.get::<ManualTickParamsImpex<PilatusWrapperSettings>>();
 
     let initial_count = params.map_leaf(

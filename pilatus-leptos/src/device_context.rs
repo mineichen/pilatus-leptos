@@ -6,7 +6,7 @@ use leptos_router::hooks::use_params_map;
 use pilatus::device::DeviceId;
 
 use leptos_router::components::Outlet;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Clone)]
 pub struct DeviceContext {
@@ -27,20 +27,20 @@ impl DeviceContext {
     >(
         &self,
     ) -> MapRwSignal<T> {
-        let recipe_context = expect_context::<RecipeContext>();
+        let recipe_context: RecipeContext = expect_context();
         let device_id = self.infos.device_id;
         recipe_context.get(Signal::derive(move || device_id))
     }
 
     pub fn get_untyped(&self) -> MapRwSignal<serde_json::Value> {
-        let recipe_context = expect_context::<RecipeContext>();
+        let recipe_context: RecipeContext = expect_context();
         let device_id = self.infos.device_id;
         recipe_context.get_untyped(Signal::derive(move || device_id))
     }
 }
 #[component]
 pub fn DeviceView() -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
     let params = use_params_map();
 
     let device_id_str = move || params.read().get("device_id");

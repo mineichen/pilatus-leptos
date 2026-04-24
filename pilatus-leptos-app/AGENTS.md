@@ -64,7 +64,7 @@ cd end2end && npx playwright test
 ```rust
 #[component]
 pub fn ComponentName(props: Type) -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
     let action = Action::new_local(move |_: &()| async move { /* ... */ });
     view! { /* JSX-like template */ }
 }

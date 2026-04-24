@@ -7,7 +7,7 @@ use thaw::{Button, ButtonAppearance, ButtonSize, Input, Tag};
 
 #[component]
 pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
     let ctx_remove = ctx.clone();
     let new_tag_input = RwSignal::new(String::new());
     let recipe_id = Signal::derive(move || recipe_memo.read().id.clone());

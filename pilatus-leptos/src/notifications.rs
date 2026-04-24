@@ -50,7 +50,7 @@ impl NotificationContext {
 
 #[component]
 pub fn Notifications() -> impl IntoView {
-    let ctx = expect_context::<NotificationContext>();
+    let ctx: NotificationContext = expect_context();
     let notifications = ctx.notifications;
 
     view! {

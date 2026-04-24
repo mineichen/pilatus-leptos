@@ -4,7 +4,7 @@ use pilatus_leptos::RecipeContext;
 
 #[component]
 pub fn Nav() -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
 
     view! {
         <nav class="flex-1 overflow-y-auto">

@@ -15,8 +15,8 @@ use wasm_bindgen_futures::JsFuture;
 #[component]
 pub fn EmulationCameraView() -> impl IntoView {
     leptos::logging::log!("Create EmulationCameraView");
-    let device_ctx = expect_context::<DeviceContext>();
-    let fetch = expect_context::<FetchApi>();
+    let device_ctx: DeviceContext = expect_context();
+    let fetch: FetchApi = expect_context();
     let device_id = device_ctx.infos.device_id;
 
     let collections = LocalResource::new(move || async move {
@@ -72,7 +72,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                     .map_err(|e| FetchError::Other(format!("Failed to read file: {:?}", e)))?;
 
                 fetch
-                    .post(&url, array_buffer)
+                    .post_body(&url, array_buffer)
                     .await
                     .map(|_| file_name.clone())
             }

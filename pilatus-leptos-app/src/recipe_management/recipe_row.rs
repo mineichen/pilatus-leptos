@@ -6,7 +6,7 @@ use super::recipe_tags::RecipeTags;
 
 #[component]
 pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
     let ctx_activate = ctx.clone();
     let ctx_duplicate = ctx.clone();
     let ctx_delete = ctx.clone();

@@ -11,7 +11,7 @@ use self::recipe_row::{RecipeRow, RecipeRowProps};
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {
-    let ctx = expect_context::<RecipeContext>();
+    let ctx: RecipeContext = expect_context();
     let ctx_create = ctx.clone();
     let ctx_commit = ctx.clone();
 

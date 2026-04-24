@@ -5,7 +5,7 @@ use crate::DeviceContext;
 
 #[component]
 pub fn JsonDeviceView() -> impl IntoView {
-    let device_context = expect_context::<DeviceContext>();
+    let device_context: DeviceContext = expect_context();
     let device_params = device_context.get_untyped();
 
     let device_params = device_params.map(

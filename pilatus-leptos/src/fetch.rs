@@ -66,17 +66,31 @@ impl FetchApi {
         }
     }
 
-    pub fn put(
+    pub fn put_body(
         &self,
         url: &str,
+        payload: JsValue,
     ) -> impl Future<Output = FetchResult<Response>> + use<> {
+        self.put_body_silent(url, payload)
+            .map(self.notify_callback())
+    }
+
+    pub fn put_body_silent(
+        &self,
+        url: &str,
+        payload: JsValue,
+    ) -> impl Future<Output = FetchResult<Response>> + use<> {
+        let request = gloo_net::http::Request::put(url).body(payload);
+        async move {
+            let response = request?.send().await?;
+            Self::handle_http_error(response).await
+        }
+    }
+    pub fn put(&self, url: &str) -> impl Future<Output = FetchResult<Response>> + use<> {
         self.put_silent(url).map(self.notify_callback())
     }
 
-    pub fn put_silent(
-        &self,
-        url: &str,
-    ) -> impl Future<Output = FetchResult<Response>> + use<> {
+    pub fn put_silent(&self, url: &str) -> impl Future<Output = FetchResult<Response>> + use<> {
         let request = gloo_net::http::Request::put(url);
         async move {
             let response = request.send().await?;
@@ -105,15 +119,16 @@ impl FetchApi {
         }
     }
 
-    pub fn post(
+    pub fn post_body(
         &self,
         url: &str,
         payload: JsValue,
     ) -> impl Future<Output = FetchResult<Response>> + use<> {
-        self.post_silent(url, payload).map(self.notify_callback())
+        self.post_body_silent(url, payload)
+            .map(self.notify_callback())
     }
 
-    pub fn post_silent(
+    pub fn post_body_silent(
         &self,
         url: &str,
         payload: JsValue,

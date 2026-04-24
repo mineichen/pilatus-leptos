@@ -1,6 +1,6 @@
 use futures_util::TryFutureExt;
 use leptos::prelude::*;
-use pilatus_leptos::{DeviceContext, PilatusWrapperSettings, VariableInput};
+use pilatus_leptos::{DeviceContext, FetchApi, FetchError, PilatusWrapperSettings, VariableInput};
 use pilatus_tick::GreeterParamsImpex;
 use thaw::{Button, ButtonAppearance, Input};
 
@@ -8,6 +8,7 @@ use thaw::{Button, ButtonAppearance, Input};
 pub fn Greeter() -> impl IntoView {
     leptos::logging::log!("Create GreeterComponent");
     let device_context = expect_context::<DeviceContext>();
+    let fetch = expect_context::<FetchApi>();
     let data = device_context.get::<GreeterParamsImpex<PilatusWrapperSettings>>();
     let lang = data.map_leaf(
         |x| x.lang.clone(),
@@ -22,22 +23,11 @@ pub fn Greeter() -> impl IntoView {
         let name = name.clone();
         async move {
             if name.is_empty() {
-                return Err("Name mustn't be empty".into());
+                return Err(FetchError::Other("Name mustn't be empty".into()));
             }
-            gloo_net::http::Request::get(&format!("/api/pilatus-greeter/greet/{name}"))
-                .send()
-                .map_err(|e| e.to_string())
-                .and_then(|r| async move {
-                    if r.ok() {
-                        r.text().await.map_err(|e| e.to_string())
-                    } else {
-                        Err(match r.text().await.as_deref() {
-                            Ok("") | Err(_) => format!("Couldn't get Body: {}", r.status()),
-                            Ok(body) => format!("Error: {body}"),
-                        })
-                    }
-                })
-                .await
+
+            let url = format!("/api/pilatus-greeter/greet/{name}");
+            Ok(fetch.get_silent(&url).await?.text().await?)
         }
     });
 
@@ -89,7 +79,7 @@ pub fn Greeter() -> impl IntoView {
                 {move || match action.value().read().as_ref() {
                     Some(Err(e)) => view! {
                         <div class="px-3 py-2 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
-                            "Error: " {e.clone()}
+                            "Error: " {e.to_string()}
                         </div>
                     }.into_any(),
                     Some(Ok(greeting)) => view! {

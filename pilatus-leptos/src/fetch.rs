@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use futures_util::FutureExt;
+use gloo_net::http::Response;
 use leptos::prelude::RenderHtml;
 use serde::{Serialize, de::DeserializeOwned};
 use web_sys::wasm_bindgen::JsValue;
@@ -29,29 +30,27 @@ impl FetchApi {
         Self { notifications }
     }
 
-    pub fn get<T: DeserializeOwned>(
-        &self,
-        url: &str,
-    ) -> impl Future<Output = FetchResult<T>> + use<T> {
-        self.get_silent(url).map(self.notify_callback())
-    }
-    pub fn get_silent<T: DeserializeOwned>(
-        &self,
-        url: &str,
-    ) -> impl Future<Output = FetchResult<T>> + use<T> {
+    pub fn get_silent(&self, url: &str) -> impl Future<Output = FetchResult<Response>> + use<> {
         let request = gloo_net::http::Request::get(url);
 
         async move {
             let response = request.send().await?;
-            let response = Self::handle_http_error(response).await?;
-            Ok(response.json::<T>().await?)
+            Ok(Self::handle_http_error(response).await?)
         }
     }
+    pub fn get_json_silent<T: DeserializeOwned>(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = FetchResult<T>> + use<T> {
+        let fut = self.get_silent(url);
+        async move { Ok(fut.await?.json::<T>().await?) }
+    }
+
     pub fn put_json<T: Serialize>(
         &self,
         url: &str,
         payload: T,
-    ) -> impl Future<Output = FetchResult<()>> + use<T> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<T> {
         self.put_json_silent(url, payload)
             .map(self.notify_callback())
     }
@@ -60,12 +59,11 @@ impl FetchApi {
         &self,
         url: &str,
         payload: T,
-    ) -> impl Future<Output = FetchResult<()>> + use<T> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<T> {
         let request = gloo_net::http::Request::put(url).json(&payload);
         async move {
             let response = request?.send().await?;
-            Self::handle_http_error(response).await?;
-            Ok(())
+            Self::handle_http_error(response).await
         }
     }
 
@@ -73,7 +71,7 @@ impl FetchApi {
         &self,
         url: &str,
         payload: T,
-    ) -> impl Future<Output = FetchResult<()>> + use<T> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<T> {
         self.post_json_silent(url, payload)
             .map(self.notify_callback())
     }
@@ -82,12 +80,11 @@ impl FetchApi {
         &self,
         url: &str,
         payload: T,
-    ) -> impl Future<Output = FetchResult<()>> + use<T> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<T> {
         let request = gloo_net::http::Request::post(url).json(&payload);
         async move {
             let response = request?.send().await?;
-            Self::handle_http_error(response).await?;
-            Ok(())
+            Self::handle_http_error(response).await
         }
     }
 
@@ -95,7 +92,7 @@ impl FetchApi {
         &self,
         url: &str,
         payload: JsValue,
-    ) -> impl Future<Output = FetchResult<()>> + use<> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<> {
         self.post_silent(url, payload).map(self.notify_callback())
     }
 
@@ -103,31 +100,23 @@ impl FetchApi {
         &self,
         url: &str,
         payload: JsValue,
-    ) -> impl Future<Output = FetchResult<()>> + use<> {
+    ) -> impl Future<Output = FetchResult<Response>> + use<> {
         let request = gloo_net::http::Request::post(url).body(payload);
         async move {
             let response = request?.send().await?;
-            Self::handle_http_error(response).await?;
-            Ok(())
+            Self::handle_http_error(response).await
         }
     }
 
-    pub fn delete(&self, url: &str) -> impl Future<Output = FetchResult<()>> + use<> {
+    pub fn delete(&self, url: &str) -> impl Future<Output = FetchResult<Response>> + use<> {
         self.delete_silent(url).map(self.notify_callback())
     }
-    pub fn delete_silent(&self, url: &str) -> impl Future<Output = FetchResult<()>> + use<> {
+    pub fn delete_silent(&self, url: &str) -> impl Future<Output = FetchResult<Response>> + use<> {
         let request = gloo_net::http::Request::delete(url);
         async move {
             let response = request.send().await?;
-            Self::handle_http_error(response).await?;
-            Ok(())
+            Self::handle_http_error(response).await
         }
-    }
-    fn notify<TOk>(&self, result: Result<TOk, FetchError>) -> Result<TOk, FetchError> {
-        result.inspect_err(|e| {
-            self.notifications
-                .error(e.to_string(), Duration::from_secs(3))
-        })
     }
 
     fn notify_callback<TOk>(
@@ -139,9 +128,7 @@ impl FetchApi {
         }
     }
 
-    async fn handle_http_error(
-        r: gloo_net::http::Response,
-    ) -> FetchResult<gloo_net::http::Response> {
+    async fn handle_http_error(r: Response) -> FetchResult<Response> {
         if r.ok() {
             Ok(r)
         } else {

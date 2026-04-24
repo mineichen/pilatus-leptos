@@ -12,7 +12,9 @@ pub fn AravisView() -> impl IntoView {
     let cameras = LocalResource::new(move || async move {
         let id = device_id.get();
         let url = format!("/api/pilatus-aravis/camera?device_id={id}");
-        fetch.get::<Vec<pilatus_aravis::DeviceInfo>>(&url).await
+        fetch
+            .get_json_silent::<Vec<pilatus_aravis::DeviceInfo>>(&url)
+            .await
     });
 
     let image_url = Signal::derive(move || {

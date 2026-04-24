@@ -326,6 +326,8 @@ impl<T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug> impex::Visito
 
 #[cfg(test)]
 mod tests {
+    use crate::{FetchApi, NotificationContext};
+
     use super::*;
 
     #[test]
@@ -354,7 +356,9 @@ mod tests {
             // Create a RecipeContext with a variable
             let recipes = Recipes::default();
             let client_id = Uuid::new_v4();
-            let ctx = RecipeContext::new(recipes, client_id);
+            let notifications = NotificationContext::default();
+            let fetch = FetchApi::new(notifications);
+            let ctx = RecipeContext::new(recipes, client_id, fetch);
 
             // Set the variable value
             ctx.set_variable(Name::new("myvar").unwrap(), "test_value");

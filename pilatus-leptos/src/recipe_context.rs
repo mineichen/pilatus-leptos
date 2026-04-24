@@ -31,12 +31,15 @@ struct UnsavedDeviceChange {
 }
 
 #[derive(Clone)]
-pub struct RecipeContext(Arc<RecipeContextState>);
+pub struct RecipeContext {
+    fetch: FetchApi,
+    state: Arc<RecipeContextState>,
+}
 
 impl std::ops::Deref for RecipeContext {
     type Target = RecipeContextState;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.state
     }
 }
 
@@ -52,8 +55,11 @@ pub struct RecipeContextState {
 }
 
 impl RecipeContext {
-    pub(crate) fn new(recipes: pilatus::Recipes, client_id: Uuid) -> Self {
-        Self(Arc::new(RecipeContextState::new(recipes, client_id)))
+    pub(crate) fn new(recipes: pilatus::Recipes, client_id: Uuid, fetch: FetchApi) -> Self {
+        Self {
+            state: Arc::new(RecipeContextState::new(recipes, client_id)),
+            fetch,
+        }
     }
 }
 
@@ -331,11 +337,11 @@ pub fn ProvideDeviceContext(children: Children) -> impl IntoView {
         {move || {
             recipes_resource.get().map(|recipes| {
                 let fetch: FetchApi = expect_context();
-                let device_context = RecipeContext::new(recipes, my_id);
+                let device_context = RecipeContext::new(recipes, my_id, fetch);
                 let (ch_reader, ch_writer) = {
                     (
-                        device_context.0.unsaved_changes_reader,
-                        device_context.0.unsaved_changes_writer,
+                        device_context.unsaved_changes_reader,
+                        device_context.unsaved_changes_writer,
                     )
                 };
                 provide_context(device_context.clone());

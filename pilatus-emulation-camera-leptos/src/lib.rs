@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use futures_util::FutureExt;
+use futures_util::TryFutureExt;
 use leptos::prelude::*;
 use leptos::{either::Either, logging::debug_error};
 use pilatus::Name;
@@ -22,7 +22,7 @@ pub fn EmulationCameraView() -> impl IntoView {
     let collections = LocalResource::new(move || async move {
         leptos::logging::log!("ChangeDeviceId: {device_id}");
         let url = format!("/api/pilatus-emulation-camera/collection?device_id={device_id}");
-        fetch.get::<Vec<Name>>(&url).await
+        fetch.get_json_silent::<Vec<Name>>(&url).await
     });
 
     let (show_new_collection_dialog, set_show_new_collection_dialog) = signal(false);
@@ -83,7 +83,7 @@ pub fn EmulationCameraView() -> impl IntoView {
             "/api/pilatus-emulation-camera/collection/{}?device_id={}",
             collection_name, device_id
         );
-        fetch.delete(&url)
+        fetch.delete(&url).map_ok(|_| ())
     });
 
     Effect::new(move |_| {
@@ -148,7 +148,10 @@ pub fn EmulationCameraView() -> impl IntoView {
                                 <ErrorBoundary fallback =|errors| {
                                     errors.get()
                                         .into_iter()
-                                        .map(|(_, e)| {dbg!(&e); view! {
+                                        .map(|(_, e)| {
+                                            dbg!(&e);
+
+                                            view! {
                                             <div class="px-3 py-2 mb-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
                                                 "✗ " { e.to_string()}
                                             </div>

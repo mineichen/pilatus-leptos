@@ -1,27 +1,20 @@
-use futures_util::TryFutureExt;
 use leptos::prelude::*;
-use pilatus_leptos::{DeviceContext, PilatusWrapperSettings};
+use pilatus_leptos::{DeviceContext, FetchApi, FetchResult, PilatusWrapperSettings};
 use pilatus_tick::ManualTickParamsImpex;
 use thaw::{Button, ButtonAppearance, SpinButton};
 
 #[component]
 pub fn ManualTick() -> impl IntoView {
     leptos::logging::log!("Create ManualTickComponent");
-    let increment = Action::new_local(|_| async {
-        gloo_net::http::Request::put("/api/pilatus-manual-tick/increment")
-            .send()
-            .map_err(|e| e.to_string())
-            .and_then(|r| async move {
-                if r.status() == 200 {
-                    r.text().await.map_err(|e| e.to_string())
-                } else {
-                    Err(match r.text().await.as_deref() {
-                        Ok("") | Err(_) => format!("Couldn't get Body: {}", r.status()),
-                        Ok(body) => format!("Error: {body}"),
-                    })
-                }
-            })
-            .await
+    let fetch = expect_context::<FetchApi>();
+    let increment = Action::new_local(move |_| async move {
+        FetchResult::Ok(
+            fetch
+                .put_json_silent("/api/pilatus-manual-tick/increment", ())
+                .await?
+                .text()
+                .await?,
+        )
     });
 
     let device_context = expect_context::<DeviceContext>();
@@ -63,7 +56,7 @@ pub fn ManualTick() -> impl IntoView {
                                 <span class="text-emerald-400">"Count: " {count}</span>
                             }.into_any(),
                             Some(Err(e)) => view! {
-                                <span class="text-red-400">"Error: " {e}</span>
+                                <span class="text-red-400">"Error: " {e.to_string() }</span>
                             }.into_any(),
                             None => "".into_any(),
                         }}

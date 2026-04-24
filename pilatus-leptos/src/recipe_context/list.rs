@@ -78,39 +78,20 @@ impl RecipeContext {
         }
         .seal()?;
 
-        let result = async {
-            gloo_net::http::Request::put(&url)
-                .header("content-type", "application/json")
-                .body(serde_json::to_string(&metadata)?)?
-                .send()
-                .await
-        }
-        .await;
+        self.fetch.put_json(&url, &metadata).await?;
 
-        match result {
-            Ok(response) if response.ok() => {
-                // Update in place instead of replacing the entire root
-                root.update(|recipes| {
-                    if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
-                        leptos::logging::log!(
-                            "Updating tags in place: {:?} -> {:?}",
-                            recipe_mut.tags,
-                            tags
-                        );
-                        recipe_mut.tags = tags;
-                    }
-                });
-                Ok(())
+        // Update in place instead of replacing the entire root
+        root.update(|recipes| {
+            if let Some(recipe_mut) = recipes.get_with_id_mut(&recipe_id) {
+                leptos::logging::log!(
+                    "Updating tags in place: {:?} -> {:?}",
+                    recipe_mut.tags,
+                    tags
+                );
+                recipe_mut.tags = tags;
             }
-            Ok(response) => {
-                let error_msg = match response.text().await.as_deref() {
-                    Ok("") | Err(_) => format!("HTTP {}", response.status()),
-                    Ok(body) => body.to_string(),
-                };
-                Err(anyhow::anyhow!("Failed to add tag: {}", error_msg))
-            }
-            Err(e) => Err(anyhow::anyhow!("Failed to add tag: {}", e)),
-        }
+        });
+        Ok(())
     }
 
     /// Remove a tag from a specific recipe

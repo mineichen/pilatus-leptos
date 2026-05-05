@@ -41,7 +41,8 @@
             pkgs.aravis
             pkgs.tailwindcss_4
             pkgs.sass
-          ];
+            pkgs.mdbook
+	  ];
           greet = ''
             echo "===================================="
             echo " Welcome to the deterministic dev shell! "

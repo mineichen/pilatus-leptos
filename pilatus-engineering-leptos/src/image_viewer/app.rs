@@ -2,15 +2,19 @@ use chrono::DateTime;
 use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
-    AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageViewerInteraction, MaskImage,
-    PixelArea, Tools,
+    AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
+    ImageViewerInteraction, PixelArea, Tools,
 };
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
-pub(super) type ChangeListener =
-    Box<dyn FnMut(&MaskImage) -> LocalBoxFuture<'static, anyhow::Result<()>>>;
+pub(super) type ChangeListener = Box<
+    dyn FnMut(
+        &mut ImageStateLoaded,
+        imanot::AffectedLayer,
+    ) -> LocalBoxFuture<'static, anyhow::Result<()>>,
+>;
 
 pub struct EframeImageViewer {
     #[cfg(target_arch = "wasm32")]
@@ -133,8 +137,7 @@ impl eframe::App for App {
             x(self, ctx)
         }
         if let ImageState::Loaded(loaded) = &mut self.state.image_state {
-            if loaded.masks.is_dirty() {
-                loaded.masks.mark_not_dirty();
+            if let Some(affected) = loaded.masks.take_dirty() {
                 let time = chrono::Utc::now()
                     .signed_duration_since(DateTime::UNIX_EPOCH)
                     .num_seconds();
@@ -148,8 +151,10 @@ impl eframe::App for App {
                         time - *start_time
                     );
                 } else {
-                    self.change_listener_task =
-                        Some((AsyncTask::new((self.change_listener)(&loaded.masks)), time));
+                    self.change_listener_task = Some((
+                        AsyncTask::new((self.change_listener)(loaded, affected)),
+                        time,
+                    ));
                 }
             }
             if let Some((task, _)) = &mut self.change_listener_task {
@@ -174,6 +179,7 @@ impl eframe::App for App {
                 {
                     let image_rect = viewer_result.response.rect;
                     let offset_pos = egui::pos2(image_rect.max.x - 5.0, image_rect.max.y - 5.0);
+
                     egui::Area::new(egui::Id::new("pixel_coords_overlay"))
                         .fixed_pos(offset_pos)
                         .pivot(egui::Align2::RIGHT_BOTTOM)

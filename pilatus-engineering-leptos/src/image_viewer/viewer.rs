@@ -60,8 +60,8 @@ where
         {
             let tools = tools.take().unwrap_or_default();
             let listener = tool_change_listener.take().unwrap_or_else(|| {
-                Box::new(|_masks| {
-                    leptos::logging::log!("Change tool stuff");
+                Box::new(|_masks, layer| {
+                    leptos::logging::log!("Change tool stuff on layer {layer:?}");
                     std::future::ready(Ok(())).boxed()
                 })
             });

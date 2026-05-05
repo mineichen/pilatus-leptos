@@ -4,18 +4,19 @@ use anyhow::Context;
 use imanot::PixelArea;
 use imask::{ImageDimension, ImaskSet, SortedRanges, SortedRangesMap};
 use imbuf::{DynamicImageChannel, ImageChannel};
-use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, StreamImageError};
+use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, MetaImageDecoder, StreamImageError};
 
 /// Returns `Ok(None)` for MissingFrame error
 /// Inefficient image buffer copy is tolerated, as imanot is expected to change to DynamicImage for it's original image soon
 pub fn parse(
     input: &[u8],
+    decoder: &MetaImageDecoder,
 ) -> anyhow::Result<
     Result<ImageWithMeta<imbuf::Image<[u8; 3], 1>>, StreamImageError<imbuf::Image<[u8; 3], 1>>>,
 > {
     let time_before = chrono::Utc::now().timestamp_millis();
     leptos::logging::log!("before pilatus-engineering::decode {time_before}");
-    let decoded = pilatus_engineering::image::decode(input)?;
+    let decoded = decoder.decode(input)?;
     leptos::logging::log!(
         "pilatus-engineering::decode took {:?}ms",
         chrono::Utc::now().timestamp_millis() - time_before

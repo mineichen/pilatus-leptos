@@ -73,7 +73,7 @@ impl ViewerHandle {
                     f(loaded);
                     ctx.request_repaint();
                 } else {
-                    leptos::logging::warn!("Ignored callback, as image is not loaded");
+                    app.pending_on_load.push(Box::new(f));
                 }
             }));
         if set_result.is_ok() {
@@ -144,6 +144,7 @@ pub struct App {
     receiver: mpsc::Receiver<ChangeItem>,
     change_listener: ChangeListener,
     change_listener_task: Option<(imanot::AsyncTask<anyhow::Result<()>>, i64)>,
+    pending_on_load: Vec<Box<dyn FnOnce(&mut ImageStateLoaded) + Send>>,
 }
 
 impl App {
@@ -158,6 +159,7 @@ impl App {
             receiver,
             change_listener,
             change_listener_task: None,
+            pending_on_load: Vec::new(),
         }
     }
 }
@@ -192,11 +194,19 @@ impl eframe::App for App {
                 if let Some(x) = task.data() {
                     self.change_listener_task = None;
                     if let Err(e) = x {
-                        leptos::logging::error!("Error in change_listner: {e}");
+                        leptos::logging::error!("Error in change_listener: {e}");
                     }
                 } else {
                     ctx.request_repaint_after_secs(0.5);
                 }
+            }
+            let mut pending = std::mem::take(&mut self.pending_on_load).into_iter();
+            if let Some(f) = pending.next() {
+                f(loaded);
+                for f in pending {
+                    f(loaded);
+                }
+                ctx.request_repaint();
             }
         }
         egui::CentralPanel::default()

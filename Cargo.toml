@@ -39,7 +39,7 @@ image = { version = "0.25", default-features = false }
 imbuf = "0.3"
 imanot = { git = "https://github.com/mineichen/imanot.git" }
 imask = { git = "https://github.com/mineichen/imask.git" }
-impex = { git = "https://github.com/mineichen/impex", features = ["visitor"] }
+impex = { version = "0.1", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"
 leptos_axum = "0.8"
@@ -99,5 +99,7 @@ opt-level = 2
 # [patch."https://github.com/mineichen/imanot.git"]
 # imanot.path = "../imanot/imanot"
 
-# [patch.crates-io]
+
+[patch.crates-io]
 # imbuf.path = "../imbuf"
+impex.path = "../impex/impex"

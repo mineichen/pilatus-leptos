@@ -9,7 +9,7 @@ use wasm_bindgen::JsCast;
 
 use crate::image_viewer::app::ChangeListener;
 
-use super::{ImageProvider, app::EframeImageViewer};
+use super::{ImageProvider, app::EframeImageViewer, app::ViewerHandle};
 
 #[component]
 pub fn ImageViewerComponent<T>(
@@ -20,6 +20,7 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] mut tools: Option<Tools>,
     #[prop(optional)] primary: Option<Signal<String>>,
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
+    #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>>>,
 ) -> impl IntoView
 where
     T: ImageProvider,
@@ -65,10 +66,14 @@ where
                     std::future::ready(Ok(())).boxed()
                 })
             });
+            let set_handle = set_handle.take();
             leptos::reactive::spawn_local(async move {
                 match EframeImageViewer::create(canvas, tools, listener).await {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
+                        if let Some(set_handle) = set_handle {
+                            set_handle.set(Some(viewer.handle().clone()));
+                        }
                         set_viewer.set(Some(viewer));
                     }
                     Err(e) => {
@@ -81,7 +86,7 @@ where
     if let Some(primary) = primary {
         Effect::new(move || {
             if let Some(viewer_ref) = viewer.read().as_ref() {
-                viewer_ref.set_primary(primary.get());
+                viewer_ref.handle().set_primary(primary.get());
             }
         });
     }
@@ -130,7 +135,7 @@ where
                     last = now;
                 }
 
-                viewer_ref.replace_image(image, masks).await;
+                viewer_ref.handle().replace_image(image, masks).await;
             }
 
             leptos::logging::log!("Image stream closed");

@@ -8,7 +8,7 @@ use imanot::{
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
 
-type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
+type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context) + Send>;
 pub(super) type ChangeListener = Box<
     dyn FnMut(
         &mut ImageStateLoaded,
@@ -16,11 +16,78 @@ pub(super) type ChangeListener = Box<
     ) -> LocalBoxFuture<'static, anyhow::Result<()>>,
 >;
 
+#[derive(Clone)]
+pub struct ViewerHandle {
+    command_send: mpsc::Sender<ChangeItem>,
+    ctx: egui::Context,
+}
+
+impl ViewerHandle {
+    pub fn set_primary(&self, name: String) {
+        let enqueue = self
+            .command_send
+            .clone()
+            .try_send(Box::new(move |app, _ctx| {
+                let mut primary = app.state.tools.primary();
+                let (Some(idx), ImageState::Loaded(loaded)) = (
+                    primary.tool_names().position(|x| x == name),
+                    &app.state.image_state,
+                ) else {
+                    return;
+                };
+                primary.set_idx(idx, &loaded.image);
+            }));
+        if enqueue.is_err() {
+            leptos::logging::error!("Unable to queue set_primary");
+        }
+    }
+
+    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>, masks: Vec<PixelArea>) {
+        let (r_send, r_recv) = oneshot::channel();
+        let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
+            app.state.image_state.set_image_data(ImageData {
+                id: ImageId::from("foo"),
+                image: ImageLoadOk {
+                    original: imanot::OriginalImage::Rgb8(adjust.clone()),
+                    adjust,
+                },
+                masks,
+            });
+            ctx.request_repaint();
+            debug_log!("Replaced image state");
+            r_send.send(()).ok();
+        }));
+        if set_result.is_ok() {
+            self.ctx.request_repaint();
+            r_recv.await.ok();
+            self.ctx.request_repaint();
+        }
+    }
+
+    pub fn with_loaded_state(&self, f: impl FnOnce(&mut ImageStateLoaded) + Send + 'static) {
+        let set_result = self
+            .command_send
+            .clone()
+            .try_send(Box::new(move |app, ctx| {
+                if let ImageState::Loaded(loaded) = &mut app.state.image_state {
+                    f(loaded);
+                    ctx.request_repaint();
+                } else {
+                    leptos::logging::warn!("Ignored callback, as image is not loaded");
+                }
+            }));
+        if set_result.is_ok() {
+            self.ctx.request_repaint();
+        } else {
+            leptos::logging::error!("Unable to queue with_loaded_state");
+        }
+    }
+}
+
 pub struct EframeImageViewer {
     #[cfg(target_arch = "wasm32")]
     _runner: eframe::WebRunner,
-    command_send: mpsc::Sender<ChangeItem>,
-    ctx: egui::Context,
+    handle: ViewerHandle,
 }
 
 impl EframeImageViewer {
@@ -57,54 +124,18 @@ impl EframeImageViewer {
                 .await
                 .map_err(|e| anyhow::anyhow!("Couldn't start {e:?}"))?;
 
-            // It is normal for start() to return after initialization... The eventloop continues
             Ok(Self {
-                ctx: ctx.take().unwrap(),
                 _runner: runner,
-                command_send: sender,
+                handle: ViewerHandle {
+                    ctx: ctx.take().unwrap(),
+                    command_send: sender,
+                },
             })
         }
     }
-    pub fn set_primary(&self, name: String) {
-        let enqueue = self
-            .command_send
-            .clone()
-            .try_send(Box::new(move |app, _ctx| {
-                let mut primary = app.state.tools.primary();
-                let (Some(idx), ImageState::Loaded(loaded)) = (
-                    primary.tool_names().position(|x| x == name),
-                    &app.state.image_state,
-                ) else {
-                    return;
-                };
-                primary.set_idx(idx, &loaded.image);
-            }));
-        if enqueue.is_err() {
-            leptos::logging::error!("Unable to queue set_primary");
-        }
-    }
-    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>, masks: Vec<PixelArea>) {
-        let (r_send, r_recv) = oneshot::channel();
-        let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
-            app.state.image_state.set_image_data(ImageData {
-                id: ImageId::from("foo"),
-                image: ImageLoadOk {
-                    original: imanot::OriginalImage::Rgb8(adjust.clone()),
-                    adjust,
-                },
-                masks,
-            });
-            ctx.request_repaint();
-            debug_log!("Replaced image state");
-            r_send.send(()).ok();
-        }));
-        // Avoid no deadlock
-        if set_result.is_ok() {
-            self.ctx.request_repaint();
-            r_recv.await.ok();
-            // Assure it is painted
-            self.ctx.request_repaint();
-        }
+
+    pub fn handle(&self) -> &ViewerHandle {
+        &self.handle
     }
 }
 

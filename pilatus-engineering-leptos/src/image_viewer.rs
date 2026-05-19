@@ -5,6 +5,7 @@ mod viewer;
 mod websocket_provider;
 
 pub use app::EframeImageViewer;
+pub use app::ViewerHandle;
 pub use provider::ImageProvider;
 pub use single_provider::SingleImageProvider;
 pub use viewer::ImageViewerComponent;

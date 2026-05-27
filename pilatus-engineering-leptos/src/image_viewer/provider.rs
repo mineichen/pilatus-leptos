@@ -1,12 +1,15 @@
 use futures_util::Stream;
-use imanot::PixelArea;
-use imbuf::Image;
+use imbuf::DynamicImage;
 use leptos::prelude::ReadSignal;
+use pilatus_engineering::image::{ImageWithMeta, StreamImageError};
 use std::pin::Pin;
 
 /// Trait for providing images to the ImageViewer
 /// Implementations handle different image acquisition strategies
-pub type ImageProviderStreamItem = anyhow::Result<(Image<[u8; 3], 1>, Vec<PixelArea>)>;
+// pub type ImageProviderStreamItem =
+//     anyhow::Result<(ImageWithMeta<Image<[u8; 3], 1>>, Vec<PixelArea>)>;
+pub type ImageProviderStreamItem =
+    anyhow::Result<Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>>;
 pub trait ImageProvider: 'static {
     fn image_stream(
         &self,

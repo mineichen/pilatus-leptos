@@ -3,7 +3,10 @@
   "permission": {
     "external_directory": {
       "~/.cargo/git/checkouts/**": "allow",
-      "/workspace/pilatus/**": "allow"
+      "/workspace/pilatus/**": "allow",
+      "/workspace/impex/**": "allow",
+      "/workspace/imask/**": "allow",
+      "/workspace/imanot/**": "allow"
     }
   }
 }

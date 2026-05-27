@@ -43,19 +43,7 @@ impl ImageProvider for SingleImageProvider {
 
             leptos::logging::log!("Received {} bytes from HTTP", bytes.len());
 
-            match parse(&bytes, &decoder)? {
-                Ok(mut img) => Ok((
-                    img.image,
-                    super::super::decode::extract_from_extensions(
-                        &mut img.extensions,
-                        128,
-                        [0, 0, 255],
-                    ),
-                )),
-                Err(e) => Err(anyhow::anyhow!(
-                    "HTTP-Response returned errornous frame: {e}"
-                )),
-            }
+            Ok(parse(&bytes, &decoder)?)
         }))
     }
 

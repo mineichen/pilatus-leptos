@@ -72,6 +72,7 @@
                 pkgs.bashInteractive
                 pkgs.ripgrep
                 pkgs.git
+		pkgs.cargo-shear
                 pkgs.opencode
                 pkgs.coreutils
                 (pkgs.writeScriptBin "entrypoint.sh" ''
@@ -85,7 +86,7 @@
             config = {
               Env = pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") envVars ++ [ "HOME=/root" ];
               Cmd = [ "/bin/entrypoint.sh" ];
-              WorkingDir = "/workspace";
+              WorkingDir = "/workspace/pilatus-leptos";
             };
           };
           apps.isolated-build = {

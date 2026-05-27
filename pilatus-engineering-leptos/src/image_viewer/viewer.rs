@@ -2,9 +2,11 @@ use std::rc::Rc;
 
 use futures_util::{FutureExt, StreamExt};
 use imanot::Tools;
+use imbuf::DynamicImage;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
+use pilatus_engineering::image::{ImageWithMeta, StreamImageError};
 use wasm_bindgen::JsCast;
 
 use crate::image_viewer::app::ChangeListener;
@@ -19,6 +21,9 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
     #[prop(optional)] mut tools: Option<Tools>,
     #[prop(optional)] primary: Option<Signal<String>>,
+    #[prop(optional)] mut on_image: Option<
+        Box<dyn FnMut(&mut Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>)>,
+    >,
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
     #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>>>,
 ) -> impl IntoView
@@ -28,6 +33,7 @@ where
     let provider_error = provider.error();
     let provider = Rc::new(provider);
     let canvas_ref = NodeRef::<Canvas>::new();
+    let on_image = RwSignal::new_local(on_image.take());
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
 
@@ -109,13 +115,39 @@ where
             let mut last = js_sys::Date::now();
 
             while let Some(result) = stream.next().await {
-                let (image, masks) = match result {
-                    Ok(image) => image,
+                let mut meta_image = match result {
+                    Ok(mut r) => {
+                        {
+                            on_image.update(|c| {
+                                if let Some(c) = c {
+                                    (c)(&mut r);
+                                }
+                            });
+                        };
+                        match super::super::decode::into_rgb(r) {
+                            Ok(Ok(image)) => image,
+
+                            Ok(Err(e)) => {
+                                leptos::logging::warn!("Backend error: {e}");
+                                break;
+                            }
+                            Err(e) => {
+                                leptos::logging::warn!("Invalid protocol: {e}");
+                                break;
+                            }
+                        }
+                    }
                     Err(e) => {
                         leptos::logging::error!("Error receiving image: {}", e);
                         break;
                     }
                 };
+                let image = meta_image.image;
+                let masks = super::super::decode::extract_from_extensions(
+                    &mut meta_image.extensions,
+                    128,
+                    [0, 0, 255],
+                );
 
                 let Some(guard) = viewer.try_read() else {
                     break;

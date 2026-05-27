@@ -47,15 +47,9 @@ impl ImageProvider for WebSocketImageProvider {
                         match ws.next().await {
                             Some(Ok(Message::Bytes(bytes))) => {
                                 return Some(match parse(&bytes, &decoder) {
-                                    Ok(Ok(mut i)) => {
-                                        let areas = super::super::decode::extract_from_extensions(
-                                            &mut i.extensions,
-                                            128,
-                                            [0, 0, 255],
-                                        );
+                                    Ok(Ok(i)) => {
                                         error_signal.set(Ok(()));
-
-                                        (Ok(Some((i.image, areas))), Ok(ws))
+                                        (Ok(Some(Ok(i))), Ok(ws))
                                     }
                                     #[expect(deprecated)]
                                     Ok(Err(StreamImageError::MissedItems(_))) => continue,
@@ -63,7 +57,13 @@ impl ImageProvider for WebSocketImageProvider {
                                         leptos::logging::log!("Processing Error");
                                         error_signal.set(Err(error.to_string()));
 
-                                        (Ok(Some((image, Vec::new()))), Ok(ws))
+                                        (
+                                            Ok(Some(Err(StreamImageError::ProcessingError {
+                                                image: image,
+                                                error,
+                                            }))),
+                                            Ok(ws),
+                                        )
                                     }
                                     Ok(Err(e)) => (Err(e.into()), Ok(ws)),
                                     Err(e) => (Err(e.into()), Ok(ws)),

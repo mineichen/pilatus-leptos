@@ -33,7 +33,7 @@ impl ImageProvider for WebSocketImageProvider {
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         let state = crate::ws_suspend::SuspensibleWebSocket::new(url).map_err(Some);
-        let error_signal = self.error.clone();
+        let error_signal = self.error;
         let decoder = self.decoder.clone();
         Box::pin(
             stream::unfold(state, move |ws_result| {
@@ -59,14 +59,14 @@ impl ImageProvider for WebSocketImageProvider {
 
                                         (
                                             Ok(Some(Err(StreamImageError::ProcessingError {
-                                                image: image,
+                                                image,
                                                 error,
                                             }))),
                                             Ok(ws),
                                         )
                                     }
                                     Ok(Err(e)) => (Err(e.into()), Ok(ws)),
-                                    Err(e) => (Err(e.into()), Ok(ws)),
+                                    Err(e) => (Err(e), Ok(ws)),
                                 });
                             }
                             Some(Ok(_other)) => {

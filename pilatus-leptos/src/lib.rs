@@ -44,7 +44,7 @@ pub fn ws_url_base() -> impl Display {
 #[component]
 pub fn ProvidePilatusContext(children: Children) -> impl IntoView {
     let notifications = NotificationContext::default();
-    let fetch = FetchApi::new(notifications.clone());
+    let fetch = FetchApi::new(notifications);
     provide_context(fetch);
     provide_context(notifications);
     children()

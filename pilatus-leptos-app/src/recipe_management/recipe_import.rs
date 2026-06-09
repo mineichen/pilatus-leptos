@@ -144,13 +144,13 @@ async fn run_import(
     while let Some(x) = wasm_stream.next().await {
         let bytes = js_sys::Uint8Array::new(&x.map_err(|x| anyhow!("{x:?}"))?);
         let data = bytes.to_vec();
-        ws.send(Message::Bytes(data.into())).await?;
+        ws.send(Message::Bytes(data)).await?;
     }
 
     loop {
         match recv_message(&mut ws).await? {
             ImportServerMessage::Success => return Ok(true),
-            ImportServerMessage::Error(msg) => return Err(anyhow::anyhow!(msg).into()),
+            ImportServerMessage::Error(msg) => return Err(anyhow::anyhow!(msg)),
             ImportServerMessage::Conflicts(conflicts) => {
                 let (tx, mut rx) = mpsc::channel(1);
                 set_conflicts.set(Some(ConflictContext {

@@ -43,7 +43,7 @@ impl ImageProvider for SingleImageProvider {
 
             leptos::logging::log!("Received {} bytes from HTTP", bytes.len());
 
-            Ok(parse(&bytes, &decoder)?)
+            parse(&bytes, &decoder)
         }))
     }
 

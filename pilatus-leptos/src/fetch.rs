@@ -34,7 +34,7 @@ impl FetchApi {
 
         async move {
             let response = request.send().await?;
-            Ok(Self::handle_http_error(response).await?)
+            Self::handle_http_error(response).await
         }
     }
     pub fn get_json_silent<T: DeserializeOwned>(

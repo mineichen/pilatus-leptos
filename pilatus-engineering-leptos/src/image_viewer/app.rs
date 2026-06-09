@@ -51,7 +51,7 @@ impl ViewerHandle {
                     original: imanot::OriginalImage::Rgb8(adjust.clone()),
                     adjust,
                 },
-                masks,
+                masks: masks.into(),
             });
             ctx.request_repaint();
             debug_log!("Replaced image state");

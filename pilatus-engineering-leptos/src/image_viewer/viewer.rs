@@ -26,6 +26,7 @@ pub fn ImageViewerComponent<T>(
     >,
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
     #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>>>,
+    #[prop(optional)] active_layer: Option<SignalSetter<Option<usize>>>,
 ) -> impl IntoView
 where
     T: ImageProvider,
@@ -74,7 +75,7 @@ where
             });
             let set_handle = set_handle.take();
             leptos::reactive::spawn_local(async move {
-                match EframeImageViewer::create(canvas, tools, listener).await {
+                match EframeImageViewer::create(canvas, tools, listener, active_layer).await {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
                         if let Some(set_handle) = set_handle {

@@ -6,6 +6,7 @@ use imanot::{
     ImageViewerInteraction, PixelArea, Tools,
 };
 use imbuf::Image;
+use leptos::prelude::{Set, SignalSetter};
 use leptos::logging::{debug_log, warn};
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context) + Send>;
@@ -96,10 +97,11 @@ impl EframeImageViewer {
         canvas: web_sys::HtmlCanvasElement,
         tools: Tools,
         change_listener: ChangeListener,
+        active_layer: Option<SignalSetter<Option<usize>>>,
     ) -> anyhow::Result<Self> {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = canvas;
+            let _ = (canvas, tools, change_listener, active_layer);
             panic!("EframeImageViewer::create() is only supported on wasm32")
         }
         #[cfg(target_arch = "wasm32")]
@@ -118,7 +120,7 @@ impl EframeImageViewer {
                             "App creation callback called - eframe instance created"
                         );
                         ctx_start.set(Some(cc.egui_ctx.clone()));
-                        Ok(Box::new(App::new(tools, receiver, change_listener)))
+                        Ok(Box::new(App::new(tools, receiver, change_listener, active_layer)))
                     }),
                 )
                 .await
@@ -145,6 +147,8 @@ pub struct App {
     change_listener: ChangeListener,
     change_listener_task: Option<(imanot::AsyncTask<anyhow::Result<()>>, i64)>,
     pending_on_load: Vec<Box<dyn FnOnce(&mut ImageStateLoaded) + Send>>,
+    active_layer: Option<SignalSetter<Option<usize>>>,
+    last_active_subgroup: Option<usize>,
 }
 
 impl App {
@@ -153,6 +157,7 @@ impl App {
         tools: Tools,
         receiver: mpsc::Receiver<ChangeItem>,
         change_listener: ChangeListener,
+        active_layer: Option<SignalSetter<Option<usize>>>,
     ) -> Self {
         Self {
             state: imanot::State::new(tools),
@@ -160,6 +165,8 @@ impl App {
             change_listener,
             change_listener_task: None,
             pending_on_load: Vec::new(),
+            active_layer,
+            last_active_subgroup: None,
         }
     }
 }
@@ -235,5 +242,16 @@ impl eframe::App for App {
                         });
                 }
             });
+
+        let current_active = match &self.state.image_state {
+            ImageState::Loaded(loaded) => loaded.masks.active_subgroup(),
+            _ => None,
+        };
+        if current_active != self.last_active_subgroup {
+            self.last_active_subgroup = current_active;
+            if let Some(setter) = &self.active_layer {
+                setter.set(current_active);
+            }
+        }
     }
 }

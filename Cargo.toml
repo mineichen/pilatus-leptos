@@ -78,16 +78,16 @@ opt-level = 2
 [profile.dev.package.imanot]
 opt-level = 2
 
-[patch."https://github.com/mineichen/pilatus.git"]
-pilatus = { path = "../pilatus/pilatus" }
-pilatus-rt = { path = "../pilatus/pilatus-rt" }
-pilatus-axum = { path = "../pilatus/pilatus-axum" }
-pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
-pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
-pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
-pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
-pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
-pilatus-tick = { path = "../pilatus/examples/tick" }
+# [patch."https://github.com/mineichen/pilatus.git"]
+# pilatus = { path = "../pilatus/pilatus" }
+# pilatus-rt = { path = "../pilatus/pilatus-rt" }
+# pilatus-axum = { path = "../pilatus/pilatus-axum" }
+# pilatus-axum-rt = { path = "../pilatus/pilatus-axum-rt" }
+# pilatus-engineering = { path = "../pilatus/pilatus-engineering" }
+# pilatus-engineering-rt = { path = "../pilatus/pilatus-engineering-rt" }
+# pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
+# pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
+# pilatus-tick = { path = "../pilatus/examples/tick" }
 
 # [patch."https://github.com/mineichen/pilatus-aravis.git"]
 # pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
@@ -96,10 +96,10 @@ pilatus-tick = { path = "../pilatus/examples/tick" }
 #[patch."https://github.com/mineichen/imask.git"]
 #imask.path = "../imask"
 
-[patch."https://github.com/mineichen/imanot.git"]
-imanot.path = "../imanot/imanot"
+# [patch."https://github.com/mineichen/imanot.git"]
+# imanot.path = "../imanot/imanot"
 
 
-[patch.crates-io]
+# [patch.crates-io]
 # imbuf.path = "../imbuf"
-impex.path = "../impex/impex"
+# impex.path = "../impex/impex"

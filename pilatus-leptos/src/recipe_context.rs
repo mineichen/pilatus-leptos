@@ -126,8 +126,8 @@ impl RecipeContext {
             recipes
                 .active()
                 .1
-                .devices
-                .get(&device_id)
+                .device_by_id(device_id)
+                .ok()
                 .map(|device| DeviceInfos {
                     name: device.device_name.clone(),
                     device_id,
@@ -147,10 +147,7 @@ impl RecipeContext {
                 let device_id = device_id.get_untracked();
                 let (active_id, active) = recipes.get_active();
 
-                let device = active
-                    .devices
-                    .get_mut(&device_id)
-                    .unwrap_or_else(|| panic!("Unknown DeviceId {device_id} in active recipe"));
+                let device = active.device_by_id_mut(device_id).unwrap();
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
 
@@ -203,10 +200,7 @@ impl RecipeContext {
                 let device_id = device_id.get_untracked();
                 let (active_id, active) = recipes.get_active();
 
-                let device = active
-                    .devices
-                    .get_mut(&device_id)
-                    .unwrap_or_else(|| panic!("Unknown DeviceId {device_id} in active recipe"));
+                let device = active.device_by_id_mut(device_id).unwrap();
                 device.params = UntypedDeviceParamsWithVariables::from_serializable(&x)
                     .expect("Expect serialize to work");
 
@@ -234,9 +228,8 @@ fn build_getter(device_id: Signal<DeviceId>) -> impl Fn(&Recipes) -> &Value {
         recipes
             .active()
             .1
-            .devices
-            .get(&device_id.get())
-            .expect("DeviceId must exist")
+            .device_by_id(device_id.get())
+            .unwrap()
             .params
             .deref()
     }

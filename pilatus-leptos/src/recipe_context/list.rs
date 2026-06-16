@@ -16,9 +16,8 @@ impl RecipeContext {
             root.with(|recipes| {
                 let (_, active) = recipes.active();
                 active
-                    .devices
                     .iter()
-                    .map(|(&device_id, device)| DeviceInfos {
+                    .map(|(device_id, device)| DeviceInfos {
                         name: device.device_name.clone(),
                         device_id,
                         device_type: device.device_type.clone(),

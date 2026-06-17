@@ -172,9 +172,10 @@ impl App {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
         if let Ok(x) = self.receiver.try_recv() {
-            x(self, ctx)
+            x(self, &ctx)
         }
         if let ImageState::Loaded(loaded) = &mut self.state.image_state {
             if let Some(affected) = loaded.masks.take_dirty() {
@@ -217,8 +218,8 @@ impl eframe::App for App {
             }
         }
         egui::CentralPanel::default()
-            .frame(egui::Frame::new()) // Removes padding
-            .show(ctx, |ui| {
+            .frame(egui::Frame::new())
+            .show_inside(ui, |ui| {
                 let viewer_result = self.state.ui(ui);
                 if let Some(ImageViewerInteraction {
                     cursor_image_pos: Some((x, y)),
@@ -232,7 +233,7 @@ impl eframe::App for App {
                         .fixed_pos(offset_pos)
                         .pivot(egui::Align2::RIGHT_BOTTOM)
                         .order(egui::Order::Foreground)
-                        .show(ctx, |ui| {
+                        .show(&ctx, |ui| {
                             egui::Frame::popup(ui.style())
                                 .fill(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 200))
                                 .show(ui, |ui| {

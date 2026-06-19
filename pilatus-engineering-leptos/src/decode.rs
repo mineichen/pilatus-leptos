@@ -71,7 +71,7 @@ pub fn extract_from_extensions(
     color: [u8; 3],
 ) -> Vec<PixelArea> {
     let rgba = [color[0], color[1], color[2], opacity];
-    extensions
+    let mut ch = extensions
         .iter::<SortedRanges<u64, u64>>()
         .map(|x| {
             let width = x.bounds().len_x();
@@ -81,5 +81,7 @@ pub fn extract_from_extensions(
                 .expect("Always sorted and not empty");
             PixelArea::from_ranges(ranges, rgba)
         })
-        .collect()
+        .collect::<Vec<_>>();
+    ch.extend(extensions.iter_extract::<PixelArea>());
+    ch
 }

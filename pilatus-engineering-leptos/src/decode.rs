@@ -72,7 +72,7 @@ pub fn extract_from_extensions(
 ) -> Vec<PixelArea> {
     let rgba = [color[0], color[1], color[2], opacity];
     let mut ch = extensions
-        .iter::<SortedRanges<u64, u64>>()
+        .iter::<SortedRanges<u32, u32>>()
         .map(|x| {
             let width = x.bounds().len_x();
             let iter = x.iter_global_with::<Range<u32>>(width);

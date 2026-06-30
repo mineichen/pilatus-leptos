@@ -67,7 +67,7 @@ thaw_utils = { git = "https://github.com/thaw-ui/thaw.git" }
 thiserror = "2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-wasm-streams = "0.5"
+wasm-streams = "0.6"
 web-sys = "0.3"
 
 # Reduced binary size from currently 800MB to 100MB

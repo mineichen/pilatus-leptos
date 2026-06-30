@@ -12,7 +12,7 @@ pub type ImageProviderStreamItem =
     anyhow::Result<Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>>;
 pub trait ImageProvider: 'static {
     fn image_stream(
-        &self,
+        &mut self,
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>>;
     fn list_sources(ignore: Option<String>) -> impl Future<Output = anyhow::Result<Vec<String>>>;

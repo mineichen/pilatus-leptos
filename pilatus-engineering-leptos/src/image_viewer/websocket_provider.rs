@@ -29,7 +29,7 @@ impl Default for WebSocketImageProvider {
 
 impl ImageProvider for WebSocketImageProvider {
     fn image_stream(
-        &self,
+        &mut self,
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         let state = crate::ws_suspend::SuspensibleWebSocket::new(url).map_err(Some);

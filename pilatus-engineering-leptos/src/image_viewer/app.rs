@@ -6,8 +6,8 @@ use imanot::{
     ImageViewerInteraction, PixelArea, Tools,
 };
 use imbuf::Image;
-use leptos::prelude::{Set, SignalSetter};
 use leptos::logging::{debug_log, warn};
+use leptos::prelude::{Set, SignalSetter};
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context) + Send>;
 pub(super) type ChangeListener = Box<
@@ -65,6 +65,11 @@ impl ViewerHandle {
         }
     }
 
+    pub fn request_repaint(&self) {
+        self.ctx.request_repaint();
+    }
+
+    /// Executes immediately, if state is loaded. If it's not, the action is executed as soon as it is
     pub fn with_loaded_state(&self, f: impl FnOnce(&mut ImageStateLoaded) + Send + 'static) {
         let set_result = self
             .command_send
@@ -120,7 +125,12 @@ impl EframeImageViewer {
                             "App creation callback called - eframe instance created"
                         );
                         ctx_start.set(Some(cc.egui_ctx.clone()));
-                        Ok(Box::new(App::new(tools, receiver, change_listener, active_layer)))
+                        Ok(Box::new(App::new(
+                            tools,
+                            receiver,
+                            change_listener,
+                            active_layer,
+                        )))
                     }),
                 )
                 .await

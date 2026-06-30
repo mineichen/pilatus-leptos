@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::time::Duration;
 
 use futures_util::{FutureExt, StreamExt};
 use imanot::Tools;
@@ -32,11 +32,29 @@ where
     T: ImageProvider,
 {
     let provider_error = provider.error();
-    let provider = Rc::new(provider);
+    let provider = RwSignal::new_local(provider);
     let canvas_ref = NodeRef::<Canvas>::new();
     let on_image = RwSignal::new_local(on_image.take());
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
+
+    let await_viewer = move |v: ReadSignal<Option<EframeImageViewer>, LocalStorage>| async move {
+        for _ in 0..10 {
+            let Some(guard) = v.try_read() else {
+                return Err(());
+            };
+            match guard.as_ref() {
+                Some(x) => return Ok(Some(x.handle().clone())),
+                None => {
+                    let retry_in = Duration::from_millis(100);
+                    leptos::logging::log!("Not yet ready, waiting for {retry_in:?}");
+                    drop(guard);
+                    gloo_timers::future::sleep(retry_in).await;
+                }
+            }
+        }
+        Ok(None)
+    };
 
     let available = LocalResource::new(move || async move {
         let Some(maybe_ignored_device_id) = list_all_but else {
@@ -81,7 +99,9 @@ where
                         if let Some(set_handle) = set_handle {
                             set_handle.set(Some(viewer.handle().clone()));
                         }
-                        set_viewer.set(Some(viewer));
+                        if set_viewer.try_set(Some(viewer)).is_some() {
+                            leptos::logging::error!("Setting viewer failed.");
+                        }
                     }
                     Err(e) => {
                         leptos::logging::error!("eframe start() returned error: {e:?}");
@@ -110,7 +130,9 @@ where
                 },
             };
 
-            let mut stream = provider.image_stream(ws_url);
+            let Some(mut stream) = provider.try_update(|x| x.image_stream(ws_url)) else {
+                return;
+            };
 
             #[cfg(target_arch = "wasm32")]
             let mut last = js_sys::Date::now();
@@ -150,12 +172,13 @@ where
                     [0, 0, 255],
                 );
 
-                let Some(guard) = viewer.try_read() else {
-                    break;
-                };
-                let Some(viewer_ref) = guard.as_ref() else {
-                    leptos::logging::debug_log!("Viewer is not ready to display images");
-                    continue;
+                let viewer_ref = match await_viewer(viewer).await {
+                    Ok(Some(x)) => x,
+                    Ok(None) => {
+                        leptos::logging::debug_log!("Viewer is not ready to display images");
+                        continue;
+                    }
+                    Err(_) => break,
                 };
 
                 #[cfg(target_arch = "wasm32")]
@@ -168,7 +191,7 @@ where
                     last = now;
                 }
 
-                viewer_ref.handle().replace_image(image, masks).await;
+                viewer_ref.replace_image(image, masks).await;
             }
 
             leptos::logging::log!("Image stream closed");

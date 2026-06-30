@@ -26,7 +26,7 @@ impl Default for SingleImageProvider {
 
 impl ImageProvider for SingleImageProvider {
     fn image_stream(
-        &self,
+        &mut self,
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>> {
         let decoder = self.decoder.clone();

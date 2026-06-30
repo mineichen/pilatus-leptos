@@ -1535,9 +1535,9 @@ checksum = "669a445ee724c5c69b1b06fe0b63e70a1c84bc9bb7d9696cd4f4e3ec45050408"
 
 [[package]]
 name = "ecolor"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a05fbfa222ffb51989d5ccf33e5f7aebfcf96c5023413856b0c3618a7f79896e"
+checksum = "6758be723a3f298bbfda4db75748bc2ba0abafe096b6383c7c32da264764fbc3"
 dependencies = [
  "bytemuck",
  "emath",
@@ -1545,9 +1545,9 @@ dependencies = [
 
 [[package]]
 name = "eframe"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f98fe83b2589105b69dd25ca1e0fa2135a6e864d502fd8e08978f937e128cfef"
+checksum = "8dc8234e2f681b2afd2b2e8c332fa614de2fddbdcb28d0acf5c420449682ea90"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1581,15 +1581,16 @@ dependencies = [
 
 [[package]]
 name = "egui"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42112be0ae157289312b92b3dfaf20e911b5a3c4c65d4aab0e7c47fbc0ce16e3"
+checksum = "2796c98d50b79631281d516343a6f6e93c0666462ca36e2c93b39f25d7793325"
 dependencies = [
  "accesskit",
  "ahash",
  "bitflags 2.13.0",
  "emath",
  "epaint",
+ "itertools 0.14.0",
  "log",
  "nohash-hasher",
  "profiling",
@@ -1599,9 +1600,9 @@ dependencies = [
 
 [[package]]
 name = "egui-wgpu"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f0c0559ac5598a1b887a6206dccbab7e3e6246c57cb00ae287262bd44776c9c"
+checksum = "d2e6cfac0725563555fa4f91e9f799b9d7c6c5dd831fca6abc8234afc64b7a34"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1619,9 +1620,9 @@ dependencies = [
 
 [[package]]
 name = "egui-winit"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "967c5b323625d46d46a59b5daba3fef742248d27693cc18972458619858c4239"
+checksum = "9ea6bf3608db949588b95b8b341ee358d0c3f95cf4dc3f53d8d76717edee87db"
 dependencies = [
  "accesskit_winit",
  "arboard",
@@ -1641,9 +1642,9 @@ dependencies = [
 
 [[package]]
 name = "egui_glow"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b652957fa7e1ab01e8fecbfbf4e35f6e43a53fa98af8a562b50d5403cd44b9"
+checksum = "52274b9bfb8d8e252cd0f00c9f6214f360d75a0962baa77a2d62ddb002fe99d4"
 dependencies = [
  "bytemuck",
  "egui",
@@ -1651,8 +1652,6 @@ dependencies = [
  "log",
  "memoffset",
  "profiling",
- "wasm-bindgen",
- "web-sys",
  "winit",
 ]
 
@@ -1674,9 +1673,9 @@ dependencies = [
 
 [[package]]
 name = "emath"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b53f0d33a479321da6b0caa71366c9f67e8a2c149762d90bdc0d16e601ee8ecb"
+checksum = "cd4ec073c9898516584d8c6cfdcee95b530b3d941cd5031ef4050aa36812308b"
 dependencies = [
  "bytemuck",
 ]
@@ -1710,9 +1709,9 @@ dependencies = [
 
 [[package]]
 name = "epaint"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6675898a291ec212fc3df04f537d177fce8496120244590e6359dcaa4c25da79"
+checksum = "4e60a8888b51da911df23918fd7301359b1d43a406a0ff3b8863af093dd7fc6c"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1720,6 +1719,7 @@ dependencies = [
  "emath",
  "epaint_default_fonts",
  "font-types",
+ "harfrust",
  "log",
  "nohash-hasher",
  "parking_lot",
@@ -1727,14 +1727,16 @@ dependencies = [
  "self_cell",
  "skrifa",
  "smallvec",
+ "unicode-general-category",
+ "unicode-segmentation",
  "vello_cpu",
 ]
 
 [[package]]
 name = "epaint_default_fonts"
-version = "0.34.3"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8970033a4282a7bcf899b38b5ed3a58b732fe093d03785d58648515d8d309da"
+checksum = "13ee4e1f553a3584c301f3a56ff1a775f1384781396cea301c8d952e9b93f560"
 
 [[package]]
 name = "equator"
@@ -1858,12 +1860,9 @@ dependencies = [
 
 [[package]]
 name = "fearless_simd"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fb2907d1f08b2b316b9223ced5b0e89d87028ba8deae9764741dba8ff7f3903"
-dependencies = [
- "bytemuck",
-]
+checksum = "b97b65636e5b9ef369943878ac74335ba1c55c1cb6adbf1e2c293c624248d693"
 
 [[package]]
 name = "find-msvc-tools"
@@ -2075,12 +2074,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gen_ops"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "304de19db7028420975a296ab0fcbbc8e69438c4ed254a1e41e2a7f37d5f0e0a"
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2253,6 +2246,22 @@ checksum = "8ab79e1ed126803a8fb827e3de0e2ff95191912b8db65cee467edb56fc4cc215"
 dependencies = [
  "libc",
  "system-deps",
+]
+
+[[package]]
+name = "glifo"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d99fc21d493812643aae86d53b7bbd02f376434a90317e8a790bc209fdd6605e"
+dependencies = [
+ "bytemuck",
+ "foldhash 0.2.0",
+ "hashbrown 0.17.1",
+ "log",
+ "peniko",
+ "skrifa",
+ "smallvec",
+ "vello_common",
 ]
 
 [[package]]
@@ -2493,6 +2502,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17e2ac29387b1aa07a1e448f7bb4f35b500787971e965b02842b900afa5c8f6f"
 
 [[package]]
+name = "guillotiere"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b17e70c989c36bad147b27a58d148c0741c51448aa5653436547323e524d0ab"
+dependencies = [
+ "euclid",
+]
+
+[[package]]
 name = "h2"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2521,6 +2539,18 @@ dependencies = [
  "crunchy",
  "num-traits",
  "zerocopy",
+]
+
+[[package]]
+name = "harfrust"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0431e8e389aa0f1e72bb9d1c2db8957a1a7a3580e8ed97db819c14837aac9b3e"
+dependencies = [
+ "bitflags 2.13.0",
+ "bytemuck",
+ "read-fonts",
+ "smallvec",
 ]
 
 [[package]]
@@ -2554,6 +2584,9 @@ name = "hashbrown"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+dependencies = [
+ "foldhash 0.2.0",
+]
 
 [[package]]
 name = "hdrhistogram"
@@ -2917,7 +2950,7 @@ checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
 [[package]]
 name = "imanot"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/imanot.git#8d31db59fab1e400c6076f8cc2f0cbf2098fa600"
+source = "git+https://github.com/mineichen/imanot.git#c2e3a92347eb82d1cc177b19f4764b1a302544f2"
 dependencies = [
  "egui",
  "futures",
@@ -2926,7 +2959,6 @@ dependencies = [
  "itertools 0.15.0",
  "log",
  "num-traits",
- "range-set-blaze",
  "thiserror 2.0.18",
  "web-sys",
 ]
@@ -2934,12 +2966,11 @@ dependencies = [
 [[package]]
 name = "imask"
 version = "0.0.1"
-source = "git+https://github.com/mineichen/imask.git#ee6d70ce8b1820929eadd1d4f98ee1d391e6961d"
+source = "git+https://github.com/mineichen/imask.git#d6bf7e5ae013aac946b9f4afad667a6c2445311e"
 dependencies = [
  "itertools 0.15.0",
  "nalgebra",
  "num-traits",
- "range-set-blaze",
  "thiserror 2.0.18",
 ]
 
@@ -4479,7 +4510,7 @@ checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "approx",
@@ -4554,7 +4585,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -4574,7 +4605,7 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -4601,7 +4632,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "impex",
  "pilatus",
@@ -4630,7 +4661,7 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "bytes",
@@ -4652,7 +4683,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "approx",
@@ -4701,7 +4732,7 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "axum",
@@ -4798,14 +4829,14 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
  "console-subscriber",
  "futures",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "minfac",
  "pilatus",
  "pin-project",
@@ -4825,7 +4856,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "impex",
  "pilatus",
@@ -4835,7 +4866,7 @@ dependencies = [
 [[package]]
 name = "pilatus-tick-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#07ea913ed1229bd65b85ada68ebb1fbc90ba9e17"
+source = "git+https://github.com/mineichen/pilatus.git#c7f5f0c58a2babb08cec3b0c001274859de497f9"
 dependencies = [
  "anyhow",
  "futures",
@@ -5242,18 +5273,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca45419789ae5a7899559e9512e58ca889e41f04f1f2445e9f4b290ceccd1d08"
 
 [[package]]
-name = "range-set-blaze"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8c68551976fabe286bcc4f1494f31fc598dd37afda76166009b853e481f82b5"
-dependencies = [
- "gen_ops",
- "itertools 0.14.0",
- "num-integer",
- "num-traits",
-]
-
-[[package]]
 name = "rav1e"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5450,9 +5469,9 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
-version = "0.37.0"
+version = "0.39.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b634fabf032fab15307ffd272149b622260f55974d9fad689292a5d33df02e5"
+checksum = "c4ed38b89c2c77ff968c524145ad65fb010f38af5c7a224b53b81d47ac2daa81"
 dependencies = [
  "bytemuck",
  "font-types",
@@ -6020,9 +6039,9 @@ checksum = "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649"
 
 [[package]]
 name = "skrifa"
-version = "0.40.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fbdfe3d2475fbd7ddd1f3e5cf8288a30eb3e5f95832829570cd88115a7434ac"
+checksum = "0c34617370ae968efb7161bb2beb517d9084659aae19e24b89e3db25b46e4564"
 dependencies = [
  "bytemuck",
  "read-fonts",
@@ -6726,9 +6745,9 @@ dependencies = [
 
 [[package]]
 name = "tower-http"
-version = "0.6.11"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840"
+checksum = "b11f75e912b0c2be01b63d8cf8057b8c3f97cf34abb3d431a3a4c8675498e233"
 dependencies = [
  "bitflags 2.13.0",
  "bytes",
@@ -6957,6 +6976,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce61d488bcdc9bc8b5d1772c404828b17fc481c0a582b5581e95fb233aef503e"
 
 [[package]]
+name = "unicode-general-category"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b993bddc193ae5bd0d623b49ec06ac3e9312875fdae725a975c51db1cc1677f"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7081,27 +7106,29 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vello_common"
-version = "0.0.6"
+version = "0.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bd1a4c633ce09e7d713df1a6e036644a125e15e0c169cfb5180ddf5836ca04b"
+checksum = "19d672facaa2d697285a786cd9d44d614cd2ce54cdc022504bf339f8fff3b750"
 dependencies = [
  "bytemuck",
  "fearless_simd",
- "hashbrown 0.16.1",
+ "guillotiere",
+ "hashbrown 0.17.1",
  "log",
  "peniko",
- "skrifa",
  "smallvec",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "vello_cpu"
-version = "0.0.6"
+version = "0.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0162bfe48aabf6a9fdcd401b628c7d9f260c2cbabb343c70a65feba6f7849edc"
+checksum = "588691169aed86b5c8fb487266afee01323234e6fd0a3f2aaec0eaa8e4007f23"
 dependencies = [
  "bytemuck",
- "hashbrown 0.16.1",
+ "glifo",
+ "hashbrown 0.17.1",
  "vello_common",
 ]
 

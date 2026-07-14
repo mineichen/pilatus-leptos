@@ -150,6 +150,10 @@ where
                         match super::super::decode::into_rgb(r) {
                             Ok(Ok(image)) => image,
 
+                            Ok(Err(StreamImageError::ProcessingError {
+                                image,
+                                ..
+                            })) => ImageWithMeta::with_hash(image, None),
                             Ok(Err(e)) => {
                                 leptos::logging::warn!("Backend error: {e}");
                                 break;

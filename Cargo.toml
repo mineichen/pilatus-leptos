@@ -96,8 +96,8 @@ opt-level = 2
 # pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
 # pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
 
-#[patch."https://github.com/mineichen/imask.git"]
-#imask.path = "../imask"
+# [patch."https://github.com/mineichen/imask.git"]
+# imask.path = "../imask"
 
 # [patch."https://github.com/mineichen/imanot.git"]
 # imanot.path = "../imanot/imanot"

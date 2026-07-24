@@ -3,13 +3,13 @@ use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
     AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
-    ImageViewerInteraction, PixelArea, Tools,
+    ImageViewerInteraction, PixelArea, ToolFactory, Tools,
 };
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
 use leptos::prelude::{Set, SignalSetter};
 
-type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context) + Send>;
+type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
 pub(super) type ChangeListener = Box<
     dyn FnMut(
         &mut ImageStateLoaded,
@@ -24,19 +24,18 @@ pub struct ViewerHandle {
 }
 
 impl ViewerHandle {
-    pub fn set_primary(&self, name: String) {
+    pub fn set_primary(&self, factory: ToolFactory) {
         let enqueue = self
             .command_send
             .clone()
             .try_send(Box::new(move |app, _ctx| {
-                let mut primary = app.state.tools.primary();
-                let (Some(idx), ImageState::Loaded(loaded)) = (
-                    primary.tool_names().position(|x| x == name),
-                    &app.state.image_state,
-                ) else {
+                let ImageState::Loaded(loaded) = &app.state.image_state else {
                     return;
                 };
-                primary.set_idx(idx, &loaded.image);
+                app.state
+                    .tools
+                    .primary()
+                    .set_factory(factory, &loaded.image);
             }));
         if enqueue.is_err() {
             leptos::logging::error!("Unable to queue set_primary");
@@ -229,7 +228,7 @@ impl eframe::App for App {
         }
         egui::CentralPanel::default()
             .frame(egui::Frame::new())
-            .show_inside(ui, |ui| {
+            .show(ui, |ui| {
                 let viewer_result = self.state.ui(ui);
                 if let Some(ImageViewerInteraction {
                     cursor_image_pos: Some((x, y)),

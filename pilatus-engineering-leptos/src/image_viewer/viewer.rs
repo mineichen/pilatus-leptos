@@ -20,12 +20,11 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
     #[prop(optional)] mut tools: Option<Tools>,
-    #[prop(optional)] primary: Option<Signal<String>>,
     #[prop(optional)] mut on_image: Option<
         Box<dyn FnMut(&mut Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>)>,
     >,
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
-    #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>>>,
+    #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>, LocalStorage>>,
     #[prop(optional)] active_layer: Option<SignalSetter<Option<usize>>>,
 ) -> impl IntoView
 where
@@ -110,13 +109,7 @@ where
             });
         }
     });
-    if let Some(primary) = primary {
-        Effect::new(move || {
-            if let Some(viewer_ref) = viewer.read().as_ref() {
-                viewer_ref.handle().set_primary(primary.get());
-            }
-        });
-    }
+
     // Start the image stream processing when URL changes
     let _image_acquisition = LocalResource::new(move || {
         let provider = provider.clone();
@@ -150,10 +143,9 @@ where
                         match super::super::decode::into_rgb(r) {
                             Ok(Ok(image)) => image,
 
-                            Ok(Err(StreamImageError::ProcessingError {
-                                image,
-                                ..
-                            })) => ImageWithMeta::with_hash(image, None),
+                            Ok(Err(StreamImageError::ProcessingError { image, .. })) => {
+                                ImageWithMeta::with_hash(image, None)
+                            }
                             Ok(Err(e)) => {
                                 leptos::logging::warn!("Backend error: {e}");
                                 break;

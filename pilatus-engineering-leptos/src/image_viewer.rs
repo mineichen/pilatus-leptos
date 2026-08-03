@@ -6,6 +6,8 @@ mod viewer;
 mod websocket_provider;
 
 pub use app::EframeImageViewer;
+pub use app::OnFrameCallback;
+pub use app::OnFrameCtx;
 pub use app::ViewerHandle;
 pub use provider::ImageProvider;
 pub use signal_provider::SignalImageProvider;

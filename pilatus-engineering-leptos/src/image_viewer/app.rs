@@ -17,6 +17,16 @@ pub(super) type ChangeListener = Box<
     ) -> LocalBoxFuture<'static, anyhow::Result<()>>,
 >;
 
+/// Context handed to the per-frame callback of the image viewer.
+/// Called every frame, right after the image viewer was rendered.
+pub struct OnFrameCtx<'a> {
+    /// Interaction result of the image viewer for this frame (hover position, painter, ...)
+    pub interaction: Option<ImageViewerInteraction>,
+    pub ui: &'a mut egui::Ui,
+}
+
+pub type OnFrameCallback = Box<dyn for<'a> FnMut(OnFrameCtx<'a>)>;
+
 #[derive(Clone)]
 pub struct ViewerHandle {
     command_send: mpsc::Sender<ChangeItem>,
@@ -102,10 +112,11 @@ impl EframeImageViewer {
         tools: Tools,
         change_listener: ChangeListener,
         active_layer: Option<SignalSetter<Option<usize>>>,
+        on_frame: Option<OnFrameCallback>,
     ) -> anyhow::Result<Self> {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = (canvas, tools, change_listener, active_layer);
+            let _ = (canvas, tools, change_listener, active_layer, on_frame);
             panic!("EframeImageViewer::create() is only supported on wasm32")
         }
         #[cfg(target_arch = "wasm32")]
@@ -129,6 +140,7 @@ impl EframeImageViewer {
                             receiver,
                             change_listener,
                             active_layer,
+                            on_frame,
                         )))
                     }),
                 )
@@ -158,6 +170,7 @@ pub struct App {
     pending_on_load: Vec<Box<dyn FnOnce(&mut ImageStateLoaded) + Send>>,
     active_layer: Option<SignalSetter<Option<usize>>>,
     last_active_subgroup: Option<usize>,
+    on_frame: Option<OnFrameCallback>,
 }
 
 impl App {
@@ -167,6 +180,7 @@ impl App {
         receiver: mpsc::Receiver<ChangeItem>,
         change_listener: ChangeListener,
         active_layer: Option<SignalSetter<Option<usize>>>,
+        on_frame: Option<OnFrameCallback>,
     ) -> Self {
         Self {
             state: imanot::State::new(tools),
@@ -176,6 +190,7 @@ impl App {
             pending_on_load: Vec::new(),
             active_layer,
             last_active_subgroup: None,
+            on_frame,
         }
     }
 }
@@ -230,10 +245,8 @@ impl eframe::App for App {
             .frame(egui::Frame::new())
             .show(ui, |ui| {
                 let viewer_result = self.state.ui(ui);
-                if let Some(ImageViewerInteraction {
-                    cursor_image_pos: Some((x, y)),
-                    ..
-                }) = viewer_result.inner
+                if let Some(interaction) = &viewer_result.inner
+                    && let Some((x, y)) = interaction.cursor_image_pos
                 {
                     let image_rect = viewer_result.response.rect;
                     let offset_pos = egui::pos2(image_rect.max.x - 5.0, image_rect.max.y - 5.0);
@@ -250,6 +263,12 @@ impl eframe::App for App {
                                     ui.add(egui::Label::new(format!("y: {y}")).extend());
                                 });
                         });
+                }
+                if let Some(on_frame) = &mut self.on_frame {
+                    on_frame(OnFrameCtx {
+                        interaction: viewer_result.inner,
+                        ui,
+                    });
                 }
             });
 

@@ -11,7 +11,7 @@ use wasm_bindgen::JsCast;
 
 use crate::image_viewer::app::ChangeListener;
 
-use super::{ImageProvider, app::EframeImageViewer, app::ViewerHandle};
+use super::{ImageProvider, OnFrameCallback, app::EframeImageViewer, app::ViewerHandle};
 
 #[component]
 pub fn ImageViewerComponent<T>(
@@ -26,6 +26,7 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
     #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>, LocalStorage>>,
     #[prop(optional)] active_layer: Option<SignalSetter<Option<usize>>>,
+    #[prop(optional)] mut on_frame: Option<OnFrameCallback>,
 ) -> impl IntoView
 where
     T: ImageProvider,
@@ -91,8 +92,11 @@ where
                 })
             });
             let set_handle = set_handle.take();
+            let on_frame = on_frame.take();
             leptos::reactive::spawn_local(async move {
-                match EframeImageViewer::create(canvas, tools, listener, active_layer).await {
+                match EframeImageViewer::create(canvas, tools, listener, active_layer, on_frame)
+                    .await
+                {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
                         if let Some(set_handle) = set_handle {

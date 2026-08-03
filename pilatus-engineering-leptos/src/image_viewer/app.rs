@@ -279,7 +279,9 @@ impl eframe::App for App {
         if current_active != self.last_active_subgroup {
             self.last_active_subgroup = current_active;
             if let Some(setter) = &self.active_layer {
-                setter.set(current_active);
+                if let Some(x) = setter.try_set(current_active) {
+                    leptos::logging::log!("Couldn't set active as signal vanished: {x:?}");
+                };
             }
         }
     }

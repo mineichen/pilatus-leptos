@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 mod device_context;
 mod fetch;
+mod frozen_signal;
 mod impex_strategy;
 mod json_device;
 mod leaf_rw_signal;
@@ -13,6 +14,7 @@ mod variable_input;
 
 pub use device_context::*;
 pub use fetch::*;
+pub use frozen_signal::*;
 pub use impex_strategy::*;
 pub use json_device::*;
 pub use leaf_rw_signal::*;

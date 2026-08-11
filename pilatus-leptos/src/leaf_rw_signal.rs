@@ -33,7 +33,7 @@ where
     T: Send + Sync + 'static,
 {
     /// Location where the MapRwSignal was created
-    pub(crate) defined_at: &'static Location<'static>,
+    defined_at: &'static Location<'static>,
     /// signal from which we can read the value
     pub(crate) read_signal: Signal<PilatusPrimitiveValue<T>>,
     /// signal from where we can write the value to

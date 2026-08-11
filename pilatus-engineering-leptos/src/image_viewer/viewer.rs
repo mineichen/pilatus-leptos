@@ -115,87 +115,85 @@ where
     });
 
     // Start the image stream processing when URL changes
-    let _image_acquisition = LocalResource::new(move || {
-        let provider = provider.clone();
-        async move {
-            let ws_url = url.get();
-            let ws_url = match ws_url {
-                Some(x) => x,
-                None => match &*available.read() {
-                    Some(Ok(x)) if !x.is_empty() => x[0].clone(),
-                    _ => return,
-                },
-            };
+    let _image_acquisition = LocalResource::new(move || async move {
+        let ws_url = url.get();
+        let ws_url = match ws_url {
+            Some(x) => x,
+            None => match &*available.read() {
+                Some(Ok(x)) if !x.is_empty() => x[0].clone(),
+                _ => return,
+            },
+        };
 
-            let Some(mut stream) = provider.try_update(|x| x.image_stream(ws_url)) else {
-                return;
+        let extract = provider.try_update(|x| (x.history_strategy(), x.image_stream(ws_url)));
+        let Some((strategy, mut stream)) = extract else {
+            return;
+        };
+
+        #[cfg(target_arch = "wasm32")]
+        let mut last = js_sys::Date::now();
+
+        while let Some(result) = stream.next().await {
+            let mut meta_image = match result {
+                Ok(mut r) => {
+                    {
+                        on_image.update(|c| {
+                            if let Some(c) = c {
+                                (c)(&mut r);
+                            }
+                        });
+                    };
+                    match super::super::decode::into_rgb(r) {
+                        Ok(Ok(image)) => image,
+
+                        Ok(Err(StreamImageError::ProcessingError { image, .. })) => {
+                            ImageWithMeta::with_hash(image, None)
+                        }
+                        Ok(Err(e)) => {
+                            leptos::logging::warn!("Backend error: {e}");
+                            break;
+                        }
+                        Err(e) => {
+                            leptos::logging::warn!("Invalid protocol: {e}");
+                            break;
+                        }
+                    }
+                }
+                Err(e) => {
+                    leptos::logging::error!("Error receiving image: {}", e);
+                    break;
+                }
+            };
+            let image = meta_image.image;
+            let masks = super::super::decode::extract_from_extensions(
+                &mut meta_image.extensions,
+                128,
+                [0, 0, 255],
+            );
+
+            let viewer_ref = match await_viewer(viewer).await {
+                Ok(Some(x)) => x,
+                Ok(None) => {
+                    leptos::logging::debug_log!("Viewer is not ready to display images");
+                    continue;
+                }
+                Err(_) => break,
             };
 
             #[cfg(target_arch = "wasm32")]
-            let mut last = js_sys::Date::now();
-
-            while let Some(result) = stream.next().await {
-                let mut meta_image = match result {
-                    Ok(mut r) => {
-                        {
-                            on_image.update(|c| {
-                                if let Some(c) = c {
-                                    (c)(&mut r);
-                                }
-                            });
-                        };
-                        match super::super::decode::into_rgb(r) {
-                            Ok(Ok(image)) => image,
-
-                            Ok(Err(StreamImageError::ProcessingError { image, .. })) => {
-                                ImageWithMeta::with_hash(image, None)
-                            }
-                            Ok(Err(e)) => {
-                                leptos::logging::warn!("Backend error: {e}");
-                                break;
-                            }
-                            Err(e) => {
-                                leptos::logging::warn!("Invalid protocol: {e}");
-                                break;
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        leptos::logging::error!("Error receiving image: {}", e);
-                        break;
-                    }
-                };
-                let image = meta_image.image;
-                let masks = super::super::decode::extract_from_extensions(
-                    &mut meta_image.extensions,
-                    128,
-                    [0, 0, 255],
+            {
+                let now = js_sys::Date::now();
+                leptos::logging::log!(
+                    "Forward image to viewer {image:?} at {:?}ms ({strategy:?})",
+                    now - last
                 );
-
-                let viewer_ref = match await_viewer(viewer).await {
-                    Ok(Some(x)) => x,
-                    Ok(None) => {
-                        leptos::logging::debug_log!("Viewer is not ready to display images");
-                        continue;
-                    }
-                    Err(_) => break,
-                };
-
-                #[cfg(target_arch = "wasm32")]
-                {
-                    let now = js_sys::Date::now();
-                    leptos::logging::log!(
-                        "Forward image to viewer {image:?} at {:?}ms",
-                        now - last
-                    );
-                    last = now;
-                }
-
-                viewer_ref.replace_image(image, masks).await;
+                last = now;
             }
 
-            leptos::logging::log!("Image stream closed");
+            viewer_ref.replace_image(image, masks, strategy).await;
         }
+
+        leptos::logging::log!("Image stream closed");
     });
 
     let (is_fullscreen, set_is_fullscreen) = signal(false);

@@ -2,7 +2,7 @@ use chrono::DateTime;
 use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
-    AsyncTask, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
+    AsyncTask, HistoryStrategy, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
     ImageViewerInteraction, PixelArea, ToolFactory, Tools,
 };
 use imbuf::Image;
@@ -52,21 +52,31 @@ impl ViewerHandle {
         }
     }
 
-    pub async fn replace_image(&self, adjust: Image<[u8; 3], 1>, masks: Vec<PixelArea>) {
+    pub async fn replace_image(
+        &self,
+        adjust: Image<[u8; 3], 1>,
+        masks: Vec<PixelArea>,
+        history_strategy: HistoryStrategy,
+    ) {
         let (r_send, r_recv) = oneshot::channel();
-        let set_result = self.command_send.clone().try_send(Box::new(|app, ctx| {
-            app.state.image_state.set_image_data(ImageData {
-                id: ImageId::from("foo"),
-                image: ImageLoadOk {
-                    original: imanot::OriginalImage::Rgb8(adjust.clone()),
-                    adjust,
-                },
-                masks: masks.into(),
-            });
-            ctx.request_repaint();
-            debug_log!("Replaced image state");
-            r_send.send(()).ok();
-        }));
+        let set_result = self
+            .command_send
+            .clone()
+            .try_send(Box::new(move |app, ctx| {
+                let data = ImageData::new(
+                    ImageId::from("foo"),
+                    ImageLoadOk {
+                        original: imanot::OriginalImage::Rgb8(adjust.clone()),
+                        adjust,
+                    },
+                    masks.into(),
+                    history_strategy,
+                );
+                app.state.set_image(data);
+                ctx.request_repaint();
+                debug_log!("Replaced image state");
+                r_send.send(()).ok();
+            }));
         if set_result.is_ok() {
             self.ctx.request_repaint();
             r_recv.await.ok();

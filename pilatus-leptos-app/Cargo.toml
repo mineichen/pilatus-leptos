@@ -24,6 +24,9 @@ serde_json.workspace = true
 thaw.workspace = true
 thaw_utils.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
+tracing-log = "0.2"
+tracing-wasm = "0.2"
 wasm-streams.workspace = true
 web-sys = { workspace = true, features = ["FileReader", "FileList", "HtmlInputElement", "Window", "Location"] }
 

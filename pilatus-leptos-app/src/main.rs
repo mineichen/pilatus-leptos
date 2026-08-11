@@ -5,7 +5,7 @@ use pilatus_leptos_app::App;
 pub fn main() {
     use leptos::{logging, mount};
 
-    console_error_panic_hook::set_once();
+    pilatus_leptos_app::init_logging();
     logging::log!("csr mode - mounting to body");
     mount::mount_to_body(RootApp);
 }

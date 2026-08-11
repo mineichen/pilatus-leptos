@@ -2,6 +2,7 @@ use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt, TryStreamExt, stream};
 use gloo_net::websocket::Message;
+use imanot::HistoryStrategy;
 use leptos::prelude::{ReadSignal, RwSignal, Set, use_context};
 use pilatus::device::DeviceId;
 use pilatus_engineering::image::{MetaImageDecoder, StreamImageError};
@@ -15,6 +16,7 @@ use super::provider::ImageProvider;
 #[non_exhaustive]
 pub struct WebSocketImageProvider {
     pub error: RwSignal<Result<(), String>>,
+    pub history_strategy: HistoryStrategy,
     decoder: MetaImageDecoder,
 }
 
@@ -23,11 +25,15 @@ impl Default for WebSocketImageProvider {
         Self {
             error: RwSignal::new(Ok(())),
             decoder: use_context().unwrap_or(MetaImageDecoder::with_extensions(Arc::default())),
+            history_strategy: HistoryStrategy::Keep,
         }
     }
 }
 
 impl ImageProvider for WebSocketImageProvider {
+    fn history_strategy(&self) -> HistoryStrategy {
+        self.history_strategy
+    }
     fn image_stream(
         &mut self,
         url: String,

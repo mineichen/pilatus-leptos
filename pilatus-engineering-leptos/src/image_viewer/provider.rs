@@ -1,4 +1,5 @@
 use futures_util::Stream;
+use imanot::HistoryStrategy;
 use imbuf::DynamicImage;
 use leptos::prelude::ReadSignal;
 use pilatus_engineering::image::{ImageWithMeta, StreamImageError};
@@ -15,6 +16,9 @@ pub trait ImageProvider: 'static {
         &mut self,
         url: String,
     ) -> Pin<Box<dyn Stream<Item = ImageProviderStreamItem> + 'static>>;
+    fn history_strategy(&self) -> HistoryStrategy {
+        HistoryStrategy::Reset
+    }
     fn list_sources(ignore: Option<String>) -> impl Future<Output = anyhow::Result<Vec<String>>>;
     fn error(&self) -> ReadSignal<Result<(), String>>;
 }

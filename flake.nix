@@ -54,7 +54,16 @@
           podmanRun = "${pkgs.podman}/bin/podman run --rm -it "
             + "--network=slirp4netns "
             + "--tmpfs /tmp "
-            + "-v ..:/workspace:z "
+            + "-v ../pilatus:/workspace/pilatus:z "
+            + "-v ../pilatus-leptos:/workspace/pilatus-leptos:z "
+            + "-v ../pilatus-opencv:/workspace/pilatus-opencv:z "
+            + "-v ../pilatus-aravis:/workspace/pilatus-aravis:z "
+            + "-v ../imask:/workspace/imask:z "
+            + "-v ../imbuf:/workspace/imbuf:z "
+            + "-v ../impex:/workspace/impex:z "
+            + "-v ../shape-based-matching-rs:/workspace/shape-based-matching-rs:z "
+            + "-v ../sealedstruct:/workspace/sealedstruct:z "
+            + "-v ../imanot:/workspace/imanot:z "
             + "-e HOME=/root "
             + "${containername}:latest /bin/entrypoint.sh";
         in

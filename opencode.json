@@ -7,6 +7,8 @@
       "/workspace/impex/**": "allow",
       "/workspace/imask/**": "allow",
       "/workspace/imanot/**": "allow"
-    }
-  }
+    },
+    "lsp": "allow"
+  },
+  "lsp": true
 }

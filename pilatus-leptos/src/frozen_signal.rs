@@ -48,9 +48,8 @@ where
         let write_signal: SignalSetter<T> = source.into();
         let latch = StoredValue::new(None);
 
-        let (l_m, s_m) = (latch, source);
         let read_signal: Signal<T> =
-            Memo::new(move |_| l_m.get_value().unwrap_or_else(|| s_m.get())).into();
+            Memo::new(move |_| latch.get_value().unwrap_or_else(|| source.get())).into();
 
         Self {
             defined_at: Location::caller(),
@@ -302,16 +301,30 @@ mod tests {
     fn roundtrip() {
         let owner = Owner::new();
         owner.with(|| {
-            let rw_signal = RwSignal::new(21);
+            let rw_signal = RwSignal::new(12);
             let frozen = FrozenSignal::new(rw_signal);
             let effect_count = StoredValue::new(0);
+            assert_eq!(12, *frozen.read());
+            rw_signal.set(21);
+            assert_eq!(21, *frozen.read());
 
-            Effect::new(move || effect_count.set_value(effect_count.get_value() + 1));
+            let effect = ImmediateEffect::new_isomorphic(move || {
+                let _ = frozen.read();
+                effect_count.set_value(effect_count.get_value() + 1);
+            });
             assert_eq!(1, *effect_count.read_value());
+
             frozen.set(42);
             assert_eq!(42, *rw_signal.read());
             assert_eq!(21, *frozen.read());
             assert_eq!(1, *effect_count.read_value());
+
+            rw_signal.set(99);
+            assert_eq!(99, *rw_signal.read());
+            assert_eq!(21, *frozen.read());
+            assert_eq!(1, *effect_count.read_value());
+
+            effect.dispose();
         });
     }
 }

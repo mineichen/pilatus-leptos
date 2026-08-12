@@ -34,26 +34,21 @@ where
 {
 }
 
-impl<T> FrozenSignal<T>
+impl<T> FrozenSignal<T, SyncStorage>
 where
     T: Send + Sync + Clone + PartialEq + 'static,
 {
-    /// Creates a new frozen signal from any source that provides both a reactive read
-    /// ([`Get<Value = T>`](Get)) and a write part ([`SignalSetter<T>`]).
+    /// Creates a new frozen signal from separate read and write signals.
     #[track_caller]
-    pub fn new<S>(source: S) -> Self
-    where
-        S: Copy + Send + Sync + 'static + Get<Value = T> + Into<SignalSetter<T>>,
-    {
-        let write_signal: SignalSetter<T> = source.into();
-        let latch = StoredValue::new(None);
+    pub fn new(read: Signal<T, SyncStorage>, write: SignalSetter<T, SyncStorage>) -> Self {
+        let latch = StoredValue::new_with_storage(None);
 
-        let read_signal: Signal<T> =
-            Memo::new(move |_| latch.get_value().unwrap_or_else(|| source.get())).into();
+        let read_signal: Signal<T, SyncStorage> =
+            Memo::new(move |_| latch.get_value().unwrap_or_else(|| read.get())).into();
 
         Self {
             defined_at: Location::caller(),
-            write_signal,
+            write_signal: write,
             latch,
             read_signal,
         }
@@ -64,25 +59,52 @@ impl<T> FrozenSignal<T, LocalStorage>
 where
     T: Clone + PartialEq + 'static,
 {
-    /// Creates a new frozen signal over a local-storage source, for values that are not `Send + Sync`.
+    /// Creates a new frozen signal from separate read and write signals, for values that are not `Send + Sync`.
     #[track_caller]
-    pub fn new_local<S>(source: S) -> Self
-    where
-        S: Copy + 'static + Get<Value = T> + Into<SignalSetter<T, LocalStorage>>,
-    {
-        let write_signal: SignalSetter<T, LocalStorage> = source.into();
-        let latch = StoredValue::new_local(None);
+    pub fn new(read: Signal<T, LocalStorage>, write: SignalSetter<T, LocalStorage>) -> Self {
+        let latch = StoredValue::new_with_storage(None);
 
-        let (l_m, s_m) = (latch, source);
-        let read_signal: Signal<T, LocalStorage> =
-            Signal::derive_local(move || l_m.get_value().unwrap_or_else(|| s_m.get()));
+        let read_rw: RwSignal<T, LocalStorage> = RwSignal::new_with_storage(read.get_untracked());
+        let read_signal: Signal<T, LocalStorage> = read_rw.read_only().into();
+
+        Effect::new(move |_| {
+            let new_value = latch.get_value().unwrap_or_else(|| read.get());
+            read_rw.maybe_update(|current| {
+                if *current == new_value {
+                    false
+                } else {
+                    *current = new_value;
+                    true
+                }
+            });
+        });
 
         Self {
             defined_at: Location::caller(),
-            write_signal,
+            write_signal: write,
             latch,
             read_signal,
         }
+    }
+}
+
+impl<T> From<RwSignal<T>> for FrozenSignal<T>
+where
+    T: Send + Sync + Clone + PartialEq + 'static,
+{
+    fn from(value: RwSignal<T>) -> Self {
+        let (read, write) = value.split();
+        Self::new(read.into(), write.into())
+    }
+}
+
+impl<T> From<RwSignal<T, LocalStorage>> for FrozenSignal<T, LocalStorage>
+where
+    T: Clone + PartialEq + 'static,
+{
+    fn from(value: RwSignal<T, LocalStorage>) -> Self {
+        let (read, write) = value.split();
+        Self::new(read.into(), write.into())
     }
 }
 
@@ -303,7 +325,7 @@ mod tests {
         _ = Executor::init_tokio();
 
         let rw_signal = RwSignal::new(12);
-        let frozen = FrozenSignal::new(rw_signal);
+        let frozen = FrozenSignal::from(rw_signal);
         let effect_count = StoredValue::new(0);
         rw_signal.set(21);
 
@@ -328,5 +350,41 @@ mod tests {
         assert_eq!(1, *effect_count.read_value());
 
         effect.dispose();
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn local_storage_roundtrip() {
+        _ = Executor::init_tokio();
+        let owner = Owner::new();
+        tokio::task::LocalSet::new()
+            .run_until(owner.with(|| async move {
+                let rw_local = RwSignal::new_local(12);
+                let frozen = FrozenSignal::from(rw_local);
+                let effect_count = StoredValue::new_local(0);
+                rw_local.set(21);
+
+                let effect = Effect::new(move |_| {
+                    let _ = frozen.read();
+                    effect_count.set_value(effect_count.get_value() + 1);
+                });
+                Executor::tick().await;
+                assert_eq!(1, *effect_count.read_value());
+                assert_eq!(21, *frozen.read());
+
+                frozen.set(42);
+                Executor::tick().await;
+                assert_eq!(42, *rw_local.read());
+                assert_eq!(21, *frozen.read());
+                assert_eq!(1, *effect_count.read_value());
+
+                rw_local.set(99);
+                Executor::tick().await;
+                assert_eq!(99, *rw_local.read());
+                assert_eq!(21, *frozen.read());
+                assert_eq!(1, *effect_count.read_value());
+
+                effect.dispose();
+            }))
+            .await;
     }
 }

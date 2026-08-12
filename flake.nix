@@ -37,6 +37,7 @@
             pkgs.pkg-config
             pkgs.just
             pkgs.trunk
+            pkgs.git
             pkgs.glib
             pkgs.aravis
             pkgs.tailwindcss_4
@@ -81,7 +82,7 @@
                 pkgs.bashInteractive
                 pkgs.ripgrep
                 pkgs.git
-		pkgs.cargo-shear
+                pkgs.cargo-shear
                 pkgs.opencode
                 pkgs.coreutils
                 (pkgs.writeScriptBin "entrypoint.sh" ''

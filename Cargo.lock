@@ -225,6 +225,7 @@ checksum = "1384d3fe1eecb464229fcf6eebb72306591c56bf27b373561489458a7c73027d"
 dependencies = [
  "futures",
  "thiserror 2.0.20",
+ "tokio",
  "wasm-bindgen-futures",
 ]
 
@@ -4703,6 +4704,7 @@ dependencies = [
 name = "pilatus-leptos"
 version = "0.1.0"
 dependencies = [
+ "any_spawner",
  "anyhow",
  "futures-util",
  "gloo-net 0.7.0",
@@ -4720,6 +4722,7 @@ dependencies = [
  "thaw",
  "thaw_utils",
  "thiserror 2.0.20",
+ "tokio",
  "uuid",
  "web-sys",
 ]

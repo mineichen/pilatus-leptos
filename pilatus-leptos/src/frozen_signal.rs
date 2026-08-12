@@ -296,35 +296,37 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use any_spawner::Executor;
 
-    #[test]
-    fn roundtrip() {
-        let owner = Owner::new();
-        owner.with(|| {
-            let rw_signal = RwSignal::new(12);
-            let frozen = FrozenSignal::new(rw_signal);
-            let effect_count = StoredValue::new(0);
-            assert_eq!(12, *frozen.read());
-            rw_signal.set(21);
-            assert_eq!(21, *frozen.read());
+    #[tokio::test]
+    async fn roundtrip() {
+        _ = Executor::init_tokio();
 
-            let effect = ImmediateEffect::new_isomorphic(move || {
-                let _ = frozen.read();
-                effect_count.set_value(effect_count.get_value() + 1);
-            });
-            assert_eq!(1, *effect_count.read_value());
+        let rw_signal = RwSignal::new(12);
+        let frozen = FrozenSignal::new(rw_signal);
+        let effect_count = StoredValue::new(0);
+        rw_signal.set(21);
 
-            frozen.set(42);
-            assert_eq!(42, *rw_signal.read());
-            assert_eq!(21, *frozen.read());
-            assert_eq!(1, *effect_count.read_value());
-
-            rw_signal.set(99);
-            assert_eq!(99, *rw_signal.read());
-            assert_eq!(21, *frozen.read());
-            assert_eq!(1, *effect_count.read_value());
-
-            effect.dispose();
+        let effect = Effect::new_sync(move |_| {
+            let _ = frozen.read();
+            effect_count.set_value(effect_count.get_value() + 1);
         });
+        Executor::tick().await;
+        assert_eq!(1, *effect_count.read_value());
+        assert_eq!(21, *frozen.read());
+
+        frozen.set(42);
+        Executor::tick().await;
+        assert_eq!(42, *rw_signal.read());
+        assert_eq!(21, *frozen.read());
+        assert_eq!(1, *effect_count.read_value());
+
+        rw_signal.set(99);
+        Executor::tick().await;
+        assert_eq!(99, *rw_signal.read());
+        assert_eq!(21, *frozen.read());
+        assert_eq!(1, *effect_count.read_value());
+
+        effect.dispose();
     }
 }

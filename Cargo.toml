@@ -28,7 +28,7 @@ anyhow = "1"
 axum = "0.8"
 chrono = "0.4"
 egui = "0.35"
-eframe = "0.35"
+eframe = { version = "0.35", default-features = false, features = ["default_fonts", "glow"] }
 futures-channel = "0.3"
 futures-util = "0.3"
 gloo-events = "0.3"
@@ -100,8 +100,8 @@ opt-level = 2
 # [patch."https://github.com/mineichen/imask.git"]
 # imask.path = "../imask"
 
-[patch."https://github.com/mineichen/imanot.git"]
-imanot.path = "../imanot/imanot"
+# [patch."https://github.com/mineichen/imanot.git"]
+# imanot.path = "../imanot/imanot"
 
 
 # [patch.crates-io]

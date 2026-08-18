@@ -32,32 +32,24 @@ impl From<FetchError> for LeptosPipelineError {
     }
 }
 
-pub trait RecoverPipelineError<TOk> {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError>;
+pub trait RecoverPipelineError<T> {
+    fn allow_empty(self) -> Result<Option<T>, LeptosPipelineError>;
 }
-impl<TOk> RecoverPipelineError<TOk> for Result<TOk, LeptosPipelineError> {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError> {
+
+impl<T> RecoverPipelineError<T> for Result<T, LeptosPipelineError> {
+    fn allow_empty(self) -> Result<Option<T>, LeptosPipelineError> {
         match self {
             Ok(x) => Ok(Some(x)),
-            Err(e) => e.recover_pipeline_error(recoverer),
+            Err(e) => e.allow_empty(),
         }
     }
 }
-impl<TOk> RecoverPipelineError<TOk> for LeptosPipelineError {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError> {
+impl<T> RecoverPipelineError<T> for LeptosPipelineError {
+    fn allow_empty(self) -> Result<Option<T>, LeptosPipelineError> {
         match self {
             LeptosPipelineError::NotAvailableYet(x) => Err(LeptosPipelineError::NotAvailableYet(x)),
             LeptosPipelineError::MissingInfo(x) => Err(LeptosPipelineError::MissingInfo(x)),
-            LeptosPipelineError::Pipeline(x) => recoverer(x).map_err(LeptosPipelineError::Pipeline),
+            LeptosPipelineError::Pipeline(x) => x.allow_empty().map_err(LeptosPipelineError::from),
         }
     }
 }

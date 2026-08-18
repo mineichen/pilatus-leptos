@@ -105,7 +105,7 @@ impl MaskSignal {
                     Ok(buf)
                 })
                 .map(Some)
-                .or_else(|e| e.recover_pipeline_error(|e| Ok(e.allow_empty()?)));
+                .or_else(|e| e.allow_empty());
             let map_fut = mask.map(|x| store(x));
             async move {
                 let x = map_fut?.await?;

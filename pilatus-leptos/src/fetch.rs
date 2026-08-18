@@ -19,6 +19,7 @@ pub enum FetchError {
     #[error("Http {0}: {1}")]
     StatusCode(u16, String),
     #[error(transparent)]
+    #[allow(private_interfaces)]
     Deserialize(#[from] DeserializeSignalError),
     #[error("{0}")]
     Other(String),

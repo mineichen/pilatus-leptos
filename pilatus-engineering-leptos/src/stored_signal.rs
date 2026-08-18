@@ -6,7 +6,7 @@ use pilatus_leptos::FetchError;
 use std::future::Future;
 
 /// Errors that can occur while a mask is loaded from or stored to the server.
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error, PartialEq)]
 pub enum LeptosPipelineError {
     /// The mask has not been loaded yet.
     #[error("not available yet")]

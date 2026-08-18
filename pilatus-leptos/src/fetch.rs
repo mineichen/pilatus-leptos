@@ -14,14 +14,37 @@ pub struct FetchApi {
 
 pub type FetchResult<T> = Result<T, FetchError>;
 
-#[derive(Debug, thiserror::Error, Clone)]
+#[derive(Debug, thiserror::Error, Clone, PartialEq)]
 pub enum FetchError {
     #[error("Http {0}: {1}")]
     StatusCode(u16, String),
-    #[error("Invalid data: {0}")]
-    Deserialize(Arc<serde_json::Error>),
+    #[error(transparent)]
+    Deserialize(#[from] DeserializeSignalError),
     #[error("{0}")]
     Other(String),
+}
+
+/// Wraps serde_json::Error to make it comparable and cloneable,
+/// which is necessary for efficient holding in Memo-signals. It only compares the kind of error for equality
+#[derive(Debug, thiserror::Error, Clone)]
+#[error("Invalid data: {0}")]
+struct DeserializeSignalError(#[source] Arc<serde_json::Error>);
+
+impl From<serde_json::Error> for DeserializeSignalError {
+    fn from(value: serde_json::Error) -> Self {
+        Self(Arc::new(value))
+    }
+}
+
+impl From<serde_json::Error> for FetchError {
+    fn from(value: serde_json::Error) -> Self {
+        DeserializeSignalError::from(value).into()
+    }
+}
+impl PartialEq for DeserializeSignalError {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.classify() == other.0.classify()
+    }
 }
 
 impl FetchApi {
@@ -176,7 +199,7 @@ impl From<gloo_net::Error> for FetchError {
     fn from(value: gloo_net::Error) -> Self {
         match value {
             gloo_net::Error::JsError(e) => FetchError::Other(e.to_string()),
-            gloo_net::Error::SerdeError(e) => FetchError::Deserialize(Arc::new(e)),
+            gloo_net::Error::SerdeError(e) => FetchError::from(e),
             gloo_net::Error::GlooError(e) => FetchError::Other(e.to_string()),
         }
     }

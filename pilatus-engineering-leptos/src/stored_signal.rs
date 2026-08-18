@@ -9,8 +9,8 @@ use std::future::Future;
 #[derive(Debug, Clone, thiserror::Error, PartialEq)]
 pub enum LeptosPipelineError {
     /// The mask has not been loaded yet.
-    #[error("not available yet")]
-    NotAvailableYet,
+    #[error("not available yet: {0}")]
+    NotAvailableYet(&'static str),
     /// The mask information could not be fetched.
     #[error("missing info: {0}")]
     MissingInfo(#[source] FetchError),
@@ -59,7 +59,7 @@ impl<TOk> RecoverPipelineError<TOk> for LeptosPipelineError {
         recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
     ) -> Result<Option<TOk>, LeptosPipelineError> {
         match self {
-            LeptosPipelineError::NotAvailableYet => Err(LeptosPipelineError::NotAvailableYet),
+            LeptosPipelineError::NotAvailableYet(x) => Err(LeptosPipelineError::NotAvailableYet(x)),
             LeptosPipelineError::MissingInfo(x) => Err(LeptosPipelineError::MissingInfo(x)),
             LeptosPipelineError::Pipeline(x) => recoverer(x).map_err(LeptosPipelineError::Pipeline),
         }
@@ -102,12 +102,14 @@ pub struct StoredSignal {
 impl StoredSignal {
     /// Creates a new stored signal.
     ///
+    /// - `reason` describes why the mask is not yet available. Until the
+    ///   loader resolves, the read signal yields
+    ///   [`LeptosPipelineError::NotAvailableYet`] carrying this reason.
     /// - `loader` produces the initial mask from the server. It can return
     ///   [`Err`] to signal an empty mask ([`LeptosPipelineError::Pipeline`])
-    ///   or a fetch failure ([`LeptosPipelineError::MissingInfo`]). Until it
-    ///   resolves, the signal reads as [`LeptosPipelineError::NotAvailableYet`].
+    ///   or a fetch failure ([`LeptosPipelineError::MissingInfo`]).
     /// - `store` persists a written mask back to the server.
-    pub fn new<F, Fut, S, FutS>(loader: F, store: S) -> Self
+    pub fn new<F, Fut, S, FutS>(subject: &'static str, loader: F, store: S) -> Self
     where
         F: Fn() -> Fut + 'static,
         Fut: Future<Output = Result<Response, LeptosPipelineError>> + 'static,
@@ -115,6 +117,7 @@ impl StoredSignal {
         FutS: Future<Output = Result<(), FetchError>> + 'static,
     {
         Self::new_with_vec(
+            subject,
             move || {
                 loader().and_then(|response| async move {
                     response.binary().await.map_err(|_| {
@@ -133,7 +136,7 @@ impl StoredSignal {
     /// Like [`StoredSignal::new`], but the loader provides the raw mask bytes
     /// instead of an HTTP [`Response`]. This makes the reactive behavior
     /// testable outside of a web runtime.
-    pub(crate) fn new_with_vec<F, Fut, S, FutS>(loader: F, store: S) -> Self
+    pub(crate) fn new_with_vec<F, Fut, S, FutS>(subject: &'static str, loader: F, store: S) -> Self
     where
         F: Fn() -> Fut + 'static,
         Fut: Future<Output = Result<Vec<u8>, LeptosPipelineError>> + 'static,
@@ -174,7 +177,7 @@ impl StoredSignal {
         let read = Signal::derive_local(move || {
             resource
                 .get()
-                .unwrap_or(Err(LeptosPipelineError::NotAvailableYet))
+                .unwrap_or(Err(LeptosPipelineError::NotAvailableYet(subject)))
         });
         // A write updates the resource immediately and stores it back via the
         // hidden action. The resource and the store action stay hidden away.
@@ -261,6 +264,7 @@ mod tests {
                 let store_values = stored_values.clone();
 
                 let stored = StoredSignal::new_with_vec(
+                    "test mask",
                     || async { Ok(mask_bytes(vec![0..10])) },
                     move |value| {
                         let store_values = store_values.clone();
@@ -296,6 +300,7 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new_with_vec(
+                    "test mask",
                     || async { Ok(mask_bytes(vec![0..7])) },
                     |_value| async { Ok(()) },
                 );
@@ -303,7 +308,7 @@ mod tests {
                 // Not yet resolved: reads as not available.
                 assert!(matches!(
                     stored.get(),
-                    Err(LeptosPipelineError::NotAvailableYet)
+                    Err(LeptosPipelineError::NotAvailableYet("test mask"))
                 ));
 
                 await_loaded(
@@ -322,6 +327,7 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new(
+                    "test mask",
                     || async { Err(PipelineError::Empty.into()) },
                     |_value| async { Ok(()) },
                 );
@@ -341,6 +347,7 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new(
+                    "test mask",
                     || async { Err(FetchError::Other("boom".into()).into()) },
                     |_value| async { Ok(()) },
                 );

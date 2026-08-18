@@ -122,7 +122,7 @@ impl StoredSignal {
                 loader().and_then(|response| async move {
                     response.binary().await.map_err(|_| {
                         LeptosPipelineError::MissingInfo(FetchError::Other(
-                            "Could not read occlusions body".to_string(),
+                            "Could not read body".to_string(),
                         ))
                     })
                 })
@@ -152,7 +152,7 @@ impl StoredSignal {
             })
         });
         let store_action = Action::new_local(move |value: &StoredMaskValue| {
-            let occlusions = value
+            let mask = value
                 .as_ref()
                 .map_err(Clone::clone)
                 .and_then(|x| {
@@ -165,7 +165,7 @@ impl StoredSignal {
                 })
                 .map(Some)
                 .or_else(|e| e.recover_pipeline_error(|e| Ok(e.allow_empty()?)));
-            let map_fut = occlusions.map(|x| store(x));
+            let map_fut = mask.map(|x| store(x));
             async move {
                 let x = map_fut?.await?;
                 Ok(x)

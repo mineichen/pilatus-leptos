@@ -1,11 +1,11 @@
-use futures_util::{TryFutureExt, future::LocalBoxFuture};
+use futures_util::{FutureExt, TryFutureExt, future::LocalBoxFuture};
 use gloo_net::http::Response;
 use imask::{IncompatibleSizeError, NonZeroRange, PipelineError, SortedRanges, SyncRangeWriter};
 use leptos::prelude::*;
 use pilatus_leptos::FetchError;
 
 /// Errors that can occur while a mask is loaded from or stored to the server.
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum LeptosPipelineError {
     /// The mask has not been loaded yet.
     #[error("not available yet")]
@@ -110,16 +110,33 @@ impl StoredSignal {
         loader: impl Fn() -> LocalBoxFuture<'static, Result<Response, LeptosPipelineError>> + 'static,
         store: impl Fn(Option<Vec<u8>>) -> LocalBoxFuture<'static, Result<(), FetchError>> + 'static,
     ) -> Self {
+        Self::new_with_vec(
+            move || {
+                loader()
+                    .and_then(|response| async move {
+                        response.binary().await.map_err(|_| {
+                            LeptosPipelineError::MissingInfo(FetchError::Other(
+                                "Could not read occlusions body".to_string(),
+                            ))
+                        })
+                    })
+                    .boxed_local()
+            },
+            store,
+        )
+    }
+
+    /// Creates a new stored signal from the already fetched serialized mask.
+    ///
+    /// Like [`StoredSignal::new`], but the loader provides the raw mask bytes
+    /// instead of an HTTP [`Response`]. This makes the reactive behavior
+    /// testable outside of a web runtime.
+    pub(crate) fn new_with_vec(
+        loader: impl Fn() -> LocalBoxFuture<'static, Result<Vec<u8>, LeptosPipelineError>> + 'static,
+        store: impl Fn(Option<Vec<u8>>) -> LocalBoxFuture<'static, Result<(), FetchError>> + 'static,
+    ) -> Self {
         let resource = LocalResource::new(move || {
-            loader().and_then(|response| async move {
-                let bytes =
-                    response
-                        .binary()
-                        .await
-                        .ok()
-                        .ok_or(LeptosPipelineError::MissingInfo(FetchError::Other(
-                            "Could not read occlusions body".to_string(),
-                        )))?;
+            loader().and_then(|bytes| async move {
                 match SortedRanges::<u32, u32>::from_serialized(&bytes) {
                     Ok(m) if m.len() > 0 => Ok(m),
                     _ => Err(LeptosPipelineError::Pipeline(imask::PipelineError::Empty)),
@@ -230,13 +247,6 @@ mod tests {
         buf
     }
 
-    fn mask(ranges: Vec<std::ops::Range<u32>>) -> gloo_net::http::Response {
-        let mut buf = mask_bytes(ranges);
-        gloo_net::http::Response::builder()
-            .body(Some(buf.as_mut_slice()))
-            .unwrap()
-    }
-
     #[tokio::test(flavor = "current_thread")]
     async fn loads_and_stores() {
         _ = Executor::init_tokio();
@@ -246,8 +256,8 @@ mod tests {
                 let stored_values = Rc::new(RefCell::new(Vec::<Option<Vec<u8>>>::new()));
                 let store_values = stored_values.clone();
 
-                let stored = StoredSignal::new(
-                    || async { Ok(mask(vec![0..10])) }.boxed_local(),
+                let stored = StoredSignal::new_with_vec(
+                    || async { Ok(mask_bytes(vec![0..10])) }.boxed_local(),
                     move |value| {
                         let store_values = store_values.clone();
                         async move {
@@ -282,8 +292,8 @@ mod tests {
         let owner = Owner::new();
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
-                let stored = StoredSignal::new(
-                    || async { Ok(mask(vec![0..7])) }.boxed_local(),
+                let stored = StoredSignal::new_with_vec(
+                    || async { Ok(mask_bytes(vec![0..7])) }.boxed_local(),
                     |_value| async { Ok(()) }.boxed_local(),
                 );
 

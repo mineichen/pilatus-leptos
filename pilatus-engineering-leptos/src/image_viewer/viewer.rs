@@ -167,9 +167,9 @@ where
             let image = meta_image.image;
             let masks = super::super::decode::extract_from_extensions(
                 &mut meta_image.extensions,
-                128,
-                [0, 0, 255],
+                [0, 0, 255, 128],
             );
+            let stack = imanot::PixelAreaStack::from_iter(masks);
 
             let viewer_ref = match await_viewer(viewer).await {
                 Ok(Some(x)) => x,
@@ -190,7 +190,7 @@ where
                 last = now;
             }
 
-            viewer_ref.replace_image(image, masks, strategy).await;
+            viewer_ref.replace_image(image, stack, strategy).await;
         }
 
         leptos::logging::log!("Image stream closed");

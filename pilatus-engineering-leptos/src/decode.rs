@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{collections::BTreeSet, ops::Range};
 
 use anyhow::Context;
 use imanot::PixelArea;
@@ -67,21 +67,49 @@ fn extract_rgb(
 }
 pub fn extract_from_extensions(
     extensions: &mut AnyMultiMap,
-    opacity: u8,
-    color: [u8; 3],
-) -> Vec<PixelArea> {
-    let rgba = [color[0], color[1], color[2], opacity];
-    let mut ch = extensions
-        .iter::<SortedRanges<u32, u32>>()
-        .map(|x| {
-            let width = x.bounds().len_x();
-            let iter = x.iter_global_with::<Range<u32>>(width);
-            let roi = iter.bounds();
-            let ranges = SortedRanges::try_from_ordered_iter(iter.with_roi(roi))
-                .expect("Always sorted and not empty");
-            PixelArea::from_ranges(ranges, rgba)
-        })
-        .collect::<Vec<_>>();
-    ch.extend(extensions.iter_extract::<PixelArea>());
-    ch
+    rgba: [u8; 4],
+) -> impl Iterator<Item = (usize, PixelArea)> {
+    let mut layers = extensions
+        .iter_extract::<LayerOverlay>()
+        .map(|x| (x.layer, x.pixel_area))
+        .fuse();
+
+    let mut rest = extensions
+        .iter_extract::<SortedRanges<u32>>()
+        .map(move |ranges| PixelArea::from_ranges(ranges, rgba))
+        .chain(extensions.iter_extract::<PixelArea>());
+    let mut seen_layers = BTreeSet::<usize>::new();
+    std::iter::from_fn(move || match layers.next() {
+        Some((k, v)) => {
+            seen_layers.insert(k);
+            Some((k, v))
+        }
+        None => rest.next().map(|ranges| {
+            let mut iter = seen_layers.iter().copied();
+            let next_layer = iter
+                .next()
+                .map(|mut last| {
+                    while let Some(x) = iter.next()
+                        && x - 1 == last
+                    {
+                        last = x;
+                    }
+                    last + 1
+                })
+                .unwrap_or(0);
+            leptos::logging::log!("Next layer: {next_layer}");
+            seen_layers.insert(next_layer);
+            (next_layer, ranges)
+        }),
+    })
+}
+
+/// An overlay to be placed on an explicit layer index.
+///
+/// Unlike the dense overlays extracted by [`extract_from_extensions`], these
+/// keep their layer index, so layers in between may stay empty.
+#[derive(Debug, Clone)]
+pub struct LayerOverlay {
+    pub layer: usize,
+    pub pixel_area: PixelArea,
 }

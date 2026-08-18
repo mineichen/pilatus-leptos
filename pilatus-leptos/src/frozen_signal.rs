@@ -61,7 +61,7 @@ where
 {
     /// Creates a new frozen signal from separate read and write signals, for values that are not `Send + Sync`.
     #[track_caller]
-    pub fn new(read: Signal<T, LocalStorage>, write: SignalSetter<T, LocalStorage>) -> Self {
+    pub fn new_local(read: Signal<T, LocalStorage>, write: SignalSetter<T, LocalStorage>) -> Self {
         let latch = StoredValue::new_with_storage(None);
 
         let read_rw: RwSignal<T, LocalStorage> = RwSignal::new_with_storage(read.get_untracked());
@@ -104,7 +104,7 @@ where
 {
     fn from(value: RwSignal<T, LocalStorage>) -> Self {
         let (read, write) = value.split();
-        Self::new(read.into(), write.into())
+        Self::new_local(read.into(), write.into())
     }
 }
 

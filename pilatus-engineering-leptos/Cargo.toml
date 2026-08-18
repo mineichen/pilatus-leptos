@@ -14,7 +14,7 @@ gloo-events.workspace = true
 gloo-net.workspace = true
 gloo-timers.workspace = true
 imanot.workspace = true
-imask.workspace = true
+imask = { workspace = true, features = ["async-io"] }
 imbuf.workspace = true
 js-sys.workspace = true
 leptos.workspace = true
@@ -26,3 +26,13 @@ thiserror.workspace = true
 thaw.workspace = true
 wasm-bindgen = "0.2"
 web-sys = { workspace = true, features = ["File", "FileList", "HtmlElement", "DragEvent", "DataTransfer", "Document", "VisibilityState"] }
+
+# Important to enable native build for winit
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+eframe = { workspace = true, features = ["default_fonts", "glow", "x11"] }
+
+
+[dev-dependencies]
+any_spawner = { version = "0.3", features = ["tokio"] }
+reactive_graph = { workspace = true, features = ["effects"] }
+tokio = { version = "1", features = ["rt", "macros"] }

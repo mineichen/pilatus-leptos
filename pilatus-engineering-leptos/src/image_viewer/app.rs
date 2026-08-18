@@ -3,7 +3,7 @@ use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
     AsyncTask, HistoryStrategy, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
-    ImageViewerInteraction, PixelArea, ToolFactory, Tools,
+    ImageViewerInteraction, PixelAreaStack, ToolFactory, Tools,
 };
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
@@ -55,7 +55,7 @@ impl ViewerHandle {
     pub async fn replace_image(
         &self,
         adjust: Image<[u8; 3], 1>,
-        masks: Vec<PixelArea>,
+        masks: PixelAreaStack,
         history_strategy: HistoryStrategy,
     ) {
         let (r_send, r_recv) = oneshot::channel();
@@ -69,7 +69,7 @@ impl ViewerHandle {
                         original: imanot::OriginalImage::Rgb8(adjust.clone()),
                         adjust,
                     },
-                    masks.into(),
+                    masks,
                     history_strategy,
                 );
                 app.state.set_image(data);

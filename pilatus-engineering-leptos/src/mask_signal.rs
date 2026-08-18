@@ -1,76 +1,17 @@
 use futures_util::TryFutureExt;
 use gloo_net::http::Response;
-use imask::{IncompatibleSizeError, NonZeroRange, PipelineError, SortedRanges, SyncRangeWriter};
+use imask::{NonZeroRange, SortedRanges, SyncRangeWriter};
 use leptos::prelude::*;
 use pilatus_leptos::FetchError;
 use std::future::Future;
 
-/// Errors that can occur while a mask is loaded from or stored to the server.
-#[derive(Debug, Clone, thiserror::Error, PartialEq)]
-pub enum LeptosPipelineError {
-    /// The mask has not been loaded yet.
-    #[error("not available yet: {0}")]
-    NotAvailableYet(&'static str),
-    /// The mask information could not be fetched.
-    #[error("missing info: {0}")]
-    MissingInfo(#[source] FetchError),
-    /// The mask pipeline failed, e.g. because the mask is empty.
-    #[error("pipeline error: {0}")]
-    Pipeline(#[from] PipelineError),
-}
+use crate::{LeptosPipelineError, RecoverPipelineError};
 
-impl From<IncompatibleSizeError> for LeptosPipelineError {
-    fn from(value: IncompatibleSizeError) -> Self {
-        PipelineError::from(value).into()
-    }
-}
-
-impl From<FetchError> for LeptosPipelineError {
-    fn from(value: FetchError) -> Self {
-        match value {
-            FetchError::StatusCode(404, _) => {
-                LeptosPipelineError::Pipeline(imask::PipelineError::Empty)
-            }
-            e => LeptosPipelineError::MissingInfo(e),
-        }
-    }
-}
-
-pub trait RecoverPipelineError<TOk> {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError>;
-}
-impl<TOk> RecoverPipelineError<TOk> for Result<TOk, LeptosPipelineError> {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError> {
-        match self {
-            Ok(x) => Ok(Some(x)),
-            Err(e) => e.recover_pipeline_error(recoverer),
-        }
-    }
-}
-impl<TOk> RecoverPipelineError<TOk> for LeptosPipelineError {
-    fn recover_pipeline_error(
-        self,
-        recoverer: impl Fn(PipelineError) -> Result<Option<TOk>, PipelineError>,
-    ) -> Result<Option<TOk>, LeptosPipelineError> {
-        match self {
-            LeptosPipelineError::NotAvailableYet(x) => Err(LeptosPipelineError::NotAvailableYet(x)),
-            LeptosPipelineError::MissingInfo(x) => Err(LeptosPipelineError::MissingInfo(x)),
-            LeptosPipelineError::Pipeline(x) => recoverer(x).map_err(LeptosPipelineError::Pipeline),
-        }
-    }
-}
-
-/// The value held by a [`StoredSignal`]: either the loaded mask or an error
+/// The value held by a [`MaskSignal`]: either the loaded mask or an error
 /// describing why there is none yet.
 pub type StoredMaskValue = Result<SortedRanges<u32>, LeptosPipelineError>;
 
-/// A value that is loaded once from a server and stored back to it on every write.
+/// A mask that is loaded once from a server and stored back to it on every write.
 ///
 /// It packages the four things that make up such a server-persisted mask:
 /// - the read [`Signal`] that exposes the current value,
@@ -84,7 +25,7 @@ pub type StoredMaskValue = Result<SortedRanges<u32>, LeptosPipelineError>;
 /// value and the store action are private implementation details, so the
 /// consumer never touches them directly.
 #[derive(Clone, Copy)]
-pub struct StoredSignal {
+pub struct MaskSignal {
     read: Signal<StoredMaskValue, LocalStorage>,
     write: SignalSetter<StoredMaskValue, LocalStorage>,
     #[allow(
@@ -99,10 +40,10 @@ pub struct StoredSignal {
     store: Action<StoredMaskValue, Result<(), LeptosPipelineError>>,
 }
 
-impl StoredSignal {
-    /// Creates a new stored signal.
+impl MaskSignal {
+    /// Creates a new mask signal.
     ///
-    /// - `reason` describes why the mask is not yet available. Until the
+    /// - `subject` describes why the mask is not yet available. Until the
     ///   loader resolves, the read signal yields
     ///   [`LeptosPipelineError::NotAvailableYet`] carrying this reason.
     /// - `loader` produces the initial mask from the server. It can return
@@ -131,9 +72,9 @@ impl StoredSignal {
         )
     }
 
-    /// Creates a new stored signal from the already fetched serialized mask.
+    /// Creates a new mask signal from the already fetched serialized mask.
     ///
-    /// Like [`StoredSignal::new`], but the loader provides the raw mask bytes
+    /// Like [`MaskSignal::new`], but the loader provides the raw mask bytes
     /// instead of an HTTP [`Response`]. This makes the reactive behavior
     /// testable outside of a web runtime.
     pub(crate) fn new_with_vec<F, Fut, S, FutS>(subject: &'static str, loader: F, store: S) -> Self
@@ -226,7 +167,7 @@ impl StoredSignal {
 mod tests {
     use super::*;
     use any_spawner::Executor;
-    use imask::{ImaskSet, Rect};
+    use imask::{ImaskSet, PipelineError, Rect};
     use reactive_graph::owner::Owner;
     use std::cell::RefCell;
     use std::num::NonZero;
@@ -263,7 +204,7 @@ mod tests {
                 let stored_values = Rc::new(RefCell::new(Vec::<Option<Vec<u8>>>::new()));
                 let store_values = stored_values.clone();
 
-                let stored = StoredSignal::new_with_vec(
+                let stored = MaskSignal::new_with_vec(
                     "test mask",
                     || async { Ok(mask_bytes(vec![0..10])) },
                     move |value| {
@@ -299,7 +240,7 @@ mod tests {
         let owner = Owner::new();
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
-                let stored = StoredSignal::new_with_vec(
+                let stored = MaskSignal::new_with_vec(
                     "test mask",
                     || async { Ok(mask_bytes(vec![0..7])) },
                     |_value| async { Ok(()) },
@@ -326,7 +267,7 @@ mod tests {
         let owner = Owner::new();
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
-                let stored = StoredSignal::new(
+                let stored = MaskSignal::new(
                     "test mask",
                     || async { Err(PipelineError::Empty.into()) },
                     |_value| async { Ok(()) },
@@ -346,7 +287,7 @@ mod tests {
         let owner = Owner::new();
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
-                let stored = StoredSignal::new(
+                let stored = MaskSignal::new(
                     "test mask",
                     || async { Err(FetchError::Other("boom".into()).into()) },
                     |_value| async { Ok(()) },
@@ -360,7 +301,7 @@ mod tests {
             .await;
     }
 
-    async fn await_loaded(stored: &StoredSignal, expected: impl Fn(&StoredMaskValue) -> bool) {
+    async fn await_loaded(stored: &MaskSignal, expected: impl Fn(&StoredMaskValue) -> bool) {
         for _ in 0..64 {
             if expected(&stored.get()) {
                 return;

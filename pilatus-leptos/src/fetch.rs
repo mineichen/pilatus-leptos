@@ -14,7 +14,7 @@ pub struct FetchApi {
 
 pub type FetchResult<T> = Result<T, FetchError>;
 
-#[derive(Debug, thiserror::Error, Clone, PartialEq)]
+#[derive(Debug, thiserror::Error, Clone)]
 pub enum FetchError {
     #[error("Http {0}: {1}")]
     StatusCode(u16, String),

@@ -1,11 +1,12 @@
-use futures_util::{FutureExt, TryFutureExt, future::LocalBoxFuture};
+use futures_util::TryFutureExt;
 use gloo_net::http::Response;
 use imask::{IncompatibleSizeError, NonZeroRange, PipelineError, SortedRanges, SyncRangeWriter};
 use leptos::prelude::*;
 use pilatus_leptos::FetchError;
+use std::future::Future;
 
 /// Errors that can occur while a mask is loaded from or stored to the server.
-#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum LeptosPipelineError {
     /// The mask has not been loaded yet.
     #[error("not available yet")]
@@ -106,21 +107,22 @@ impl StoredSignal {
     ///   or a fetch failure ([`LeptosPipelineError::MissingInfo`]). Until it
     ///   resolves, the signal reads as [`LeptosPipelineError::NotAvailableYet`].
     /// - `store` persists a written mask back to the server.
-    pub fn new(
-        loader: impl Fn() -> LocalBoxFuture<'static, Result<Response, LeptosPipelineError>> + 'static,
-        store: impl Fn(Option<Vec<u8>>) -> LocalBoxFuture<'static, Result<(), FetchError>> + 'static,
-    ) -> Self {
+    pub fn new<F, Fut, S, FutS>(loader: F, store: S) -> Self
+    where
+        F: Fn() -> Fut + 'static,
+        Fut: Future<Output = Result<Response, LeptosPipelineError>> + 'static,
+        S: Fn(Option<Vec<u8>>) -> FutS + 'static,
+        FutS: Future<Output = Result<(), FetchError>> + 'static,
+    {
         Self::new_with_vec(
             move || {
-                loader()
-                    .and_then(|response| async move {
-                        response.binary().await.map_err(|_| {
-                            LeptosPipelineError::MissingInfo(FetchError::Other(
-                                "Could not read occlusions body".to_string(),
-                            ))
-                        })
+                loader().and_then(|response| async move {
+                    response.binary().await.map_err(|_| {
+                        LeptosPipelineError::MissingInfo(FetchError::Other(
+                            "Could not read occlusions body".to_string(),
+                        ))
                     })
-                    .boxed_local()
+                })
             },
             store,
         )
@@ -131,10 +133,13 @@ impl StoredSignal {
     /// Like [`StoredSignal::new`], but the loader provides the raw mask bytes
     /// instead of an HTTP [`Response`]. This makes the reactive behavior
     /// testable outside of a web runtime.
-    pub(crate) fn new_with_vec(
-        loader: impl Fn() -> LocalBoxFuture<'static, Result<Vec<u8>, LeptosPipelineError>> + 'static,
-        store: impl Fn(Option<Vec<u8>>) -> LocalBoxFuture<'static, Result<(), FetchError>> + 'static,
-    ) -> Self {
+    pub(crate) fn new_with_vec<F, Fut, S, FutS>(loader: F, store: S) -> Self
+    where
+        F: Fn() -> Fut + 'static,
+        Fut: Future<Output = Result<Vec<u8>, LeptosPipelineError>> + 'static,
+        S: Fn(Option<Vec<u8>>) -> FutS + 'static,
+        FutS: Future<Output = Result<(), FetchError>> + 'static,
+    {
         let resource = LocalResource::new(move || {
             loader().and_then(|bytes| async move {
                 match SortedRanges::<u32, u32>::from_serialized(&bytes) {
@@ -218,7 +223,6 @@ impl StoredSignal {
 mod tests {
     use super::*;
     use any_spawner::Executor;
-    use futures_util::FutureExt;
     use imask::{ImaskSet, Rect};
     use reactive_graph::owner::Owner;
     use std::cell::RefCell;
@@ -257,7 +261,7 @@ mod tests {
                 let store_values = stored_values.clone();
 
                 let stored = StoredSignal::new_with_vec(
-                    || async { Ok(mask_bytes(vec![0..10])) }.boxed_local(),
+                    || async { Ok(mask_bytes(vec![0..10])) },
                     move |value| {
                         let store_values = store_values.clone();
                         async move {
@@ -265,7 +269,6 @@ mod tests {
 
                             Ok(())
                         }
-                        .boxed_local()
                     },
                 );
 
@@ -293,8 +296,8 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new_with_vec(
-                    || async { Ok(mask_bytes(vec![0..7])) }.boxed_local(),
-                    |_value| async { Ok(()) }.boxed_local(),
+                    || async { Ok(mask_bytes(vec![0..7])) },
+                    |_value| async { Ok(()) },
                 );
 
                 // Not yet resolved: reads as not available.
@@ -319,8 +322,8 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new(
-                    || async { Err(PipelineError::Empty.into()) }.boxed_local(),
-                    |_value| async { Ok(()) }.boxed_local(),
+                    || async { Err(PipelineError::Empty.into()) },
+                    |_value| async { Ok(()) },
                 );
 
                 await_loaded(&stored, |v| {
@@ -338,8 +341,8 @@ mod tests {
         tokio::task::LocalSet::new()
             .run_until(owner.with(|| async move {
                 let stored = StoredSignal::new(
-                    || async { Err(FetchError::Other("boom".into()).into()) }.boxed_local(),
-                    |_value| async { Ok(()) }.boxed_local(),
+                    || async { Err(FetchError::Other("boom".into()).into()) },
+                    |_value| async { Ok(()) },
                 );
 
                 await_loaded(&stored, |v| {

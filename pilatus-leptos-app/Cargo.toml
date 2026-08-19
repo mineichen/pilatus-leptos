@@ -22,7 +22,6 @@ pilatus-leptos.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thaw.workspace = true
-thaw_utils.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-log = "0.2"

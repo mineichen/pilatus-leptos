@@ -10,7 +10,6 @@ gloo-timers = { workspace = true, features = ["futures", "futures-core"] }
 impex.workspace = true
 leptos.workspace = true
 leptos_router.workspace = true
-leptos_forge_utils_leptos.workspace = true
 pilatus.workspace = true
 reactive_stores.workspace = true
 reactive_graph.workspace = true

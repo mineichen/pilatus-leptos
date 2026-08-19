@@ -1,8 +1,8 @@
-use std::{collections::BTreeSet, ops::Range};
+use std::collections::BTreeSet;
 
 use anyhow::Context;
 use imanot::PixelArea;
-use imask::{ImageDimension, ImaskSet, SortedRanges};
+use imask::SortedRanges;
 use imbuf::{DynamicImage, DynamicImageChannel, ImageChannel};
 use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, MetaImageDecoder, StreamImageError};
 

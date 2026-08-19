@@ -13,7 +13,6 @@ pilatus-leptos.workspace = true
 pilatus-emulation-camera = { workspace = true, features = ["impex", "unstable"] }
 pilatus-engineering-leptos = { path = "../pilatus-engineering-leptos" }
 thaw.workspace = true
-thaw_utils.workspace = true
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { workspace = true, features = ["File", "FileList", "HtmlElement", "DragEvent", "DataTransfer"] }

@@ -45,7 +45,6 @@ leptos = "0.8"
 leptos_axum = "0.8"
 leptos_router = "0.8"
 leptos_meta = "0.8"
-leptos_forge_utils_leptos = "0.6"
 minfac = "0.1"
 pilatus = { git = "https://github.com/mineichen/pilatus.git", default-features = false }
 pilatus-aravis = { git = "https://github.com/mineichen/pilatus-aravis.git" }

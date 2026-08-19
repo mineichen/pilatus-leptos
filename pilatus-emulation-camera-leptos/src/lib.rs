@@ -296,7 +296,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                     <div class="bg-slate-800 rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl">
                         <h3 class="text-lg font-semibold text-white mt-0 mb-4">"Create New Collection"</h3>
                         <Input
-                            value=thaw_utils::Model::from(new_collection_name)
+                            value=new_collection_name
                             placeholder="Enter collection name"
                         />
                         <div class="flex gap-2 justify-end mt-4">

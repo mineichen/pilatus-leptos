@@ -86,7 +86,7 @@ impl MaskSignal {
     {
         let resource = LocalResource::new(move || {
             loader().and_then(|bytes| async move {
-                match SortedRanges::<u32, u32>::from_serialized(&bytes) {
+                match SortedRanges::<u32>::from_serialized(&bytes) {
                     Ok(m) if m.len() > 0 => Ok(m),
                     _ => Err(LeptosPipelineError::Pipeline(imask::PipelineError::Empty)),
                 }

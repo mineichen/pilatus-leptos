@@ -15,6 +15,17 @@ pub enum LeptosPipelineError {
     Pipeline(#[from] PipelineError),
 }
 
+impl imask::IntoPipelineOutput for LeptosPipelineError {
+    type Output = LeptosPipelineError;
+
+    fn into_output_if_not_empty(self) -> Option<Self::Output> {
+        match self {
+            LeptosPipelineError::Pipeline(PipelineError::Empty) => None,
+            x => Some(x),
+        }
+    }
+}
+
 impl From<IncompatibleSizeError> for LeptosPipelineError {
     fn from(value: IncompatibleSizeError) -> Self {
         PipelineError::from(value).into()

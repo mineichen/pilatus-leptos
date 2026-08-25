@@ -181,7 +181,7 @@ mod tests {
     );
 
     fn mask_ranges(ranges: Vec<std::ops::Range<u32>>) -> SortedRanges<u32> {
-        SortedRanges::<u32>::try_from_ordered_iter(ranges.with_roi(TEST_BOUNDS))
+        SortedRanges::try_from_ordered_iter(ranges.with_roi(TEST_BOUNDS))
             .expect("Sorted, non-empty ranges")
     }
     fn mask_bytes(ranges: Vec<std::ops::Range<u32>>) -> Vec<u8> {

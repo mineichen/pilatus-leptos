@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use anyhow::Context;
 use imanot::{PixelArea, PixelAreaStack};
 use imask::SortedRanges;
@@ -7,6 +5,14 @@ use imbuf::{DynamicImage, DynamicImageChannel, Image, ImageChannel};
 use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, MetaImageDecoder, StreamImageError};
 
 type RgbImage = imbuf::Image<[u8; 3], 1>;
+
+/// Callback that converts a streamed image into the rgb image displayed by
+/// the viewer together with the [`PixelAreaStack`] it draws as overlays.
+pub type ExtractImage = Box<
+    dyn FnMut(
+        Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
+    ) -> anyhow::Result<Option<(RgbImage, PixelAreaStack)>>,
+>;
 
 /// Returns `Ok(None)` for MissingFrame error
 /// Inefficient image buffer copy is tolerated, as imanot is expected to change to DynamicImage for it's original image soon
@@ -27,16 +33,28 @@ pub fn parse(
 pub fn extract_imanot_with_stack(
     decoded: Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
 ) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>> {
-    let mut meta_image = extract_imanot(decoded)?.or_else(|e| match e {
-        StreamImageError::ProcessingError { image, .. } => {
+    let mut meta_image = extract_imanot_or_fallback(decoded)?;
+    let image = meta_image.image;
+    let stack = imanot::PixelAreaStack::from_iter(extract_from_extensions(
+        &mut meta_image.extensions,
+        [0, 0, 255, 128],
+    ));
+    Ok(Some((image, stack)))
+}
+
+/// Converts the image to rgb, falling back to the plain [`ImageWithMeta`]
+/// (without extensions) of a [`StreamImageError::ProcessingError`], so its
+/// image can still be displayed. Other stream errors are propagated.
+pub fn extract_imanot_or_fallback(
+    decoded: Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
+) -> anyhow::Result<ImageWithMeta<Image<[u8; 3], 1>>> {
+    match extract_imanot(decoded)? {
+        Ok(meta_image) => Ok(meta_image),
+        Err(StreamImageError::ProcessingError { image, .. }) => {
             Ok(ImageWithMeta::with_hash(image, None))
         }
-        e => Err(e),
-    })?;
-    let image = meta_image.image;
-    let masks = extract_from_extensions(&mut meta_image.extensions, [0, 0, 255, 128]);
-    let stack = imanot::PixelAreaStack::from_iter(masks);
-    Ok(Some((image, stack)))
+        Err(e) => Err(e.into()),
+    }
 }
 
 pub fn extract_imanot(
@@ -80,51 +98,16 @@ fn extract_rgb(
     };
     Ok(image)
 }
+/// Assigns the dense overlays (extensions of [`SortedRanges`] and
+/// [`PixelArea`]) to the layers 0..n, in that order.
 pub fn extract_from_extensions(
     extensions: &mut AnyMultiMap,
     rgba: [u8; 4],
 ) -> impl Iterator<Item = (usize, PixelArea)> {
-    let mut layers = extensions
-        .iter_extract::<LayerOverlay>()
-        .map(|x| (x.layer, x.pixel_area))
-        .fuse();
-
-    let mut rest = extensions
+    extensions
         .iter_extract::<SortedRanges<u32>>()
         .map(move |ranges| PixelArea::from_ranges(ranges, rgba))
-        .chain(extensions.iter_extract::<PixelArea>());
-    let mut seen_layers = BTreeSet::<usize>::new();
-    std::iter::from_fn(move || match layers.next() {
-        Some((k, v)) => {
-            seen_layers.insert(k);
-            Some((k, v))
-        }
-        None => rest.next().map(|ranges| {
-            let mut iter = seen_layers.iter().copied();
-            let next_layer = iter
-                .next()
-                .map(|mut last| {
-                    while let Some(x) = iter.next()
-                        && x - 1 == last
-                    {
-                        last = x;
-                    }
-                    last + 1
-                })
-                .unwrap_or(0);
-            leptos::logging::log!("Next layer: {next_layer}");
-            seen_layers.insert(next_layer);
-            (next_layer, ranges)
-        }),
-    })
-}
-
-/// An overlay to be placed on an explicit layer index.
-///
-/// Unlike the dense overlays extracted by [`extract_from_extensions`], these
-/// keep their layer index, so layers in between may stay empty.
-#[derive(Debug, Clone)]
-pub struct LayerOverlay {
-    pub layer: usize,
-    pub pixel_area: PixelArea,
+        .chain(extensions.iter_extract::<PixelArea>())
+        .enumerate()
+        .map(|(layer, pixel_area)| (layer, pixel_area))
 }

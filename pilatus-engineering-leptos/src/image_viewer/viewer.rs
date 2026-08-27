@@ -2,14 +2,13 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use futures_util::{FutureExt, TryStreamExt};
-use imanot::{PixelAreaStack, Tools};
-use imbuf::{DynamicImage, Image};
+use imanot::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
-use pilatus_engineering::image::{ImageWithMeta, StreamImageError};
 use wasm_bindgen::JsCast;
 
+use crate::decode::ExtractImage;
 use crate::image_viewer::app::ChangeListener;
 
 use super::{ImageProvider, OnFrameCallback, app::EframeImageViewer, app::ViewerHandle};
@@ -21,20 +20,13 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
     #[prop(optional)] mut tools: Option<Tools>,
-    #[prop(optional)] mut extract_image: Option<
-        Box<
-            dyn FnMut(
-                Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
-            ) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>>,
-        >,
-    >,
-    #[prop(optional)] mut on_image: Option<
-        Box<dyn FnMut(&mut Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>)>,
-    >,
+    #[prop(optional)] mut extract_image: Option<ExtractImage>,
     #[prop(optional)] mut tool_change_listener: Option<ChangeListener>,
     #[prop(optional)] mut set_handle: Option<SignalSetter<Option<ViewerHandle>, LocalStorage>>,
     #[prop(optional)] active_layer: Option<SignalSetter<Option<usize>>>,
-    #[prop(optional)] mut on_frame: Option<OnFrameCallback>,
+    /// Is called for each rendered frame
+    #[prop(optional)]
+    mut on_frame: Option<OnFrameCallback>,
 ) -> impl IntoView
 where
     T: ImageProvider,
@@ -42,7 +34,6 @@ where
     let provider_error = provider.error();
     let provider = RwSignal::new_local(provider);
     let canvas_ref = NodeRef::<Canvas>::new();
-    let on_image = RwSignal::new_local(on_image.take());
     let extract_image = RwSignal::new_local(extract_image.take());
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
@@ -141,18 +132,15 @@ where
         #[cfg(target_arch = "wasm32")]
         let mut last = js_sys::Date::now();
 
-        while let Some(mut r) = stream.try_next().await? {
+        while let Some(r) = stream.try_next().await? {
             #[cfg(target_arch = "wasm32")]
-            let mut processing_start = js_sys::Date::now();
-            on_image.update(|c| {
-                c.as_mut().map(|x| (x)(&mut r));
-            });
+            let processing_start = js_sys::Date::now();
             let mut imanot_image = anyhow::Ok(None);
             extract_image.update(|e| {
                 imanot_image = if let Some(ext) = e.as_mut() {
                     (ext)(r)
                 } else {
-                    super::super::decode::extract_imanot_with_stack(r)
+                    crate::decode::extract_imanot_with_stack(r)
                 };
             });
             let imanot_image = imanot_image?;

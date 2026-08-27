@@ -1,9 +1,15 @@
 use tracing_log::log::{self, Level, Log, Metadata, Record};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+mod browser_console;
 
 pub fn init_logging() {
     console_error_panic_hook::set_once();
 
-    tracing_wasm::set_as_global_default();
+    // tracing_wasm::set_as_global_default();
+    tracing_subscriber::registry()
+        .with(browser_console::BrowserConsoleLayer)
+        .init();
     let tracer = tracing_log::LogTracer::new();
     if let Err(e) = log::set_boxed_logger(Box::new(ErrorOnlyLog(tracer))) {
         leptos::logging::error!("Error setting up logger bridge: {e:?}")

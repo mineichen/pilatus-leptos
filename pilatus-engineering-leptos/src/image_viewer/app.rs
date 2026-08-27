@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use egui::InnerResponse;
 use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
@@ -8,6 +9,7 @@ use imanot::{
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
 use leptos::prelude::{Set, SignalSetter};
+use leptos::tachys::view;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
 pub(super) type ChangeListener = Box<
@@ -251,7 +253,7 @@ impl eframe::App for App {
                 ctx.request_repaint();
             }
         }
-        egui::CentralPanel::default()
+        let InnerResponse { inner, .. } = egui::CentralPanel::default()
             .frame(egui::Frame::new())
             .show(ui, |ui| {
                 let viewer_result = self.state.ui(ui);
@@ -274,19 +276,24 @@ impl eframe::App for App {
                                 });
                         });
                 }
+                let pos = viewer_result
+                    .inner
+                    .as_ref()
+                    .and_then(|x| x.cursor_image_pos);
                 if let Some(on_frame) = &mut self.on_frame {
                     on_frame(OnFrameCtx {
                         interaction: viewer_result.inner,
                         ui,
                     });
                 }
+                pos
             });
 
         let current_active = match &self.state.image_state {
             ImageState::Loaded(loaded) => loaded.masks.active_subgroup(),
             _ => None,
         };
-        if current_active != self.last_active_subgroup {
+        if current_active != self.last_active_subgroup && inner.is_some() {
             self.last_active_subgroup = current_active;
             if let Some(setter) = &self.active_layer {
                 if let Some(x) = setter.try_set(current_active) {

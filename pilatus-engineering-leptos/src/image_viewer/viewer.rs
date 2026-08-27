@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use futures_util::{FutureExt, StreamExt};
+use anyhow::anyhow;
+use futures_util::{FutureExt, TryStreamExt};
 use imanot::Tools;
 use imbuf::DynamicImage;
 use leptos::html::Canvas;
@@ -41,7 +42,7 @@ where
     let await_viewer = move |v: ReadSignal<Option<EframeImageViewer>, LocalStorage>| async move {
         for _ in 0..10 {
             let Some(guard) = v.try_read() else {
-                return Err(());
+                return Err(anyhow!("Can no longer wait for Viewer"));
             };
             match guard.as_ref() {
                 Some(x) => return Ok(Some(x.handle().clone())),
@@ -115,55 +116,35 @@ where
     });
 
     // Start the image stream processing when URL changes
-    let _image_acquisition = LocalResource::new(move || async move {
+    let image_acquisition = LocalResource::new(move || async move {
         let ws_url = url.get();
         let ws_url = match ws_url {
             Some(x) => x,
             None => match &*available.read() {
                 Some(Ok(x)) if !x.is_empty() => x[0].clone(),
-                _ => return,
+                _ => anyhow::bail!("No url provided and none available"),
             },
         };
 
-        let extract = provider.try_update(|x| (x.history_strategy(), x.image_stream(ws_url)));
-        let Some((strategy, mut stream)) = extract else {
-            return;
-        };
+        let (strategy, mut stream) = provider
+            .try_update(|x| (x.history_strategy(), x.image_stream(ws_url)))
+            .ok_or_else(|| anyhow::anyhow!("Can't extract image stream"))?;
 
         #[cfg(target_arch = "wasm32")]
         let mut last = js_sys::Date::now();
 
-        while let Some(result) = stream.next().await {
-            let mut meta_image = match result {
-                Ok(mut r) => {
-                    {
-                        on_image.update(|c| {
-                            if let Some(c) = c {
-                                (c)(&mut r);
-                            }
-                        });
-                    };
-                    match super::super::decode::into_rgb(r) {
-                        Ok(Ok(image)) => image,
-
-                        Ok(Err(StreamImageError::ProcessingError { image, .. })) => {
-                            ImageWithMeta::with_hash(image, None)
-                        }
-                        Ok(Err(e)) => {
-                            leptos::logging::warn!("Backend error: {e}");
-                            break;
-                        }
-                        Err(e) => {
-                            leptos::logging::warn!("Invalid protocol: {e}");
-                            break;
-                        }
-                    }
+        while let Some(mut r) = stream.try_next().await? {
+            #[cfg(target_arch = "wasm32")]
+            let mut processing_start = js_sys::Date::now();
+            on_image.update(|c| {
+                c.as_mut().map(|x| (x)(&mut r));
+            });
+            let mut meta_image = super::super::decode::into_rgb(r)?.or_else(|e| match e {
+                StreamImageError::ProcessingError { image, .. } => {
+                    Ok(ImageWithMeta::with_hash(image, None))
                 }
-                Err(e) => {
-                    leptos::logging::error!("Error receiving image: {}", e);
-                    break;
-                }
-            };
+                e => Err(e),
+            })?;
             let image = meta_image.image;
             let masks = super::super::decode::extract_from_extensions(
                 &mut meta_image.extensions,
@@ -171,21 +152,18 @@ where
             );
             let stack = imanot::PixelAreaStack::from_iter(masks);
 
-            let viewer_ref = match await_viewer(viewer).await {
-                Ok(Some(x)) => x,
-                Ok(None) => {
-                    leptos::logging::debug_log!("Viewer is not ready to display images");
-                    continue;
-                }
-                Err(_) => break,
+            let Some(viewer_ref) = await_viewer(viewer).await? else {
+                leptos::logging::debug_log!("Viewer is not ready to display images");
+                continue;
             };
 
             #[cfg(target_arch = "wasm32")]
             {
                 let now = js_sys::Date::now();
                 leptos::logging::log!(
-                    "Forward image to viewer {image:?} at {:?}ms ({strategy:?})",
-                    now - last
+                    "Forward next image to viewer {image:?} after {:?}ms (History: {strategy:?}, processing_time: {:?}ms)",
+                    now - last,
+                    now - processing_start
                 );
                 last = now;
             }
@@ -193,7 +171,13 @@ where
             viewer_ref.replace_image(image, stack, strategy).await;
         }
 
-        leptos::logging::log!("Image stream closed");
+        anyhow::Ok(())
+    });
+    Effect::new(move || {
+        let lock = image_acquisition.read();
+        if let Some(Err(e)) = &*lock {
+            leptos::logging::log!("Image stream error: {e:?}");
+        }
     });
 
     let (is_fullscreen, set_is_fullscreen) = signal(false);

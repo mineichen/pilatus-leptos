@@ -9,7 +9,6 @@ use imanot::{
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
 use leptos::prelude::{Set, SignalSetter};
-use leptos::tachys::view;
 
 type ChangeItem = Box<dyn FnOnce(&mut App, &egui::Context)>;
 pub(super) type ChangeListener = Box<
@@ -290,7 +289,7 @@ impl eframe::App for App {
             });
 
         let current_active = match &self.state.image_state {
-            ImageState::Loaded(loaded) => loaded.masks.active_subgroup(),
+            ImageState::Loaded(loaded) => loaded.masks.active_layer(),
             _ => None,
         };
         if current_active != self.last_active_subgroup && inner.is_some() {

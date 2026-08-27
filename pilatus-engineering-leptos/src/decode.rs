@@ -1,9 +1,9 @@
 use std::collections::BTreeSet;
 
 use anyhow::Context;
-use imanot::PixelArea;
+use imanot::{PixelArea, PixelAreaStack};
 use imask::SortedRanges;
-use imbuf::{DynamicImage, DynamicImageChannel, ImageChannel};
+use imbuf::{DynamicImage, DynamicImageChannel, Image, ImageChannel};
 use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, MetaImageDecoder, StreamImageError};
 
 type RgbImage = imbuf::Image<[u8; 3], 1>;
@@ -24,9 +24,24 @@ pub fn parse(
     decoded
 }
 
-pub(crate) fn into_rgb(
-    decoded: Result<ImageWithMeta<imbuf::DynamicImage>, StreamImageError<imbuf::DynamicImage>>,
-) -> Result<Result<ImageWithMeta<RgbImage>, StreamImageError<RgbImage>>, anyhow::Error> {
+pub fn extract_imanot_with_stack(
+    decoded: Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
+) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>> {
+    let mut meta_image = extract_imanot(decoded)?.or_else(|e| match e {
+        StreamImageError::ProcessingError { image, .. } => {
+            Ok(ImageWithMeta::with_hash(image, None))
+        }
+        e => Err(e),
+    })?;
+    let image = meta_image.image;
+    let masks = extract_from_extensions(&mut meta_image.extensions, [0, 0, 255, 128]);
+    let stack = imanot::PixelAreaStack::from_iter(masks);
+    Ok(Some((image, stack)))
+}
+
+pub fn extract_imanot(
+    decoded: Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
+) -> anyhow::Result<Result<ImageWithMeta<RgbImage>, StreamImageError<RgbImage>>> {
     match decoded {
         Ok(img) => {
             let meta = img.meta;

@@ -746,9 +746,9 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "combine"
-version = "4.6.7"
+version = "4.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd"
+checksum = "cfc320937d09e6de266b31b9afb480f197d7a861be86be7cb2ea7e5d1bfffc5e"
 dependencies = [
  "bytes",
  "memchr",
@@ -2439,7 +2439,7 @@ checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
 [[package]]
 name = "imanot"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/imanot.git#75f5e25a50c2899d636e1301a7b2da9308a3eaf7"
+source = "git+https://github.com/mineichen/imanot.git#e9923d30096ec79459656ebb7b72d4f32df4c3f2"
 dependencies = [
  "egui",
  "futures",
@@ -2456,7 +2456,7 @@ dependencies = [
 [[package]]
 name = "imask"
 version = "0.0.1"
-source = "git+https://github.com/mineichen/imask.git#fb9646bf55f5e6193360fcbb036d1363283c7d97"
+source = "git+https://github.com/mineichen/imask.git#e756fc3936c78a3c0317d1bb8e818a722c573c1e"
 dependencies = [
  "futures-core",
  "futures-io",
@@ -2479,9 +2479,9 @@ dependencies = [
 
 [[package]]
 name = "imgref"
-version = "1.12.2"
+version = "1.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89194689a993ab15268672e99e7b0e19da2da3268ac682e8f02d29d4d1434cd7"
+checksum = "6e44b0a4eaa4c82f441d50a963f2d5f05a787240aeee097597033e72accfd22f"
 
 [[package]]
 name = "impex"
@@ -6232,9 +6232,9 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "uuid"
-version = "1.25.0"
+version = "1.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f053576934f05a761a402421fbbe3d425d9366f75f978806a037b3ca481abecc"
+checksum = "b5772d71c9be8a8a6ac2117d949c5b224c1b72241bb611d9a3012edcf8af7812"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",

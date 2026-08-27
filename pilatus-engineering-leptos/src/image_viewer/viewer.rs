@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use futures_util::{FutureExt, TryStreamExt};
-use imanot::Tools;
-use imbuf::DynamicImage;
+use imanot::{PixelAreaStack, Tools};
+use imbuf::{DynamicImage, Image};
 use leptos::html::Canvas;
 use leptos::prelude::*;
 use pilatus::device::DeviceId;
@@ -21,6 +21,13 @@ pub fn ImageViewerComponent<T>(
     #[prop(optional)] list_all_but: Option<Signal<Option<DeviceId>>>,
     #[prop(optional)] set_url: Option<SignalSetter<String>>,
     #[prop(optional)] mut tools: Option<Tools>,
+    #[prop(optional)] mut extract_image: Option<
+        Box<
+            dyn FnMut(
+                Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
+            ) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>>,
+        >,
+    >,
     #[prop(optional)] mut on_image: Option<
         Box<dyn FnMut(&mut Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>)>,
     >,
@@ -36,6 +43,7 @@ where
     let provider = RwSignal::new_local(provider);
     let canvas_ref = NodeRef::<Canvas>::new();
     let on_image = RwSignal::new_local(on_image.take());
+    let extract_image = RwSignal::new_local(extract_image.take());
     leptos::logging::log!("Enter websocket viewer");
     let (viewer, set_viewer) = signal_local(None::<EframeImageViewer>);
 
@@ -139,19 +147,15 @@ where
             on_image.update(|c| {
                 c.as_mut().map(|x| (x)(&mut r));
             });
-            let mut meta_image = super::super::decode::into_rgb(r)?.or_else(|e| match e {
-                StreamImageError::ProcessingError { image, .. } => {
-                    Ok(ImageWithMeta::with_hash(image, None))
-                }
-                e => Err(e),
-            })?;
-            let image = meta_image.image;
-            let masks = super::super::decode::extract_from_extensions(
-                &mut meta_image.extensions,
-                [0, 0, 255, 128],
-            );
-            let stack = imanot::PixelAreaStack::from_iter(masks);
-
+            let mut imanot_image = anyhow::Ok(None);
+            extract_image.update(|e| {
+                imanot_image = if let Some(ext) = e.as_mut() {
+                    (ext)(r)
+                } else {
+                    super::super::decode::extract_imanot_with_stack(r)
+                };
+            });
+            let imanot_image = imanot_image?;
             let Some(viewer_ref) = await_viewer(viewer).await? else {
                 leptos::logging::debug_log!("Viewer is not ready to display images");
                 continue;
@@ -161,18 +165,21 @@ where
             {
                 let now = js_sys::Date::now();
                 leptos::logging::log!(
-                    "Forward next image to viewer {image:?} after {:?}ms (History: {strategy:?}, processing_time: {:?}ms)",
+                    "Forward next image to viewer {:?} after {:?}ms (History: {strategy:?}, processing_time: {:?}ms)",
+                    imanot_image.as_ref().map(|x| &x.0),
                     now - last,
                     now - processing_start
                 );
                 last = now;
             }
-
-            viewer_ref.replace_image(image, stack, strategy).await;
+            if let Some((image, stack)) = imanot_image {
+                viewer_ref.replace_image(image, stack, strategy).await;
+            }
         }
 
         anyhow::Ok(())
     });
+
     Effect::new(move || {
         let lock = image_acquisition.read();
         if let Some(Err(e)) = &*lock {

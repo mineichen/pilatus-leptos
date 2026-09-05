@@ -278,6 +278,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-tempfile"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64782aa61953a4fa6f6ddc6b510942adffa37315f1cbf8ca7a96fdc990f913d5"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3808,7 +3817,6 @@ checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
 [[package]]
 name = "pilatus"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "approx",
@@ -3883,7 +3891,6 @@ dependencies = [
 [[package]]
 name = "pilatus-axum"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3903,7 +3910,6 @@ dependencies = [
 [[package]]
 name = "pilatus-axum-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "async_zip",
@@ -3930,7 +3936,6 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "impex",
  "pilatus",
@@ -3958,7 +3963,6 @@ dependencies = [
 [[package]]
 name = "pilatus-emulation-camera-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3980,7 +3984,6 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "approx",
@@ -4032,7 +4035,6 @@ dependencies = [
 [[package]]
 name = "pilatus-engineering-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
  "axum",
@@ -4130,9 +4132,9 @@ dependencies = [
 [[package]]
 name = "pilatus-rt"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "anyhow",
+ "async-tempfile",
  "async-trait",
  "chrono",
  "console-subscriber",
@@ -4157,7 +4159,6 @@ dependencies = [
 [[package]]
 name = "pilatus-tick"
 version = "0.1.0"
-source = "git+https://github.com/mineichen/pilatus.git#eeb2791d5bf8af0c242382d7cf2f73642c01b7c0"
 dependencies = [
  "impex",
  "pilatus",

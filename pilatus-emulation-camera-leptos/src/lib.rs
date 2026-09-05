@@ -51,6 +51,27 @@ pub fn EmulationCameraView() -> impl IntoView {
         },
     );
 
+    let active_images = LocalResource::new(move || {
+        let collection = active_collection.get();
+        async move {
+            let Some(collection) = collection else {
+                return Ok::<_, FetchError>(Vec::new());
+            };
+            let url = format!("/api/recipe/file/list/{device_id}/{collection}");
+            let files = fetch.get_json_silent::<Vec<String>>(&url).await?;
+            let prefix = format!("{collection}/");
+            let mut images: Vec<Name> = files
+                .iter()
+                .filter_map(|path| {
+                    let name = path.strip_prefix(&prefix)?.strip_suffix(".png")?;
+                    Name::new(name).ok()
+                })
+                .collect();
+            images.sort();
+            Ok(images)
+        }
+    });
+
     let upload_action =
         Action::new_local(move |(collection_name, file): &(Name, web_sys::File)| {
             let collection_name = collection_name.clone();
@@ -64,15 +85,14 @@ pub fn EmulationCameraView() -> impl IntoView {
                     .unwrap_or(&file_name);
 
                 let url = format!(
-                    "/api/pilatus-emulation-camera/collection/{}/{}?device_id={}",
-                    collection_name, image_name, device_id
+                    "/api/recipe/file/{device_id}/{collection_name}/{image_name}.png"
                 );
                 let array_buffer = JsFuture::from(file.array_buffer())
                     .await
                     .map_err(|e| FetchError::Other(format!("Failed to read file: {:?}", e)))?;
 
                 fetch
-                    .post_body(&url, array_buffer)
+                    .put_body(&url, array_buffer)
                     .await
                     .map(|_| file_name.clone())
             }
@@ -86,15 +106,29 @@ pub fn EmulationCameraView() -> impl IntoView {
         fetch.delete(&url).map_ok(|_| ())
     });
 
+    let delete_image_action =
+        Action::new_local(move |(collection_name, image_name): &(Name, Name)| {
+            let url = format!("/api/recipe/file/{device_id}/{collection_name}/{image_name}.png");
+            fetch.delete(&url).map_ok(|_| ())
+        });
+
     Effect::new(move |_| {
         if upload_action.value().get().is_some_and(|r| r.is_ok()) {
             collections.refetch();
+            active_images.refetch();
         }
     });
 
     Effect::new(move |_| {
         if delete_action.value().get().is_some_and(|r| r.is_ok()) {
             collections.refetch();
+            active_images.refetch();
+        }
+    });
+
+    Effect::new(move |_| {
+        if delete_image_action.value().get().is_some_and(|r| r.is_ok()) {
+            active_images.refetch();
         }
     });
 
@@ -134,11 +168,11 @@ pub fn EmulationCameraView() -> impl IntoView {
             </div>
 
             <div class="flex gap-6">
-                <div class="flex-1 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div class="flex-[2] min-w-0 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                     <ImageViewerComponent url=image_url provider=WebSocketImageProvider::default()/>
                 </div>
 
-                <div class="w-72 flex flex-col">
+                <div class="flex-1 min-w-0 flex flex-col">
                     <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 flex-1 overflow-auto">
                         <h2 class="text-lg font-semibold text-white mb-1">"Collections"</h2>
                         <p class="text-xs text-slate-500 mb-4">"Drag images onto a collection or the drop zone below"</p>
@@ -277,6 +311,137 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                     <div class="text-slate-500 text-xs mt-1">"Drag & drop an image file here"</div>
                                                 </div>
                                             </div>
+                                        }),
+                                    }
+                                })
+                            }}
+                        </Suspense>
+
+                        <hr class="border-slate-700 my-4"/>
+
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <h2 class="text-sm font-semibold text-white uppercase tracking-wider shrink-0">
+                                    "Images"
+                                </h2>
+                                {move || {
+                                    active_collection.get().map(|collection| {
+                                        let name = collection.to_string();
+                                        let tooltip = name.clone();
+                                        view! {
+                                            <span
+                                                class="truncate max-w-[130px] text-[11px] px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/50 text-emerald-300"
+                                                title=tooltip
+                                            >
+                                                {name}
+                                            </span>
+                                        }
+                                    })
+                                }}
+                            </div>
+                            {move || {
+                                active_images.get().and_then(|_| {
+                                    active_collection.get().map(|_| {
+                                        let count = active_images
+                                            .get()
+                                            .and_then(|result| result.ok())
+                                            .map_or(0, |images| images.len());
+                                        view! {
+                                            <span class="text-[11px] text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded-full shrink-0">
+                                                {count}
+                                            </span>
+                                        }
+                                    })
+                                })
+                            }}
+                        </div>
+
+                        <Suspense
+                            fallback=move || {
+                                view! {
+                                    <div class="grid grid-cols-4 gap-2">
+                                        {(0..8)
+                                            .map(|_| {
+                                                view! {
+                                                    <div class="rounded-lg bg-slate-700/30 border border-slate-700 h-24 animate-pulse"></div>
+                                                }
+                                            })
+                                            .collect::<Vec<_>>()}
+                                    </div>
+                                }
+                            }
+                        >
+                            {move || {
+                                active_images.get().map(|result| {
+                                    match result {
+                                        Err(e) => Either::Left(view! {
+                                            <p class="text-red-400 text-sm">"Error: " {e.to_string()}</p>
+                                        }),
+                                        Ok(images) => Either::Right({
+                                            let active = active_collection.get();
+                                            let cards = active.as_ref().map(|active| {
+                                                images
+                                                    .iter()
+                                                    .map(|image| {
+                                                        let image_name = image.to_string();
+                                                        let alt_text = image_name.clone();
+                                                        let tooltip = image_name.clone();
+                                                        let thumb_url = format!(
+                                                            "/api/recipe/file/{device_id}/{active}/{image}.png"
+                                                        );
+                                                        let delete_image =
+                                                            (active.clone(), image.clone());
+                                                        view! {
+                                                            <div class="group relative rounded-lg overflow-hidden bg-slate-900/60 border border-slate-700 hover:border-emerald-600/60 transition-colors">
+                                                                <img
+                                                                    src=thumb_url
+                                                                    alt=alt_text
+                                                                    loading="lazy"
+                                                                    class="w-full h-20 object-cover"
+                                                                />
+                                                                <div class="flex items-center justify-between gap-1 px-2 py-1.5">
+                                                                    <span
+                                                                        class="text-xs text-slate-300 truncate"
+                                                                        title=tooltip
+                                                                    >
+                                                                        {image_name}
+                                                                    </span>
+                                                                    <button
+                                                                        class="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0"
+                                                                        title="Delete image"
+                                                                        on:click=move |_| {
+                                                                            delete_image_action.dispatch_local(delete_image.clone());
+                                                                        }
+                                                                    >
+                                                                        "🗑️"
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    })
+                                                    .collect::<Vec<_>>()
+                                            });
+
+                                            match cards {
+                                                Some(cards) if !cards.is_empty() => view! {
+                                                    <div class="grid grid-cols-4 gap-2">{cards}</div>
+                                                }
+                                                .into_any(),
+                                                None => view! {
+                                                    <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center">
+                                                        <div class="text-slate-600 text-xl mb-1">"📁"</div>
+                                                        <p class="text-slate-500 text-xs">"Activate a collection to browse its images"</p>
+                                                    </div>
+                                                }
+                                                .into_any(),
+                                                Some(_) => view! {
+                                                    <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center">
+                                                        <div class="text-slate-600 text-xl mb-1">"🖼️"</div>
+                                                        <p class="text-slate-500 text-xs">"No images in this collection yet"</p>
+                                                    </div>
+                                                }
+                                                .into_any(),
+                                            }
                                         }),
                                     }
                                 })

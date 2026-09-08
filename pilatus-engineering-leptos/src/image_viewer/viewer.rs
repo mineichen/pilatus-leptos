@@ -99,8 +99,10 @@ where
                 {
                     Ok(viewer) => {
                         leptos::logging::log!("Setting viewer for this instance");
-                        if let Some(set_handle) = set_handle {
-                            set_handle.set(Some(viewer.handle().clone()));
+                        if let Some(set_handle) = set_handle
+                            && set_handle.try_set(Some(viewer.handle().clone())).is_some()
+                        {
+                            leptos::logging::error!("set_handle failed.");
                         }
                         if set_viewer.try_set(Some(viewer)).is_some() {
                             leptos::logging::error!("Setting viewer failed.");

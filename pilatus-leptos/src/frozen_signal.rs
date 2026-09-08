@@ -127,7 +127,13 @@ where
 
     pub fn set(&self, new_val: T) {
         let (write_signal, latch, read_signal) = (self.write_signal, self.latch, self.read_signal);
-        if latch.read_value().is_some() {
+        // The owner may already be disposed: a leaked image-viewer frame loop
+        // can invoke a previous tab mount's change listener after unmount.
+        // Never panic on such stale handles, just ignore the write.
+        let Some(latched) = latch.try_read_value().map(|v| v.is_some()) else {
+            return;
+        };
+        if latched {
             write_signal.set(new_val); // already frozen: just forward to parent
             return;
         }

@@ -391,6 +391,9 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                         );
                                                         let delete_image =
                                                             (active.clone(), image.clone());
+                                                        let download_url = thumb_url.clone();
+                                                        let download_filename =
+                                                            format!("{image}.png");
                                                         view! {
                                                             <div class="group relative rounded-lg overflow-hidden bg-slate-900/60 border border-slate-700 hover:border-emerald-600/60 transition-colors">
                                                                 <img
@@ -406,15 +409,25 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                                     >
                                                                         {image_name}
                                                                     </span>
-                                                                    <button
-                                                                        class="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0"
-                                                                        title="Delete image"
-                                                                        on:click=move |_| {
-                                                                            delete_image_action.dispatch_local(delete_image.clone());
-                                                                        }
-                                                                    >
-                                                                        "🗑️"
-                                                                    </button>
+                                                                    <div class="flex items-center gap-0.5 shrink-0">
+                                                                        <a
+                                                                            href=download_url
+                                                                            download=download_filename
+                                                                            class="text-slate-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0 cursor-pointer"
+                                                                            title="Download image"
+                                                                        >
+                                                                            "⬇️"
+                                                                        </a>
+                                                                        <button
+                                                                            class="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0 cursor-pointer"
+                                                                            title="Delete image"
+                                                                            on:click=move |_| {
+                                                                                delete_image_action.dispatch_local(delete_image.clone());
+                                                                            }
+                                                                        >
+                                                                            "🗑️"
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         }

@@ -1,0 +1,14 @@
+[package]
+name = "pilatus-leptos-components"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+js-sys.workspace = true
+leptos.workspace = true
+leptos_router.workspace = true
+leptos_ui.workspace = true
+strum.workspace = true
+tw_merge.workspace = true
+wasm-bindgen.workspace = true
+web-sys = { workspace = true, features = ["CssStyleDeclaration", "Document", "Element", "HtmlElement", "HtmlInputElement", "MediaQueryList", "NodeList", "Storage", "Window"] }

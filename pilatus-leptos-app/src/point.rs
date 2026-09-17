@@ -1,7 +1,7 @@
 use leptos::prelude::*;
-use thaw::SpinButton;
+use pilatus_leptos_components::InputNumber;
 
-#[derive(Clone, Copy, Debug, Hash)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
@@ -9,20 +9,14 @@ pub struct Point {
 
 #[component]
 pub fn PointView(point: RwSignal<Point>) -> impl IntoView {
-    //let x = leptos::reactive::computed::create_slice(point, move |x| x.x, move |x, n| x.x = n);
-    let x = leptos::slice!(point.x);
-    let y = leptos::slice!(point.y);
-
-    Effect::new(move |_| {
-        leptos::logging::log!("Point in Effect: {:?}", x.0.get());
-        x.0.get()
-    });
+    let x = MappedSignal::new(point, |p: &Point| &p.x, |p: &mut Point| &mut p.x);
+    let y = MappedSignal::new(point, |p: &Point| &p.y, |p: &mut Point| &mut p.y);
 
     view! {
         <div style="background-color: lightblue; padding: 20px;">
-            <div>"X: " <SpinButton<i32> value=x step_page=1/></div>
-            <div>"Y: " <SpinButton<i32> value=y step_page=1/></div>
-            <div>"Point: (" {move || x.0.get()} ", " {move || y.0.get()} ")"</div>
+            <div>"X: " <InputNumber value=x step=1/></div>
+            <div>"Y: " <InputNumber value=y step=1/></div>
+            <div>"Point: (" {move || x.get()} ", " {move || y.get()} ")"</div>
         </div>
     }
 }

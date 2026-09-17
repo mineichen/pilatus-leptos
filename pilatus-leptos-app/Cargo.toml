@@ -11,6 +11,7 @@ futures-util.workspace = true
 gloo-net.workspace = true
 js-sys.workspace = true
 leptos = { workspace = true, features = ["csr"] }
+pilatus-leptos-components.workspace = true
 leptos_router.workspace = true
 console_error_panic_hook = "0.1"
 leptos_meta.workspace = true

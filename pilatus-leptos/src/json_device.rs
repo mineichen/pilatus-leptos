@@ -1,10 +1,12 @@
-use leptos::prelude::*;
-use thaw::{Button, Textarea, TextareaSize};
+use leptos::{either::Either, prelude::*};
+use pilatus_leptos_components::{
+    Alert, AlertDescription, AlertTitle, Button, ButtonVariant, Callout, DialogFooter, Textarea,
+};
 
 use crate::DeviceContext;
 
 #[component]
-pub fn JsonDeviceView() -> impl IntoView {
+pub fn JsonDeviceView(#[prop(optional)] on_close: Option<Callback<()>>) -> impl IntoView {
     let device_context: DeviceContext = expect_context();
     let device_params = device_context.get_untyped();
 
@@ -24,12 +26,11 @@ pub fn JsonDeviceView() -> impl IntoView {
 
     // Detect external changes (not from our edits)
     let has_external_update = Memo::new(move |_| {
-        let current_server = device_params.get();
-        let last_saved = last_saved_value.get();
-        current_server != last_saved
+        let current_server = device_params.read();
+        let last_saved = last_saved_value.read();
+        &*current_server != &*last_saved
     });
 
-    // Save handler
     let on_save = move |_| match serde_json::from_str::<serde_json::Value>(&edited_json.get()) {
         Ok(parsed) => {
             let formatted = serde_json::to_string_pretty(&parsed).unwrap();
@@ -41,11 +42,13 @@ pub fn JsonDeviceView() -> impl IntoView {
         Err(e) => {
             let error_text = e.to_string();
             let clean_error = error_text.split(" at ").next().unwrap_or(&error_text);
-            set_error_message.set(Some(format!("Invalid JSON: {}", clean_error)));
+            set_error_message.set(Some(clean_error.to_string()));
         }
     };
 
-    // Adopt external changes
+    let on_reset = move |_| {
+        set_last_saved_value.set(device_params.get_untracked());
+    };
     let on_adopt = move |_| {
         let current = device_params.get();
         edited_json.set(current.clone());
@@ -55,37 +58,59 @@ pub fn JsonDeviceView() -> impl IntoView {
     view! {
 
         {move || {
-            has_external_update.get().then(move|| {
-                view! {
-                    <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 4px;">
-                        <strong>"⚠ Update Available"</strong>
-                        <p>"The device configuration has been updated externally."</p>
-                        <Button on:click=on_adopt>"Adopt Changes"</Button>
-                    </div>
-                }
-            })
+            if has_external_update.get() {
+                Either::Left(view! {
+                    <Alert class="border-warning border-l-4 bg-warning-light dark:border-warning/50 dark:bg-warning-dark/20">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="size-4 text-warning"
+                        >
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                            <path d="M12 9v4" />
+                            <path d="M12 17h.01" />
+                        </svg>
+                            <AlertTitle class="mb-2">"Update Avcurrent_serverailable"</AlertTitle>
+                        <AlertDescription>
+                            "The device configuration has been updated externally."
+                        </AlertDescription>
+                        <div class="mt-3 flex justify-end gap-2">
+                            <Button variant=ButtonVariant::Ghost on:click=on_reset>"Ignore"</Button>
+                            <Button on:click=on_adopt>"Reload"</Button>
+                        </div>
+                    </Alert>
+                })
+            } else {
+                Either::Right(view! {
+                    {move || {
+                        error_message.get().map(move |error| {
+                            view! {
+                                <Callout title="Error" class="border-destructive/50 bg-destructive/5 dark:bg-destructive/10">
+                                    {error}
+                                </Callout>
+                            }
+                        })
+                    }}
+                    <Textarea
+                        value=edited_json
+                        rows=14
+                        class="font-mono text-xs leading-relaxed"
+                    />
+                    <DialogFooter>
+                        {on_close.map(|on_close| view! {
+                            <Button variant=ButtonVariant::Ghost on:click=move |_| on_close.run(())>"Cancel"</Button>
+                        })}
+                        <Button on:click=on_save>"Save"</Button>
+                    </DialogFooter>
+                })
+            }
         }}
-
-        {move || {
-            error_message.get().map(move|error| {
-                view! {
-                    <div style="background-color: #f8d7da; border: 1px solid #dc3545; color: #721c24; padding: 15px; margin: 10px 0; border-radius: 4px;">
-                        <strong>"❌ Error"</strong>
-                        <p>{error}</p>
-                    </div>
-                }
-            })
-        }}
-
-        <div style="margin-top: 20px;">
-            <Textarea
-                value=edited_json
-                size=TextareaSize::Large
-                attr:style="width: 100%; height: 300px;"
-            />
-            <div style="margin-top: 10px;">
-                <Button on:click=on_save>"Save"</Button>
-            </div>
-        </div>
     }
 }

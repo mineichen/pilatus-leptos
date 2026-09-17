@@ -1,7 +1,7 @@
 use leptos::{either::Either, prelude::*};
 use pilatus::Name;
-use thaw::{Button, Field, Input};
-use thaw_utils::Model;
+use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant, Input};
+use thaw::Field;
 
 use crate::LeafRwSignal;
 
@@ -47,28 +47,29 @@ pub fn VariableInput<
         value.convert_to_local(current_value);
     };
 
-    let str_value = Signal::derive(move || value.get_value().into());
-    let set_str_value = SignalSetter::map(move |v: String| {
-        match serde_json::from_value(serde_json::Value::String(v)) {
-            Ok(v) => value.set_value(v),
-            Err(e) => {
-                leptos::logging::error!(
+    // Mapped string view of the leaf (variable references preserved).
+    // `LeafRwSignal<String>` implements `Get` + `Set`, so it binds directly
+    // with no extra `RwSignal`.
+    let str_leaf = value.map(
+        |t: T| t.into(),
+        |s: String| {
+            serde_json::from_value(serde_json::Value::String(s)).map_err(|e| {
+                format!(
                     "Failed to deserialize {} from str: {}",
                     std::any::type_name::<T>(),
                     e
-                );
-            }
-        }
-    });
-    let model: Model<String> = Model::from((str_value, set_str_value));
+                )
+            })
+        },
+    );
 
     view! {
         <Field label=label.unwrap_or_default()>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <Input
-                    value=model
-                    disabled=is_var
-                    attr:style="flex: 1;"
+                    value=str_leaf
+                    disabled= move|| {is_var.get()}
+                    class="flex-1"
                 />
 
                 {move || {
@@ -78,7 +79,7 @@ pub fn VariableInput<
                                 <span style="color: #0078ff; font-weight: bold;">
                                     "🔗 " {var_name}
                                 </span>
-                                <Button on:click=convert_to_local size=thaw::ButtonSize::Small>
+                                <Button on:click=convert_to_local size=ButtonSize::Sm>
                                     "Use Local Value"
                                 </Button>
                             </div>
@@ -89,7 +90,7 @@ pub fn VariableInput<
                                 on:click=move |_| {
                                     set_show_var_dialog.set(true);
                                 }
-                                size=thaw::ButtonSize::Small
+                                size=ButtonSize::Sm
                             >
                                 "🔗 Use Variable"
                             </Button>
@@ -103,8 +104,8 @@ pub fn VariableInput<
             show_var_dialog.get().then(move|| {
                 view! {
                     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                        <div class="rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl" style="background: var(--colorNeutralBackground1);">
-                            <h3 class="text-lg font-semibold text-white mt-0 mb-4">"Create Variable Reference"</h3>
+                        <div class="rounded-xl p-6 min-w-[320px] border border-border shadow-xl bg-card">
+                            <h3 class="text-lg font-semibold text-foreground mt-0 mb-4">"Create Variable Reference"</h3>
                             <Field label="Variable Name">
                                 <Input
                                     value=new_var_name
@@ -113,15 +114,12 @@ pub fn VariableInput<
                             </Field>
                             <div class="flex gap-2 justify-end mt-4">
                                 <Button
-                                    appearance=thaw::ButtonAppearance::Subtle
+                                    variant=ButtonVariant::Ghost
                                     on:click=move |_| set_show_var_dialog.set(false)
                                 >
                                     "Cancel"
                                 </Button>
-                                <Button
-                                    appearance=thaw::ButtonAppearance::Primary
-                                    on:click=convert_to_var
-                                >
+                                <Button on:click=convert_to_var>
                                     "Create Variable"
                                 </Button>
                             </div>

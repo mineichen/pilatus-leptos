@@ -5,6 +5,7 @@ use futures_util::{FutureExt, TryStreamExt};
 use imanot::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;
+use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant};
 use pilatus::device::DeviceId;
 use wasm_bindgen::JsCast;
 
@@ -214,30 +215,34 @@ where
                 }
             })}
             {move || (!is_fullscreen.get()).then(|| view! {
-                <button
-                    class="absolute bottom-2 left-2 p-2 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors"
-                    title="Fullscreen"
-                    on:click=move |_| set_is_fullscreen.set(true)
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-                        <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                    </svg>
-                </button>
+                <span title="Fullscreen" class="absolute bottom-2 left-2">
+                    <Button
+                        variant=ButtonVariant::Ghost
+                        size=ButtonSize::Icon
+                        on:click=move |_| set_is_fullscreen.set(true)
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+                            <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                            <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+                            <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                        </svg>
+                    </Button>
+                </span>
             })}
             {move || is_fullscreen.get().then(|| view! {
-                <button
-                    class="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors"
-                    title="Close"
-                    on:click=move |_| set_is_fullscreen.set(false)
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6L6 18"/>
-                        <path d="M6 6l12 12"/>
-                    </svg>
-                </button>
+                <span title="Close" class="absolute top-4 right-4">
+                    <Button
+                        variant=ButtonVariant::Ghost
+                        size=ButtonSize::Icon
+                        on:click=move |_| set_is_fullscreen.set(false)
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18"/>
+                            <path d="M6 6l12 12"/>
+                        </svg>
+                    </Button>
+                </span>
             })}
         </div>
     }

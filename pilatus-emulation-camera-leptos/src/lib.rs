@@ -3,13 +3,13 @@ use std::ops::Deref;
 use futures_util::TryFutureExt;
 use leptos::prelude::*;
 use leptos::{either::Either, logging::debug_error};
+use pilatus_leptos_components::{Button, ButtonClass, ButtonSize, ButtonVariant, Input, IntoTailwindClass};
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
 use pilatus_leptos::{
-    DeviceContext, FetchApi, FetchError, JsonDeviceView, PilatusWrapperSettings, ws_url_base,
+    DeviceContext, FetchApi, FetchError, PilatusWrapperSettings, ws_url_base,
 };
-use thaw::{Button, ButtonAppearance, Input};
 use wasm_bindgen_futures::JsFuture;
 
 #[component]
@@ -84,9 +84,8 @@ pub fn EmulationCameraView() -> impl IntoView {
                     .map(|(name, _)| name)
                     .unwrap_or(&file_name);
 
-                let url = format!(
-                    "/api/recipe/file/{device_id}/{collection_name}/{image_name}.png"
-                );
+                let url =
+                    format!("/api/recipe/file/{device_id}/{collection_name}/{image_name}.png");
                 let array_buffer = JsFuture::from(file.array_buffer())
                     .await
                     .map_err(|e| FetchError::Other(format!("Failed to read file: {:?}", e)))?;
@@ -163,19 +162,19 @@ pub fn EmulationCameraView() -> impl IntoView {
     view! {
         <div class="space-y-6">
             <div>
-                <h1 class="text-2xl font-bold text-white mb-1">"Emulation Camera"</h1>
-                <p class="text-slate-400">"Camera emulation with image collections"</p>
+                <h1 class="text-2xl font-bold text-foreground mb-1">"Emulation Camera"</h1>
+                <p class="text-muted-foreground">"Camera emulation with image collections"</p>
             </div>
 
             <div class="flex gap-6">
-                <div class="flex-[2] min-w-0 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div class="flex-[2] min-w-0 bg-card rounded-xl border border-border overflow-hidden">
                     <ImageViewerComponent url=image_url provider=WebSocketImageProvider::default()/>
                 </div>
 
                 <div class="flex-1 min-w-0 flex flex-col">
-                    <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 flex-1 overflow-auto">
-                        <h2 class="text-lg font-semibold text-white mb-1">"Collections"</h2>
-                        <p class="text-xs text-slate-500 mb-4">"Drag images onto a collection or the drop zone below"</p>
+                    <div class="bg-card rounded-xl border border-border p-4 flex-1 overflow-auto">
+                        <h2 class="text-lg font-semibold text-foreground mb-1">"Collections"</h2>
+                        <p class="text-xs text-muted-foreground mb-4">"Drag images onto a collection or the drop zone below"</p>
 
                         {move || {
                             upload_action.value().get().map(|file_name| view! {
@@ -192,7 +191,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                         }})
                                         .collect::<Vec<_>>()
                                 }>
-                                    <div class="px-3 py-2 mb-3 bg-emerald-900/50 border border-emerald-700 rounded-lg text-emerald-300 text-sm">
+                                    <div class="px-3 py-2 mb-3 bg-success/10 border border-success/30 rounded-lg text-success text-sm">
                                         "✓ Uploaded " {file_name}
                                     </div>
                                 </ErrorBoundary>
@@ -205,7 +204,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                             </div>
                         })}
 
-                        <Suspense fallback=move || view! { <p class="text-slate-400">"Loading..."</p> }>
+                        <Suspense fallback=move || view! { <p class="text-muted-foreground">"Loading..."</p> }>
                             {move || {
                                 collections.get().map(|result| {
                                     match result {
@@ -231,9 +230,9 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                                 class=move || {
                                                                     let active = is_active.get();
                                                                     if active {
-                                                                        "bg-emerald-900/30 border-2 border-emerald-600 rounded-lg p-3 cursor-pointer transition-colors"
+                                                                        "border-2 border-success bg-success/10 rounded-lg p-3 cursor-pointer transition-colors"
                                                                     } else {
-                                                                        "bg-slate-700/50 border-2 border-slate-600 border-dashed rounded-lg p-3 cursor-pointer transition-colors hover:border-slate-500"
+                                                                        "bg-muted/50 border-2 border-border border-dashed rounded-lg p-3 cursor-pointer transition-colors hover:border-border"
                                                                     }
                                                                 }
                                                                 on:dragover=move |ev| {
@@ -252,19 +251,18 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                                     <div class="flex items-center gap-2">
                                                                         {move || {
                                                                             if is_active.get() {
-                                                                                view! { <span class="text-emerald-400">"✓"</span> }.into_any()
+                                                                                view! { <span class="text-success">"✓"</span> }.into_any()
                                                                             } else {
-                                                                                view! { <span class="text-slate-500">"📁"</span> }.into_any()
+                                                                                view! { <span class="text-muted-foreground">"📁"</span> }.into_any()
                                                                             }
                                                                         }}
-                                                                        <span class="text-white font-medium">{move || name.read().to_string()}</span>
+                                                                        <span class="text-foreground font-medium">{move || name.read().to_string()}</span>
                                                                     </div>
                                                                     <div class="flex items-center gap-1">
                                                                         {move || {
                                                                             (!is_active.get()).then(|| view! {
                                                                                 <Button
-                                                                                    appearance=ButtonAppearance::Primary
-                                                                                    size=thaw::ButtonSize::Small
+                                                                                    size=ButtonSize::Sm
                                                                                     on:click=move |ev| {
                                                                                         ev.stop_propagation();
                                                                                         active_collection.set(Some(name.get()));
@@ -274,16 +272,18 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                                                 </Button>
                                                                             })
                                                                         }}
-                                                                        <button
-                                                                            class="text-slate-500 hover:text-red-400 transition-colors p-1"
-                                                                            title="Delete"
-                                                                            on:click=move |ev| {
-                                                                                ev.stop_propagation();
-                                                                                delete_action.dispatch_local(name.get());
-                                                                            }
-                                                                        >
-                                                                            "🗑️"
-                                                                        </button>
+                                                                        <span title="Delete">
+                                                                            <Button
+                                                                                variant=ButtonVariant::Destructive
+                                                                                size=ButtonSize::IconSm
+                                                                                on:click=move |ev| {
+                                                                                    ev.stop_propagation();
+                                                                                    delete_action.dispatch_local(name.get());
+                                                                                }
+                                                                            >
+                                                                                "🗑️"
+                                                                            </Button>
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -292,7 +292,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                 </For>
 
                                                 <div
-                                                    class="bg-slate-700/30 border-2 border-dashed border-slate-500 rounded-lg p-4 cursor-pointer transition-colors hover:border-slate-400 hover:bg-slate-700/50 text-center"
+                                                    class="bg-muted/30 border-2 border-dashed border-border rounded-lg p-4 cursor-pointer transition-colors hover:border-muted-foreground hover:bg-muted/50 text-center"
                                                     on:dragover=move |ev| {
                                                         ev.prevent_default();
                                                     }
@@ -306,9 +306,9 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                         }
                                                     }
                                                 >
-                                                    <div class="text-slate-400 text-2xl mb-2">"📥"</div>
-                                                    <div class="text-slate-300 font-medium">"Drop image to create collection"</div>
-                                                    <div class="text-slate-500 text-xs mt-1">"Drag & drop an image file here"</div>
+                                                    <div class="text-muted-foreground text-2xl mb-2">"📥"</div>
+                                                    <div class="text-foreground font-medium">"Drop image to create collection"</div>
+                                                    <div class="text-muted-foreground text-xs mt-1">"Drag & drop an image file here"</div>
                                                 </div>
                                             </div>
                                         }),
@@ -317,11 +317,11 @@ pub fn EmulationCameraView() -> impl IntoView {
                             }}
                         </Suspense>
 
-                        <hr class="border-slate-700 my-4"/>
+                        <hr class="border-border my-4"/>
 
                         <div class="flex items-center justify-between gap-2 mb-3">
                             <div class="flex items-center gap-2 min-w-0">
-                                <h2 class="text-sm font-semibold text-white uppercase tracking-wider shrink-0">
+                                <h2 class="text-sm font-semibold text-foreground uppercase tracking-wider shrink-0">
                                     "Images"
                                 </h2>
                                 {move || {
@@ -330,7 +330,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                         let tooltip = name.clone();
                                         view! {
                                             <span
-                                                class="truncate max-w-[130px] text-[11px] px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/50 text-emerald-300"
+                                                class="truncate max-w-[130px] text-[11px] px-2 py-0.5 rounded-full bg-success/10 border border-success/30 text-success"
                                                 title=tooltip
                                             >
                                                 {name}
@@ -347,7 +347,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                             .and_then(|result| result.ok())
                                             .map_or(0, |images| images.len());
                                         view! {
-                                            <span class="text-[11px] text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded-full shrink-0">
+                                            <span class="text-[11px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full shrink-0">
                                                 {count}
                                             </span>
                                         }
@@ -363,7 +363,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                         {(0..8)
                                             .map(|_| {
                                                 view! {
-                                                    <div class="rounded-lg bg-slate-700/30 border border-slate-700 h-24 animate-pulse"></div>
+                                                    <div class="rounded-lg bg-muted/30 border border-border h-24 animate-pulse"></div>
                                                 }
                                             })
                                             .collect::<Vec<_>>()}
@@ -395,7 +395,7 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                         let download_filename =
                                                             format!("{image}.png");
                                                         view! {
-                                                            <div class="group relative rounded-lg overflow-hidden bg-slate-900/60 border border-slate-700 hover:border-emerald-600/60 transition-colors">
+                                                            <div class="group relative rounded-lg overflow-hidden bg-background/60 border border-border hover:border-success/60 transition-colors">
                                                                 <img
                                                                     src=thumb_url
                                                                     alt=alt_text
@@ -404,29 +404,41 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                                 />
                                                                 <div class="flex items-center justify-between gap-1 px-2 py-1.5">
                                                                     <span
-                                                                        class="text-xs text-slate-300 truncate"
+                                                                        class="text-xs text-foreground truncate"
                                                                         title=tooltip
                                                                     >
-                                                                        {image_name}
+                                                                        {image_name.clone()}
                                                                     </span>
                                                                     <div class="flex items-center gap-0.5 shrink-0">
                                                                         <a
                                                                             href=download_url
                                                                             download=download_filename
-                                                                            class="text-slate-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0 cursor-pointer"
+                                                                            class=move || {
+                                                                                ButtonClass {
+                                                                                    variant: ButtonVariant::Ghost,
+                                                                                    size: ButtonSize::IconSm,
+                                                                                }
+                                                                                    .with_class("text-muted-foreground hover:text-success opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0 cursor-pointer")
+                                                                            }
                                                                             title="Download image"
+                                                                            aria-label=format!("Download image {image_name}")
                                                                         >
                                                                             "⬇️"
                                                                         </a>
-                                                                        <button
-                                                                            class="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 shrink-0 cursor-pointer"
+                                                                        <span
                                                                             title="Delete image"
-                                                                            on:click=move |_| {
-                                                                                delete_image_action.dispatch_local(delete_image.clone());
-                                                                            }
+                                                                            class="opacity-0 group-hover:opacity-100 focus:opacity-100"
                                                                         >
-                                                                            "🗑️"
-                                                                        </button>
+                                                                            <Button
+                                                                                variant=ButtonVariant::Destructive
+                                                                                size=ButtonSize::IconSm
+                                                                                on:click=move |_| {
+                                                                                    delete_image_action.dispatch_local(delete_image.clone());
+                                                                                }
+                                                                            >
+                                                                                "🗑️"
+                                                                            </Button>
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -441,16 +453,16 @@ pub fn EmulationCameraView() -> impl IntoView {
                                                 }
                                                 .into_any(),
                                                 None => view! {
-                                                    <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center">
-                                                        <div class="text-slate-600 text-xl mb-1">"📁"</div>
-                                                        <p class="text-slate-500 text-xs">"Activate a collection to browse its images"</p>
+                                                    <div class="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                                                        <div class="text-muted-foreground text-xl mb-1">"📁"</div>
+                                                        <p class="text-muted-foreground text-xs">"Activate a collection to browse its images"</p>
                                                     </div>
                                                 }
                                                 .into_any(),
                                                 Some(_) => view! {
-                                                    <div class="border-2 border-dashed border-slate-700 rounded-lg p-4 text-center">
-                                                        <div class="text-slate-600 text-xl mb-1">"🖼️"</div>
-                                                        <p class="text-slate-500 text-xs">"No images in this collection yet"</p>
+                                                    <div class="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                                                        <div class="text-muted-foreground text-xl mb-1">"🖼️"</div>
+                                                        <p class="text-muted-foreground text-xs">"No images in this collection yet"</p>
                                                     </div>
                                                 }
                                                 .into_any(),
@@ -464,28 +476,22 @@ pub fn EmulationCameraView() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
-                <h2 class="text-lg font-semibold text-white mb-4">"Device Settings"</h2>
-                <JsonDeviceView/>
-            </div>
-
             {move || show_new_collection_dialog.get().then(|| view! {
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div class="bg-slate-800 rounded-xl p-6 min-w-[320px] border border-slate-700 shadow-xl">
-                        <h3 class="text-lg font-semibold text-white mt-0 mb-4">"Create New Collection"</h3>
+                    <div class="bg-card rounded-xl p-6 min-w-[320px] border border-border shadow-xl">
+                        <h3 class="text-lg font-semibold text-foreground mt-0 mb-4">"Create New Collection"</h3>
                         <Input
                             value=new_collection_name
                             placeholder="Enter collection name"
                         />
                         <div class="flex gap-2 justify-end mt-4">
                             <Button
-                                appearance=ButtonAppearance::Subtle
+                                variant=ButtonVariant::Ghost
                                 on:click=move |_| cancel_new_collection()
                             >
                                 "Cancel"
                             </Button>
                             <Button
-                                appearance=ButtonAppearance::Primary
                                 on:click=move |_| confirm_new_collection()
                             >
                                 "Create"

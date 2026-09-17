@@ -9,6 +9,7 @@ futures-util.workspace = true
 gloo-net.workspace = true
 gloo-timers = { workspace = true, features = ["futures", "futures-core"] }
 leptos.workspace = true
+pilatus-leptos-components.workspace = true
 leptos_router.workspace = true
 pilatus = { workspace = true, default-features = false }
 pilatus-tick = { workspace = true, features = ["unstable"] }

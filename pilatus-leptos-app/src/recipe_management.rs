@@ -3,8 +3,8 @@ mod recipe_row;
 mod recipe_tags;
 
 use leptos::prelude::*;
+use pilatus_leptos_components::{Button, ButtonVariant};
 use pilatus_leptos::RecipeContext;
-use thaw::{Button, ButtonAppearance};
 
 use self::recipe_import::RecipeImport;
 use self::recipe_row::{RecipeRow, RecipeRowProps};
@@ -33,17 +33,16 @@ pub fn RecipeManagement() -> impl IntoView {
     view! {
         <div class="space-y-6">
             <div>
-                <h1 class="text-2xl font-bold text-white mb-1">"Recipe Management"</h1>
-                <p class="text-slate-400">"Create and manage recipes for your devices."</p>
+                <h1 class="text-2xl font-bold text-foreground mb-1">"Recipe Management"</h1>
+                <p class="text-muted-foreground">"Create and manage recipes for your devices."</p>
             </div>
 
-            <div class="bg-slate-800 rounded-xl border border-slate-700">
-                <div class="p-4 border-b border-slate-700 flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-white">"Recipes"</h2>
+            <div class="bg-card rounded-xl border border-border">
+                <div class="p-4 border-b border-border flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-foreground">"Recipes"</h2>
                     <div class="flex gap-2">
                         <RecipeImport />
                         <Button
-                            appearance=ButtonAppearance::Primary
                             on:click=move |_| {
                                 create_action.dispatch(());
                             }
@@ -54,7 +53,7 @@ pub fn RecipeManagement() -> impl IntoView {
                             if has_active_changes.get() {
                                 view! {
                                     <Button
-                                        appearance=ButtonAppearance::Secondary
+                                        variant=ButtonVariant::Secondary
                                         on:click=move |_| {
                                             commit_action.dispatch(());
                                         }
@@ -92,12 +91,12 @@ pub fn RecipeManagement() -> impl IntoView {
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
-                            <tr class="border-b border-slate-700">
-                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Name"</th>
-                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Tags"</th>
-                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Created"</th>
-                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Status"</th>
-                                <th class="text-left px-4 py-3 text-sm font-medium text-slate-400">"Actions"</th>
+                            <tr class="border-b border-border">
+                                <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">"Name"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">"Tags"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">"Created"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">"Status"</th>
+                                <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">"Actions"</th>
                             </tr>
                         </thead>
                         <tbody>

@@ -1,0 +1,1 @@
+In pilatus, add new struct `pilatus_emulation-camera::CollectionIndex(pub u32)` to Extensions of a Streaming image. Use this information to highlight the currently active image. You have to add a Encoder/Decoder so this extension is Serialized/Deserialized from/to the frontend.

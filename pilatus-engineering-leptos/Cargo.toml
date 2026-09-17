@@ -18,6 +18,7 @@ imask = { workspace = true, features = ["async-io"] }
 imbuf.workspace = true
 js-sys.workspace = true
 leptos.workspace = true
+pilatus-leptos-components.workspace = true
 pilatus.workspace = true
 pilatus-engineering.workspace = true
 pilatus-leptos.workspace = true

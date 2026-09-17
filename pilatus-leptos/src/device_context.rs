@@ -1,9 +1,12 @@
 use std::str::FromStr;
 
-use crate::{DeviceInfos, MapRwSignal, RecipeContext, VariableChangeCtx};
+use crate::{DeviceInfos, JsonDeviceView, MapRwSignal, RecipeContext, VariableChangeCtx};
 use leptos::{either::Either, prelude::*};
 use leptos_router::hooks::use_params_map;
 use pilatus::device::DeviceId;
+use pilatus_leptos_components::{
+    Button, ButtonSize, ButtonVariant, Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle,
+};
 
 use leptos_router::components::Outlet;
 use serde::{Serialize, de::DeserializeOwned};
@@ -54,6 +57,7 @@ pub fn DeviceView() -> impl IntoView {
             set_delayed.set(Some(infos));
         }
     });
+    let show_settings = RwSignal::new(false);
     view! {
         { move|| {
 
@@ -62,11 +66,18 @@ pub fn DeviceView() -> impl IntoView {
                 let name = infos.name.to_string();
                 provide_context(DeviceContext { infos });
                 Either::Left(view! {
-                    <div style="padding-bottom: 20px;">
-                        <h1>{name}</h1>
-                    </div>
+                    <div class="space-y-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <h1 class="text-2xl font-bold text-foreground">{name}</h1>
+                            <span title="Device settings">
+                                <Button variant=ButtonVariant::Ghost size=ButtonSize::IconSm on:click=move |_| show_settings.set(true)>"⚙️"</Button>
+                            </span>
+                        </div>
 
-                    <Outlet/>
+                        <Outlet/>
+
+                        <DeviceSettingsModal show=show_settings/>
+                    </div>
                 })
             } else {
                 Either::Right(view! {
@@ -80,5 +91,21 @@ pub fn DeviceView() -> impl IntoView {
                 }})
             }
         }}
+    }
+}
+
+#[component]
+fn DeviceSettingsModal(show: RwSignal<bool>) -> impl IntoView {
+    view! {
+        <Dialog show=show>
+            <DialogContent class="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>"Device Settings"</DialogTitle>
+                </DialogHeader>
+                <DialogBody class="min-h-0 flex-1 overflow-y-auto">
+                    <JsonDeviceView on_close=Callback::new(move |()| show.set(false)) />
+                </DialogBody>
+            </DialogContent>
+        </Dialog>
     }
 }

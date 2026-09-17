@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use pilatus_leptos::{DeviceContext, FetchApi, FetchResult, PilatusWrapperSettings};
+use pilatus_leptos_components::{Button, InputNumber};
 use pilatus_tick::ManualTickParamsImpex;
-use thaw::{Button, ButtonAppearance, SpinButton};
 
 #[component]
 pub fn ManualTick() -> impl IntoView {
@@ -28,21 +28,20 @@ pub fn ManualTick() -> impl IntoView {
     view! {
         <div class="space-y-6">
             <div>
-                <h1 class="text-2xl font-bold text-white mb-1">"Manual Tick"</h1>
-                <p class="text-slate-400">"Increment counter manually"</p>
+                <h1 class="text-2xl font-bold text-foreground mb-1">"Manual Tick"</h1>
+                <p class="text-muted-foreground">"Increment counter manually"</p>
             </div>
 
-            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                <h2 class="text-lg font-semibold text-white mb-4">"Counter Settings"</h2>
+            <div class="bg-card rounded-xl border border-border p-6">
+                <h2 class="text-lg font-semibold text-foreground mb-4">"Counter Settings"</h2>
 
                 <div class="flex items-center gap-4 mb-6">
-                    <label class="text-slate-300 text-sm w-28">"Initial Count"</label>
-                    <SpinButton<u32> value=initial_count step_page=1/>
+                    <label class="text-foreground text-sm w-28">"Initial Count"</label>
+                    <InputNumber value=initial_count step=1/>
                 </div>
 
-                <div class="flex items-center gap-4 pt-4 border-t border-slate-700">
+                <div class="flex items-center gap-4 pt-4 border-t border-border">
                     <Button
-                        appearance=ButtonAppearance::Primary
                         on:click=move |_| {
                             increment.dispatch(());
                         }
@@ -50,10 +49,10 @@ pub fn ManualTick() -> impl IntoView {
                         "Increment"
                     </Button>
 
-                    <div class="text-slate-400 text-sm">
+                    <div class="text-muted-foreground text-sm">
                         {move || match increment.value().get() {
                             Some(Ok(count)) => view! {
-                                <span class="text-emerald-400">"Count: " {count}</span>
+                                <span class="text-success">"Count: " {count}</span>
                             }.into_any(),
                             Some(Err(e)) => view! {
                                 <span class="text-red-400">"Error: " {e.to_string() }</span>
@@ -69,6 +68,48 @@ pub fn ManualTick() -> impl IntoView {
                     </div>
                 })}
             </div>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
+            Content<br/>
         </div>
     }
 }

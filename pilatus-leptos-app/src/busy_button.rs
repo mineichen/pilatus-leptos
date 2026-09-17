@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use leptos::prelude::*;
-use thaw::Button;
+use pilatus_leptos_components::Button;
 
 #[server]
 pub async fn add_todo(title: String) -> Result<(), ServerFnError> {

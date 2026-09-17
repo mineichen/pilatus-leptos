@@ -8,6 +8,7 @@ futures-util.workspace = true
 gloo-net.workspace = true
 js-sys.workspace = true
 leptos.workspace = true
+pilatus-leptos-components.workspace = true
 pilatus.workspace = true
 pilatus-leptos.workspace = true
 pilatus-emulation-camera = { workspace = true, features = ["impex", "unstable"] }

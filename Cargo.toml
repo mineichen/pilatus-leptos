@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "pilatus-aravis-leptos",
     "app-backend",
+    "pilatus-leptos-components",
     "pilatus-leptos",
     "pilatus-leptos-app",
     "pilatus-engineering-leptos",
@@ -42,6 +43,10 @@ imask = { git = "https://github.com/mineichen/imask.git" }
 impex = { version = "0.1", features = ["visitor"] }
 js-sys = "0.3"
 leptos = "0.8"
+pilatus-leptos-components = { path = "pilatus-leptos-components" }
+leptos_ui = "0.3"
+strum = { version = "0.28", features = ["derive"] }
+tw_merge = "0.1"
 leptos_axum = "0.8"
 leptos_router = "0.8"
 leptos_meta = "0.8"
@@ -97,11 +102,11 @@ pilatus-tick = { path = "../pilatus/examples/tick" }
 # pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
 # pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
 
-# [patch."https://github.com/mineichen/imask.git"]
-# imask.path = "../imask"
+[patch."https://github.com/mineichen/imask.git"]
+imask.path = "../imask"
 
-# [patch."https://github.com/mineichen/imanot.git"]
-# imanot.path = "../imanot/imanot"
+[patch."https://github.com/mineichen/imanot.git"]
+imanot.path = "../imanot/imanot"
 
 
 # [patch.crates-io]

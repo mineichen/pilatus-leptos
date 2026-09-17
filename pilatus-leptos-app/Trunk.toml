@@ -1,6 +1,7 @@
 [watch]
 watch = [
     "../pilatus-leptos",
+    "../pilatus-leptos-components",
     ".",
     "../pilatus-engineering-leptos",
     "../pilatus-aravis-leptos",

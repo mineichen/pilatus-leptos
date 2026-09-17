@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
 use leptos::prelude::*;
+use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant, Input};
 use pilatus::Name;
 use pilatus_leptos::{RecipeContext, RecipeInfo};
-use thaw::{Button, ButtonAppearance, ButtonSize, Input, Tag};
+use thaw::Tag;
 
 #[component]
 pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
@@ -57,15 +58,18 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                                 <Tag>
                                     <span class="inline-flex items-center gap-1">
                                         <span>{tag_str.clone()}</span>
-                                        <button
-                                            class="text-red-400 hover:text-red-300 ml-1 text-sm"
-                                            on:click=move |ev| {
-                                                ev.stop_propagation();
-                                                set_tag_to_remove.set(Some(tag_name.clone()));
-                                            }
-                                        >
-                                            "×"
-                                        </button>
+                                        <span title=format!("Remove tag {}", tag_str)>
+                                            <Button
+                                                variant=ButtonVariant::Destructive
+                                                size=ButtonSize::IconSm
+                                                on:click=move |ev| {
+                                                    ev.stop_propagation();
+                                                    set_tag_to_remove.set(Some(tag_name.clone()));
+                                                }
+                                            >
+                                                "×"
+                                            </Button>
+                                        </span>
                                     </span>
                                 </Tag>
                             }
@@ -73,14 +77,14 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                         .collect_view()
                 }}
             </div>
-            <div class="flex gap-2 items-center bg-slate-800 ">
+            <div class="flex gap-2 items-center bg-card ">
                 <Input
                     value=new_tag_input
                     placeholder="Enter new tag"
                 />
                 <Button
-                    appearance=ButtonAppearance::Secondary
-                    size=ButtonSize::Small
+                    variant=ButtonVariant::Secondary
+                    size=ButtonSize::Sm
                     on:click=move |_| {
                         add_tag_to_recipe.dispatch(());
                     }
@@ -109,18 +113,17 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                     let tag_str = tag_name.to_string();
                     view! {
                         <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                            <div class="bg-slate-800 rounded-xl p-6 min-w-[300px] border border-slate-700 shadow-xl">
-                                <h3 class="text-lg font-semibold text-white mt-0">"Remove Tag?"</h3>
-                                <p class="text-slate-400 my-4">{format!("Remove tag \"{}\"?", tag_str)}</p>
+                            <div class="bg-card rounded-xl p-6 min-w-[300px] border border-border shadow-xl">
+                                <h3 class="text-lg font-semibold text-foreground mt-0">"Remove Tag?"</h3>
+                                <p class="text-muted-foreground my-4">{format!("Remove tag \"{}\"?", tag_str)}</p>
                                 <div class="mt-4 flex gap-2 justify-end">
                                     <Button
-                                        appearance=ButtonAppearance::Subtle
+                                        variant=ButtonVariant::Ghost
                                         on:click=move |_| set_tag_to_remove.set(None)
                                     >
                                         "Cancel"
                                     </Button>
                                     <Button
-                                        appearance=ButtonAppearance::Primary
                                         on:click=move |_| {
                                             remove_tag_action.dispatch(tag_name.clone());
                                         }

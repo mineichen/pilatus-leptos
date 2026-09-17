@@ -1,7 +1,7 @@
 use leptos::prelude::*;
+use pilatus_leptos_components::{Button, Input};
 use pilatus_leptos::{DeviceContext, FetchApi, FetchError, PilatusWrapperSettings, VariableInput};
 use pilatus_tick::GreeterParamsImpex;
-use thaw::{Button, ButtonAppearance, Input};
 
 #[component]
 pub fn Greeter() -> impl IntoView {
@@ -33,15 +33,15 @@ pub fn Greeter() -> impl IntoView {
     view! {
         <div class="space-y-6">
             <div>
-                <h1 class="text-2xl font-bold text-white mb-1">"Greeter"</h1>
-                <p class="text-slate-400">"Send a friendly greeting"</p>
+                <h1 class="text-2xl font-bold text-foreground mb-1">"Greeter"</h1>
+                <p class="text-muted-foreground">"Send a friendly greeting"</p>
             </div>
 
-            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                <h2 class="text-lg font-semibold text-white mb-4">"Settings"</h2>
+            <div class="bg-card rounded-xl border border-border p-6">
+                <h2 class="text-lg font-semibold text-foreground mb-4">"Settings"</h2>
 
                 <div class="mb-6">
-                    <label class="text-slate-300 text-sm block mb-2">"Language"</label>
+                    <label class="text-foreground text-sm block mb-2">"Language"</label>
                     <VariableInput
                         value=lang
                         label="Language".to_string()
@@ -49,8 +49,8 @@ pub fn Greeter() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                <h2 class="text-lg font-semibold text-white mb-4">"Send Greeting"</h2>
+            <div class="bg-card rounded-xl border border-border p-6">
+                <h2 class="text-lg font-semibold text-foreground mb-4">"Send Greeting"</h2>
 
                 <div class="flex gap-3 mb-4">
                     <div class="flex-1">
@@ -60,7 +60,6 @@ pub fn Greeter() -> impl IntoView {
                         />
                     </div>
                     <Button
-                        appearance=ButtonAppearance::Primary
                         on:click=move |_| {
                             action.dispatch(name.get_untracked());
                         }
@@ -82,8 +81,8 @@ pub fn Greeter() -> impl IntoView {
                         </div>
                     }.into_any(),
                     Some(Ok(greeting)) => view! {
-                        <div class="px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-lg">
-                            <p class="text-emerald-300 text-lg font-medium">{greeting.clone()}</p>
+                        <div class="px-4 py-3 bg-success/10 border border-success/30 rounded-lg">
+                            <p class="text-success text-lg font-medium">{greeting.clone()}</p>
                         </div>
                     }.into_any(),
                     None => "".into_any(),

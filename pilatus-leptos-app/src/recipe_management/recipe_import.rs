@@ -11,8 +11,10 @@ use js_sys::wasm_bindgen::JsCast;
 use leptos::prelude::*;
 use pilatus::{Name, RecipeId};
 use pilatus_leptos::ws_url_base;
+use pilatus_leptos_components::{
+    Button, ButtonClass, ButtonSize, ButtonVariant, IntoTailwindClass,
+};
 use serde::Deserialize;
-use thaw::{Button, ButtonAppearance};
 
 #[derive(Deserialize)]
 enum ImportServerMessage {
@@ -64,7 +66,17 @@ pub fn RecipeImport() -> impl IntoView {
 
     view! {
         <div>
-            <label class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors cursor-pointer">
+            <label class=move || {
+                let base = ButtonClass {
+                    variant: ButtonVariant::Secondary,
+                    size: ButtonSize::Default,
+                };
+                if import_action.pending().get() {
+                    base.with_class("pointer-events-none opacity-50")
+                } else {
+                    base.to_class()
+                }
+            }>
                 "Import Recipe"
                 <input
                     type="file"
@@ -80,11 +92,11 @@ pub fn RecipeImport() -> impl IntoView {
                 match action.deref() {
                     Some(Ok(true)) => view! {
                         <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                            <div class="bg-slate-800 rounded-xl p-6 min-w-[300px] border border-slate-700 shadow-xl">
-                                <h3 class="text-lg font-semibold text-emerald-400 mt-0">"Import Successful"</h3>
-                                <p class="text-slate-400 my-4">"Recipes have been imported successfully."</p>
+                            <div class="bg-card rounded-xl p-6 min-w-[300px] border border-border shadow-xl">
+                                <h3 class="text-lg font-semibold text-success mt-0">"Import Successful"</h3>
+                                <p class="text-muted-foreground my-4">"Recipes have been imported successfully."</p>
                                 <div class="mt-4 flex gap-2 justify-end">
-                                    <Button appearance=ButtonAppearance::Primary on:click=move |_| dismiss()>
+                                    <Button on:click=move |_| dismiss()>
                                         "Close"
                                     </Button>
                                 </div>
@@ -95,11 +107,11 @@ pub fn RecipeImport() -> impl IntoView {
                         let msg = msg.clone();
                         view! {
                             <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                                <div class="bg-slate-800 rounded-xl p-6 min-w-[300px] border border-red-700 shadow-xl">
+                                <div class="bg-card rounded-xl p-6 min-w-[300px] border border-red-700 shadow-xl">
                                     <h3 class="text-lg font-semibold text-red-400 mt-0">"Import Error"</h3>
-                                    <p class="text-slate-400 my-4">{msg}</p>
+                                    <p class="text-muted-foreground my-4">{msg}</p>
                                     <div class="mt-4 flex gap-2 justify-end">
-                                        <Button appearance=ButtonAppearance::Subtle on:click=move |_| dismiss()>
+                                        <Button variant=ButtonVariant::Ghost on:click=move |_| dismiss()>
                                             "Close"
                                         </Button>
                                     </div>
@@ -114,9 +126,9 @@ pub fn RecipeImport() -> impl IntoView {
 
                     None if import_action.pending().get() => view! {
                         <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                            <div class="bg-slate-800 rounded-xl p-6 min-w-[300px] border border-slate-700 shadow-xl">
-                                <h3 class="text-lg font-semibold text-white mt-0">"Importing..."</h3>
-                                <p class="text-slate-400 my-4">"Uploading recipe file and processing on server."</p>
+                            <div class="bg-card rounded-xl p-6 min-w-[300px] border border-border shadow-xl">
+                                <h3 class="text-lg font-semibold text-foreground mt-0">"Importing..."</h3>
+                                <p class="text-muted-foreground my-4">"Uploading recipe file and processing on server."</p>
                             </div>
                         </div>
                     }.into_any(),
@@ -195,20 +207,20 @@ fn ConflictModal(conflicts: ConflictContext) -> impl IntoView {
     let has_variable_conflicts = !conflicts.variable_conflicts.is_empty();
     view! {
         <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div class="bg-slate-800 rounded-xl p-6 min-w-[400px] max-w-[600px] border border-slate-700 shadow-xl">
+            <div class="bg-card rounded-xl p-6 min-w-[400px] max-w-[600px] border border-border shadow-xl">
                 <h3 class="text-lg font-semibold text-amber-400 mt-0">"Import Conflicts"</h3>
-                <p class="text-slate-400 my-4">"The imported recipes conflict with existing data. Choose how to resolve."</p>
+                <p class="text-muted-foreground my-4">"The imported recipes conflict with existing data. Choose how to resolve."</p>
 
                 {move || {
                     if has_recipe_conflicts {
                         let ids = conflicts.recipe_ids.clone();
                         view! {
                             <div class="mb-4">
-                                <h4 class="text-sm font-medium text-slate-300 mb-2">"Conflicting Recipe IDs"</h4>
-                                <div class="bg-slate-900 rounded-lg p-3 max-h-[200px] overflow-y-auto">
+                                <h4 class="text-sm font-medium text-foreground mb-2">"Conflicting Recipe IDs"</h4>
+                                <div class="bg-muted rounded-lg p-3 max-h-[200px] overflow-y-auto">
                                     {ids.iter().map(|id| {
                                         view! {
-                                            <div class="text-slate-400 text-sm py-1">{format!("{id}")}</div>
+                                            <div class="text-muted-foreground text-sm py-1">{format!("{id}")}</div>
                                         }
                                     }).collect_view()}
                                 </div>
@@ -224,19 +236,19 @@ fn ConflictModal(conflicts: ConflictContext) -> impl IntoView {
                         let vars = conflicts.variable_conflicts.clone();
                         view! {
                             <div class="mb-4">
-                                <h4 class="text-sm font-medium text-slate-300 mb-2">"Variable Conflicts"</h4>
-                                <div class="bg-slate-900 rounded-lg p-3 max-h-[200px] overflow-y-auto space-y-2">
+                                <h4 class="text-sm font-medium text-foreground mb-2">"Variable Conflicts"</h4>
+                                <div class="bg-muted rounded-lg p-3 max-h-[200px] overflow-y-auto space-y-2">
                                     {vars.iter().map(|v| {
                                         view! {
                                             <div class="text-sm">
-                                                <span class="text-slate-300 font-medium">{format!("{}", v.name)}</span>
+                                                <span class="text-foreground font-medium">{format!("{}", v.name)}</span>
                                                 <div class="flex gap-4 mt-1">
-                                                    <span class="text-slate-500">"Existing:"</span>
+                                                    <span class="text-muted-foreground">"Existing:"</span>
                                                     <span class="text-red-400">{format!("{}", v.existing)}</span>
                                                 </div>
                                                 <div class="flex gap-4">
-                                                    <span class="text-slate-500">"Imported:"</span>
-                                                    <span class="text-emerald-400">{format!("{}", v.imported)}</span>
+                                                    <span class="text-muted-foreground">"Imported:"</span>
+                                                    <span class="text-success">{format!("{}", v.imported)}</span>
                                                 </div>
                                             </div>
                                         }
@@ -251,19 +263,18 @@ fn ConflictModal(conflicts: ConflictContext) -> impl IntoView {
 
                 <div class="mt-4 flex gap-2 justify-end">
                     <Button
-                        appearance=ButtonAppearance::Subtle
+                        variant=ButtonVariant::Ghost
                         on:click=move |_| responder.close_channel()
                     >
                         "Cancel"
                     </Button>
                     <Button
-                        appearance=ButtonAppearance::Secondary
+                        variant=ButtonVariant::Secondary
                         on:click=move |_| replace_responder.try_send("Replace").unwrap()
                     >
                         "Replace Existing"
                     </Button>
                     <Button
-                        appearance=ButtonAppearance::Primary
                         on:click=move |_| duplicate_responder.try_send("Duplicate").unwrap()
                     >
                         "Duplicate"

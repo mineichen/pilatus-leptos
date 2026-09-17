@@ -19,7 +19,8 @@
 }
 
 /* Semantic colors for rust-ui/leptos-ui registry components copied into
-   `pilatus-leptos-components` (Button, Input, Textarea, InputNumber).
+   `pilatus-leptos-components` (Button, Input, Textarea, InputNumber, Badge,
+   Field, Label, Separator).
    Without these, utilities like `bg-primary` or `border-input` are never
    generated. Values from
    https://github.com/rust-ui/leptos-ui/blob/main/style/tailwind.css */
@@ -39,18 +40,24 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --destructive-light: oklch(0.95 0.08 27.325);
+    --destructive-dark: oklch(0.35 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
     --surface: oklch(0.98 0 0);
     --surface-foreground: oklch(0.145 0 0);
     --info: oklch(0.55 0.18 250);
+    --info-foreground: oklch(0.985 0 0);
     --info-light: oklch(0.95 0.08 250);
     --info-dark: oklch(0.35 0.18 250);
     --warning-light: oklch(0.95 0.08 55);
     --warning-dark: oklch(0.35 0.18 55);
     --success: oklch(0.65 0.16 145);
     --success-foreground: oklch(0.985 0 0);
+    --success-light: oklch(0.95 0.08 145);
+    --success-dark: oklch(0.35 0.16 145);
     --warning: oklch(0.65 0.16 55);
     --warning-foreground: oklch(0.985 0 0);
 }
@@ -71,18 +78,24 @@
     --accent: oklch(0.371 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --destructive-light: oklch(0.25 0.08 22.216);
+    --destructive-dark: oklch(0.85 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
     --surface: oklch(0.22 0 0);
     --surface-foreground: oklch(0.708 0 0);
     --info: oklch(0.65 0.18 250);
+    --info-foreground: oklch(0.985 0 0);
     --info-light: oklch(0.25 0.08 250);
     --info-dark: oklch(0.75 0.18 250);
     --warning-light: oklch(0.25 0.08 55);
     --warning-dark: oklch(0.75 0.16 55);
     --success: oklch(0.65 0.16 145);
     --success-foreground: oklch(0.205 0 0);
+    --success-light: oklch(0.25 0.08 145);
+    --success-dark: oklch(0.75 0.16 145);
     --warning: oklch(0.65 0.16 55);
     --warning-foreground: oklch(0.205 0 0);
 }
@@ -103,18 +116,24 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-light: var(--destructive-light);
+    --color-destructive-dark: var(--destructive-dark);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
     --color-surface: var(--surface);
     --color-surface-foreground: var(--surface-foreground);
     --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
     --color-info-light: var(--info-light);
     --color-info-dark: var(--info-dark);
     --color-warning-light: var(--warning-light);
     --color-warning-dark: var(--warning-dark);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-success-light: var(--success-light);
+    --color-success-dark: var(--success-dark);
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
 }

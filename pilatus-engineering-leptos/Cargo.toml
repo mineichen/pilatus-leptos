@@ -24,7 +24,6 @@ pilatus-engineering.workspace = true
 pilatus-leptos.workspace = true
 pin-project-lite = "0.2"
 thiserror.workspace = true
-thaw.workspace = true
 wasm-bindgen = "0.2"
 web-sys = { workspace = true, features = ["File", "FileList", "HtmlElement", "DragEvent", "DataTransfer", "Document", "VisibilityState"] }
 

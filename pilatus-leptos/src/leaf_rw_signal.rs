@@ -581,21 +581,3 @@ impl<T: Send + Sync + 'static + Default> Default for LeafRwSignal<T> {
         LeafRwSignal::new(T::default())
     }
 }
-
-// Thaw Model support
-impl<T> From<LeafRwSignal<T>> for thaw_utils::Model<T>
-where
-    T: Send + Sync + 'static + Clone + PartialEq + serde::de::DeserializeOwned + serde::Serialize,
-{
-    fn from(leaf: LeafRwSignal<T>) -> Self {
-        // Create a derived signal that extracts T from PilatusPrimitiveValue<T>
-        let read_signal = Signal::derive(move || leaf.get_value());
-
-        // Create a SignalSetter that writes back to the leaf
-        let write_signal = SignalSetter::map(move |value: T| {
-            leaf.set_value(value);
-        });
-
-        (read_signal, write_signal).into()
-    }
-}

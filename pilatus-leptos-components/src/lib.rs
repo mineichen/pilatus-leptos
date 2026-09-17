@@ -27,23 +27,34 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 mod alert;
+mod badge;
 mod button;
 mod callout;
 mod dialog;
+mod field;
 mod input;
 mod input_number;
+mod label;
+mod separator;
 mod textarea;
 mod theme_mode;
 mod theme_toggle;
 
 pub use alert::{Alert, AlertDescription, AlertTitle};
+pub use badge::{Badge, BadgeSize, BadgeVariant};
 pub use button::{Button, ButtonClass, ButtonSize, ButtonVariant};
 pub use callout::{Callout, CalloutVariant};
 pub use dialog::{
     Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
+pub use field::{
+    Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend,
+    FieldLegendVariant, FieldSeparator, FieldSet, FieldTitle,
+};
 pub use input::{Input, InputType};
 pub use input_number::{InputNumber, InputNumberValue};
+pub use label::Label;
+pub use separator::{Separator, SeparatorClass, SeparatorOrientation};
 pub use textarea::Textarea;
 pub use theme_mode::{ThemeMode, use_theme_mode};
 pub use theme_toggle::ThemeToggle;

@@ -22,7 +22,6 @@ pilatus-emulation-camera-leptos = { path = "../pilatus-emulation-camera-leptos",
 pilatus-leptos.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-thaw.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-log = "0.2"

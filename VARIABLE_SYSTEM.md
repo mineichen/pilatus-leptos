@@ -44,7 +44,7 @@ A reactive signal wrapper around `Signal<PilatusPrimitiveValue<T>>` that provide
 
 Located in `pilatus-leptos/src/variable_input.rs`
 
-A custom Thaw-based Input component that:
+A custom RustUi-based Input component that:
 - Shows whether the value is from a variable or local
 - Displays the variable name with a 🔗 icon when using a variable
 - Allows converting local values to variables
@@ -124,7 +124,7 @@ When a `LeafRwSignal` value changes:
 
 4. **Type Safety**: Consider adding type information to variables to prevent type mismatches.
 
-5. **Bi-directional Sync**: The `From<LeafRwSignal<T>> for Model<T>` implementation needs work for proper two-way binding with standard Thaw components.
+5. **Bi-directional Sync**: The `From<LeafRwSignal<T>> for Model<T>` implementation needs work for proper two-way binding with standard pilatus-letos-components.
 
 ## Testing
 
@@ -136,4 +136,3 @@ Run tests with:
 ```bash
 cargo test --lib impex_strategy
 ```
-

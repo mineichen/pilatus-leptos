@@ -517,10 +517,3 @@ impl<T: Send + Sync + 'static + Default> Default for MapRwSignal<T> {
         MapRwSignal::new(T::default())
     }
 }
-
-// Thaw Model support
-impl<T: Send + Sync + 'static + Clone> From<MapRwSignal<T>> for thaw_utils::Model<T> {
-    fn from(value: MapRwSignal<T>) -> Self {
-        (value.read_signal, value.write_signal).into()
-    }
-}

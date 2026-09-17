@@ -1,7 +1,6 @@
 use leptos::{either::Either, prelude::*};
 use pilatus::Name;
-use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant, Input};
-use thaw::Field;
+use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant, Field, FieldLabel, Input};
 
 use crate::LeafRwSignal;
 
@@ -64,7 +63,10 @@ pub fn VariableInput<
     );
 
     view! {
-        <Field label=label.unwrap_or_default()>
+        <Field>
+            {label.map(|label_text| {
+                (!label_text.is_empty()).then(|| view! { <FieldLabel>{label_text}</FieldLabel> })
+            })}
             <div style="display: flex; gap: 8px; align-items: center;">
                 <Input
                     value=str_leaf
@@ -106,7 +108,8 @@ pub fn VariableInput<
                     <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                         <div class="rounded-xl p-6 min-w-[320px] border border-border shadow-xl bg-card">
                             <h3 class="text-lg font-semibold text-foreground mt-0 mb-4">"Create Variable Reference"</h3>
-                            <Field label="Variable Name">
+                            <Field>
+                                <FieldLabel>"Variable Name"</FieldLabel>
                                 <Input
                                     value=new_var_name
                                     placeholder="Enter variable name"

@@ -1,10 +1,9 @@
 use std::str::FromStr;
 
 use leptos::prelude::*;
-use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant, Input};
+use pilatus_leptos_components::{Badge, BadgeVariant, Button, ButtonSize, ButtonVariant, Input};
 use pilatus::Name;
 use pilatus_leptos::{RecipeContext, RecipeInfo};
-use thaw::Tag;
 
 #[component]
 pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
@@ -55,7 +54,7 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                             let tag_name = tag.clone();
                             let tag_str = tag.to_string();
                             view! {
-                                <Tag>
+                                <Badge variant=BadgeVariant::Secondary>
                                     <span class="inline-flex items-center gap-1">
                                         <span>{tag_str.clone()}</span>
                                         <span title=format!("Remove tag {}", tag_str)>
@@ -71,7 +70,7 @@ pub fn RecipeTags(recipe_memo: Memo<RecipeInfo>) -> impl IntoView {
                                             </Button>
                                         </span>
                                     </span>
-                                </Tag>
+                                </Badge>
                             }
                         })
                         .collect_view()

@@ -16,10 +16,8 @@ reactive_stores.workspace = true
 reactive_graph.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-thaw.workspace = true
-thaw_utils.workspace = true
 thiserror.workspace = true
-uuid = "1"
+uuid.workspace = true
 web-sys = { workspace = true, features = ["Window", "Location"] }
 futures-util.workspace = true
 

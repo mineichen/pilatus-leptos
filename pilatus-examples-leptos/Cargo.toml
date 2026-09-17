@@ -17,5 +17,4 @@ pilatus-leptos.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 reactive_stores.workspace = true
-thaw.workspace = true
 tokio = { version = "1", features = ["time"], optional = true }

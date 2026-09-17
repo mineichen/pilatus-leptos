@@ -10,7 +10,7 @@
 | Framework | Leptos v0.8 (CSR mode) |
 | Target | `wasm32-unknown-unknown` |
 | Build Tool | Trunk (WASM bundler) |
-| UI Library | Thaw (git dependency) |
+| UI Library | Vendored RustUI (`pilatus-leptos-components`) |
 | Styling | Tailwind CSS v4 + SCSS |
 | Routing | leptos_router v0.8 |
 | Testing | Playwright (e2e) |
@@ -18,7 +18,7 @@
 ## Key Dependencies
 - `pilatus` - Core domain library (git)
 - `pilatus-leptos` - Shared Leptos utilities (workspace member)
-- `thaw` / `thaw_utils` - UI components
+- `pilatus-leptos-components` - Vendored RustUI components
 - `gloo-net` / `gloo-timers` - Web APIs for WASM
 - `serde` / `serde_json` - Serialization
 

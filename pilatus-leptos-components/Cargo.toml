@@ -8,7 +8,8 @@ js-sys.workspace = true
 leptos.workspace = true
 leptos_router.workspace = true
 leptos_ui.workspace = true
+pilatus.workspace = true
 strum.workspace = true
 tw_merge.workspace = true
 wasm-bindgen.workspace = true
-web-sys = { workspace = true, features = ["CssStyleDeclaration", "Document", "Element", "HtmlElement", "HtmlInputElement", "MediaQueryList", "NodeList", "Storage", "Window"] }
+web-sys = { workspace = true, features = ["CssStyleDeclaration", "Document", "DomRect", "Element", "HtmlElement", "HtmlInputElement", "MediaQueryList", "NodeList", "PointerEvent", "KeyboardEvent", "Storage", "Window"] }

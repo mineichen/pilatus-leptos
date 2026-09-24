@@ -3,12 +3,12 @@ use std::ops::Deref;
 use futures_util::TryFutureExt;
 use leptos::prelude::*;
 use leptos::{either::Either, logging::debug_error};
-use pilatus_leptos_components::{Button, ButtonClass, ButtonSize, ButtonVariant, Input, IntoTailwindClass};
 use pilatus::Name;
 use pilatus_emulation_camera::ActiveRecipeImpex;
 use pilatus_engineering_leptos::{ImageViewerComponent, WebSocketImageProvider};
-use pilatus_leptos::{
-    DeviceContext, FetchApi, FetchError, PilatusWrapperSettings, ws_url_base,
+use pilatus_leptos::{DeviceContext, FetchApi, FetchError, PilatusWrapperSettings, ws_url_base};
+use pilatus_leptos_components::{
+    Button, ButtonClass, ButtonSize, ButtonVariant, Input, IntoTailwindClass,
 };
 use wasm_bindgen_futures::JsFuture;
 
@@ -125,12 +125,6 @@ pub fn EmulationCameraView() -> impl IntoView {
         }
     });
 
-    Effect::new(move |_| {
-        if delete_image_action.value().get().is_some_and(|r| r.is_ok()) {
-            active_images.refetch();
-        }
-    });
-
     let confirm_new_collection = move || {
         let name_str = new_collection_name.get_untracked();
         if !name_str.is_empty()
@@ -161,11 +155,6 @@ pub fn EmulationCameraView() -> impl IntoView {
 
     view! {
         <div class="space-y-6">
-            <div>
-                <h1 class="text-2xl font-bold text-foreground mb-1">"Emulation Camera"</h1>
-                <p class="text-muted-foreground">"Camera emulation with image collections"</p>
-            </div>
-
             <div class="flex gap-6">
                 <div class="flex-[2] min-w-0 bg-card rounded-xl border border-border overflow-hidden">
                     <ImageViewerComponent url=image_url provider=WebSocketImageProvider::default()/>

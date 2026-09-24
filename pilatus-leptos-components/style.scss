@@ -1,0 +1,369 @@
+/* Single entry point for the shared styling of every Leptos app built on
+   pilatus-leptos.
+   Import this once from the app's `input.scss`:
+   `@import "…/pilatus-leptos-components/style.scss";`
+   then register only the app's own crates via `@source` — everything from
+   pilatus-leptos (components, app shell, device views) is already covered
+   here, so Tailwind generates their utilities too. */
+@import "./theme.css";
+
+/* Tailwind v4 only auto-detects sources inside the app directory, so
+   classes used by shared workspace crates would silently vanish from the
+   built CSS. Every crate is registered explicitly (paths are relative to
+   this file, so they keep working no matter which app imports it). */
+@source ".";
+@source "../pilatus-leptos";
+@source "../pilatus-leptos-app";
+@source "../pilatus-engineering-leptos";
+@source "../pilatus-emulation-camera-leptos";
+@source "../pilatus-aravis-leptos";
+@source "../pilatus-examples-leptos";
+
+canvas.fullscreen {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    height: 100% !important;
+}
+
+/* Range-slider look for the `Slider` component (and, as a base, the
+ * `InputRange` dual inputs, which hide the track).
+ *
+ * Adapted from daisyUI v5 `.range` (MIT License,
+ * https://github.com/saadeghi/daisyui): explicit thumb/track rules shared
+ * verbatim by both engines, which is what keeps every slider pixel-identical
+ * in light/dark mode and in Chromium/Firefox: a white 16px handle with a
+ * `--primary` ring on a thin 6px track with a `--primary` fill.
+ *
+ * The fill is the only dynamic piece: WebKit has no range-progress pseudo
+ * element, so the track paints a gradient whose hard stop reads the
+ * per-slider `--slider-fill` fraction (0..1, set from the value; Gecko
+ * uses its native `::-moz-range-progress` instead and ignores the var).
+ * Everything else is static paint owned by this file — never inline.
+ *
+ * The `[data-name="Slider"]` hook (not a class) cannot collide with
+ * Tailwind utilities. WebKit and Gecko pseudo elements always get separate
+ * rules — one comma list mixing both engines is dropped entirely by each
+ * engine when it meets the other's unknown pseudo element. Written as flat
+ * CSS (no nesting) on purpose. */
+[data-name="Slider"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    background-color: transparent;
+}
+[data-name="Slider"]:focus {
+    outline: none;
+}
+[data-name="Slider"]:focus-visible {
+    outline: 2px solid;
+    outline-offset: 2px;
+}
+[data-name="Slider"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--primary) 0%, var(--primary) calc(8px + (100% - 16px) * var(--slider-fill, 0.5)), var(--input) calc(8px + (100% - 16px) * var(--slider-fill, 0.5)), var(--input) 100%);
+}
+@media (forced-colors: active) {
+    [data-name="Slider"]::-webkit-slider-runnable-track {
+        border: 1px solid;
+    }
+}
+[data-name="Slider"]::-webkit-slider-thumb {
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #fff;
+    border: 3px solid var(--primary);
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+[data-name="Slider"]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: var(--input);
+}
+[data-name="Slider"]::-moz-range-progress {
+    height: 6px;
+    border-radius: 9999px;
+    background-color: var(--primary);
+}
+@media (forced-colors: active) {
+    [data-name="Slider"]::-moz-range-track {
+        border: 1px solid;
+    }
+}
+[data-name="Slider"]::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #fff;
+    border: 3px solid var(--primary);
+    position: relative;
+    top: 50%;
+}
+/* `InputNumber` control: a card with a top row (number field plus `-` /
+ * `+` steppers) and, when `range` is set, a value track with fill and
+ * thumb along the bottom edge (see `input_number.rs`).
+ *
+ * Ported from the external reference mockup (card 768x133, top row
+ * 105px, track 17px, 54px field font, 116/112px steppers), uniformly
+ * scaled to the app's form-factor rows (top row `h-9` = 36px, factor
+ * 36/105): 46px card, 6px track, 18px field font, 40/38px steppers,
+ * 17px thumb with a 4px ring. The card is fluid width (callers size it
+ * with `w-full`) instead of fixed 768px. `inr-card-plain` (no track)
+ * and `inr-top-single` (no steppers) cover the configurations without
+ * slider or step buttons.
+ *
+ * Colors are theme tokens, never fixed values, so the control follows
+ * light/dark mode: the accent is `var(--primary)` — blackish in light
+ * mode, whitish in dark mode, the same token the `Slider` fill uses —
+ * with a `color-mix` tint for the fill gradient (with a flat fallback
+ * first). The `+` stepper softens the accent to 75% primary mixed with
+ * `var(--secondary)` so it stays stronger than `-` without glaring.
+ * Neutrals come from the card/border/secondary/
+ * foreground tokens. The track fill width and thumb position arrive as
+ * inline `width` / `left` percentages set from the value; everything
+ * else is static paint owned by this file — never inline. Written as
+ * flat CSS (no nesting) on purpose.
+ *
+ * Clipping is split so the round card corners show while the thumb
+ * stays whole: the card itself is `overflow: visible` so the 17px thumb
+ * overhangs the bottom edge unclipped; the top row clips its square
+ * children to the top corners and the track clips the fill to the
+ * bottom corners. The thumb is therefore a sibling of the track (not a
+ * child), positioned at the track's center height. */
+.inr-card {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    overflow: visible;
+}
+.inr-card-plain {
+    height: auto;
+}
+.inr-top {
+    height: 36px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px 38px;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+}
+.inr-card-plain .inr-top {
+    border-radius: 10px;
+}
+.inr-top-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+.inr-input {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    padding: 0 12px;
+    border: 0;
+    outline: none;
+    background: linear-gradient(110deg, var(--card), var(--muted));
+    color: var(--foreground);
+    font: 400 18px Arial, Helvetica, sans-serif;
+    caret-color: var(--foreground);
+}
+.inr-step {
+    width: 100%;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    cursor: pointer;
+}
+.inr-step:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.inr-step:focus-visible {
+    outline: 1px solid var(--primary);
+    outline-offset: -2px;
+}
+.inr-minus {
+    background: var(--secondary);
+    border-left: 1px solid var(--border);
+}
+.inr-plus {
+    background: var(--secondary);
+    background: color-mix(in srgb, var(--primary) 75%, var(--secondary));
+    border-left: 1px solid var(--primary-foreground);
+    border-left: 1px solid color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+.inr-minus-mark {
+    width: 13px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--secondary-foreground);
+    box-shadow: 0 1px 1px rgb(20 36 60 / 0.12);
+}
+.inr-plus-mark {
+    position: relative;
+    width: 14px;
+    height: 14px;
+}
+.inr-plus-mark::before,
+.inr-plus-mark::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary-foreground);
+    border-radius: 1px;
+}
+.inr-plus-mark::before {
+    width: 14px;
+    height: 2px;
+}
+.inr-plus-mark::after {
+    width: 2px;
+    height: 14px;
+}
+.inr-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6px;
+    background: linear-gradient(180deg, var(--muted), var(--input));
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    cursor: pointer;
+    touch-action: none;
+}
+.inr-track-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.inr-track-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--primary);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--primary) 80%, white),
+        var(--primary)
+    );
+    border-radius: 0 0 0 8px;
+    pointer-events: none;
+}
+.inr-thumb {
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    width: 17px;
+    height: 17px;
+    transform: translate(-50%, 50%);
+    border: 4px solid var(--primary);
+    border-radius: 50%;
+    background: var(--card);
+    z-index: 2;
+    pointer-events: none;
+}
+@media (max-width: 800px) {
+    .inr-top {
+        grid-template-columns: minmax(0, 1fr) 26px 26px;
+    }
+    .inr-range-top {
+        grid-template-columns: minmax(0, 1fr) 26px 26px minmax(0, 1fr) 26px 26px;
+    }
+    .inr-input {
+        padding: 0 7px;
+        font-size: 15px;
+    }
+}
+/* `InputRange` shares one `InputNumber` card for both bounds: the top
+ * strip (`.inr-range-top`) holds both fields with their own steppers
+ * (`min-field/−/+`, divider, `max-field/−/+`); the bottom edge carries the
+ * shared `.inr-track` with its `.inr-track-fill` span (positioned by inline
+ * `left` / `width`), exactly like `InputNumber`.
+ *
+ * Both native handles stay stacked over the shared track (see the
+ * component): their own tracks stay transparent and fill the 17px input
+ * (via `slider-no-track` plus the heights below), so no input can paint
+ * over the other's thumb. Each input's center sits on the track center,
+ * so the 17px thumbs land exactly like `.inr-thumb` and overhang the card
+ * unclipped (the card is `overflow: visible`). Thumbs stay interactive
+ * while everything else ignores the pointer. Written as flat CSS (no
+ * nesting) on purpose. */
+.inr-range-top {
+    grid-template-columns: minmax(0, 1fr) 40px 38px minmax(0, 1fr) 40px 38px;
+}
+.inr-range-top > input:nth-of-type(2) {
+    border-left: 1px solid var(--border);
+}
+.inr-range-top > .inr-input:disabled {
+    opacity: 0.5;
+}
+[data-name="InputRange"] .inr-track {
+    pointer-events: none;
+}
+[data-name="InputRange"] .inr-track-fill {
+    border-radius: 0;
+}
+[data-name="InputRange"] [data-name="Slider"] {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5.5px;
+    height: 17px;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+[data-name="InputRange"] [data-name="Slider"]::-webkit-slider-runnable-track {
+    height: 17px;
+    background: transparent;
+}
+[data-name="InputRange"] [data-name="Slider"]::-moz-range-track {
+    height: 17px;
+    background-color: transparent;
+}
+[data-name="InputRange"] [data-name="Slider"]::-moz-range-progress {
+    background: transparent;
+}
+[data-name="InputRange"] [data-name="Slider"]::-webkit-slider-thumb {
+    pointer-events: auto;
+    box-sizing: border-box;
+    width: 17px;
+    height: 17px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 4px solid var(--primary);
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+[data-name="InputRange"] [data-name="Slider"]::-moz-range-thumb {
+    pointer-events: auto;
+    box-sizing: border-box;
+    width: 17px;
+    height: 17px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 4px solid var(--primary);
+    position: relative;
+    top: 50%;
+}

@@ -4135,6 +4135,7 @@ dependencies = [
  "leptos",
  "leptos_router",
  "leptos_ui",
+ "pilatus",
  "strum",
  "tw_merge",
  "wasm-bindgen",

@@ -14,13 +14,16 @@ pub type StoredMaskValue = Result<SortedRanges<u32>, LeptosPipelineError>;
 /// A mask that is loaded once from a server and stored back to it on every write.
 ///
 /// It packages the four things that make up such a server-persisted mask:
-/// - the read [`Signal`] that exposes the current value,
-/// - the write [`SignalSetter`] used to edit it,
+/// - a read [`Signal`] that exposes the current value,
+/// - a write [`SignalSetter`] used to edit it,
 /// - the [`LocalResource`] that provides the initial value,
 /// - the [`Action`] that stores a written value back to the server.
 ///
-/// An editor only ever reads the [`Signal`] or writes into the [`SignalSetter`]:
-/// a write updates the resource immediately and triggers the store
+/// `MaskSignal` itself implements the reactive traits over the current value
+/// ([`Read`], [`ReadUntracked`] and, via blanket impls, [`With`],
+/// [`WithUntracked`], [`Get`] and [`GetUntracked`]) by delegating to the read
+/// signal, as well as [`Set`] and [`Update`] by delegating to the write
+/// signal: a write updates the resource immediately and triggers the store
 /// [`Action`] from within the write signal. The resource loading the initial
 /// value and the store action are private implementation details, so the
 /// consumer never touches them directly.
@@ -134,32 +137,70 @@ impl MaskSignal {
             store: store_action,
         }
     }
+}
 
-    /// The read-only [`Signal`] of the current value.
-    pub fn signal(&self) -> Signal<StoredMaskValue, LocalStorage> {
-        self.read
+impl DefinedAt for MaskSignal {
+    fn defined_at(&self) -> Option<&'static std::panic::Location<'static>> {
+        self.read.defined_at()
     }
+}
 
-    /// The write-only [`SignalSetter`]. Writing to it updates the value and
-    /// stores it back to the server.
-    pub fn writer(&self) -> SignalSetter<StoredMaskValue, LocalStorage> {
-        self.write
+impl Dispose for MaskSignal {
+    fn dispose(self) {
+        self.read.dispose();
     }
+}
 
-    /// Sets the value, updating it immediately and storing it back to the
-    /// server.
-    pub fn set(&self, value: StoredMaskValue) {
+impl ReadUntracked for MaskSignal {
+    type Value = <Signal<StoredMaskValue, LocalStorage> as ReadUntracked>::Value;
+
+    fn try_read_untracked(&self) -> Option<Self::Value> {
+        self.read.try_read_untracked()
+    }
+}
+
+impl Read for MaskSignal {
+    type Value = <Signal<StoredMaskValue, LocalStorage> as Read>::Value;
+
+    fn try_read(&self) -> Option<Self::Value> {
+        self.read.try_read()
+    }
+}
+
+impl Set for MaskSignal {
+    type Value = StoredMaskValue;
+
+    fn set(&self, value: Self::Value) {
         self.write.set(value);
     }
 
-    /// Reactively reads the current value.
-    pub fn get(&self) -> StoredMaskValue {
-        self.read.get()
+    fn try_set(&self, value: Self::Value) -> Option<Self::Value> {
+        self.write.try_set(value)
     }
+}
 
-    /// Reads the current value without tracking dependencies.
-    pub fn get_untracked(&self) -> StoredMaskValue {
-        self.read.get_untracked()
+impl Update for MaskSignal {
+    type Value = StoredMaskValue;
+
+    fn try_maybe_update<U>(&self, fun: impl FnOnce(&mut Self::Value) -> (bool, U)) -> Option<U> {
+        let mut current = self.read.try_get_untracked()?;
+        let (should_update, ret) = fun(&mut current);
+        if should_update {
+            self.write.set(current);
+        }
+        Some(ret)
+    }
+}
+
+impl From<MaskSignal> for Signal<StoredMaskValue, LocalStorage> {
+    fn from(val: MaskSignal) -> Self {
+        val.read
+    }
+}
+
+impl From<MaskSignal> for SignalSetter<StoredMaskValue, LocalStorage> {
+    fn from(val: MaskSignal) -> Self {
+        val.write
     }
 }
 
@@ -168,6 +209,7 @@ mod tests {
     use super::*;
     use any_spawner::Executor;
     use imask::{ImaskSet, PipelineError, Rect};
+    use leptos::prelude::{Get, Set};
     use reactive_graph::owner::Owner;
     use std::cell::RefCell;
     use std::num::NonZero;
@@ -225,7 +267,7 @@ mod tests {
                 assert!(stored_values.borrow().is_empty());
 
                 let written = mask_ranges(vec![5..20]);
-                stored.writer().set(Ok(written.clone()));
+                stored.set(Ok(written.clone()));
                 Executor::tick().await;
 
                 assert!(matches!(stored.get(), Ok(ref m) if m == &written));

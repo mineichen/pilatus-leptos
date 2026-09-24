@@ -15,11 +15,15 @@
 //! `app_crates/registry/src/hooks` the same way (`theme_mode` was installed that way)
 //!
 //! the `icons` crate is not vendored, inline the needed SVG instead). Styling needs no extra wiring:
-//! `pilatus-leptos-app/input.scss` already scans this crate via `@source`,
-//! so the component's Tailwind classes are generated automatically. Only if
+//! `style.scss` next to this file is the single entry point for apps: it
+//! imports the semantic colors (`theme.css`) and registers every
+//! pilatus-leptos crate via `@source`, so the component's Tailwind classes
+//! are generated automatically. An app's `input.scss` only imports it
+//! (`@import "…/pilatus-leptos-components/style.scss";`) and registers its
+//! own crates. Only if
 //! the component uses new semantic colors (beyond the existing
 //! `background/foreground/primary/…` set), add the corresponding CSS
-//! variables plus `@theme inline` mappings to `input.scss`, using the
+//! variables plus `@theme inline` mappings to `theme.css`, using the
 //! values from
 //! <https://github.com/rust-ui/leptos-ui/blob/main/style/tailwind.css>
 
@@ -30,12 +34,14 @@ mod alert;
 mod badge;
 mod button;
 mod callout;
+mod checkbox;
 mod dialog;
 mod field;
 mod input;
-mod input_number;
 mod label;
+mod number;
 mod separator;
+mod slider;
 mod textarea;
 mod theme_mode;
 mod theme_toggle;
@@ -44,6 +50,7 @@ pub use alert::{Alert, AlertDescription, AlertTitle};
 pub use badge::{Badge, BadgeSize, BadgeVariant};
 pub use button::{Button, ButtonClass, ButtonSize, ButtonVariant};
 pub use callout::{Callout, CalloutVariant};
+pub use checkbox::Checkbox;
 pub use dialog::{
     Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
@@ -52,9 +59,10 @@ pub use field::{
     FieldLegendVariant, FieldSeparator, FieldSet, FieldTitle,
 };
 pub use input::{Input, InputType};
-pub use input_number::{InputNumber, InputNumberValue};
 pub use label::Label;
+pub use number::{InputNumber, InputNumberValue, InputRange};
 pub use separator::{Separator, SeparatorClass, SeparatorOrientation};
+pub use slider::Slider;
 pub use textarea::Textarea;
 pub use theme_mode::{ThemeMode, use_theme_mode};
 pub use theme_toggle::ThemeToggle;

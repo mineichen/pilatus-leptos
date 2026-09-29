@@ -61,6 +61,13 @@ impl FetchApi {
             Self::handle_http_error(response).await
         }
     }
+
+    pub fn get_json<T: DeserializeOwned>(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = FetchResult<T>> + use<T> {
+        self.get_json_silent(url).map(self.notify_callback())
+    }
     pub fn get_json_silent<T: DeserializeOwned>(
         &self,
         url: &str,

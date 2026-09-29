@@ -28,7 +28,7 @@ pub fn JsonDeviceView(#[prop(optional)] on_close: Option<Callback<()>>) -> impl 
     let has_external_update = Memo::new(move |_| {
         let current_server = device_params.read();
         let last_saved = last_saved_value.read();
-        &*current_server != &*last_saved
+        *current_server != *last_saved
     });
 
     let on_save = move |_| match serde_json::from_str::<serde_json::Value>(&edited_json.get()) {

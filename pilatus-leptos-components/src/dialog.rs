@@ -2,7 +2,7 @@ use leptos::context::Provider;
 use leptos::ev::keydown;
 use leptos::prelude::*;
 use leptos_ui::clx;
-use tw_merge::*;
+use tw_merge::tw_merge;
 
 clx! {DialogBody, div, "flex flex-col gap-4"}
 clx! {DialogHeader, div, "flex flex-col gap-2 text-center sm:text-left"}

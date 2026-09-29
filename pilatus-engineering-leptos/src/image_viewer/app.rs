@@ -28,6 +28,8 @@ pub struct OnFrameCtx<'a> {
 
 pub type OnFrameCallback = Box<dyn for<'a> FnMut(OnFrameCtx<'a>)>;
 
+type OnLoadCallback = Box<dyn FnOnce(&mut ImageStateLoaded) + Send>;
+
 #[derive(Clone)]
 pub struct ViewerHandle {
     command_send: mpsc::Sender<ChangeItem>,
@@ -178,7 +180,7 @@ pub struct App {
     receiver: mpsc::Receiver<ChangeItem>,
     change_listener: ChangeListener,
     change_listener_task: Option<(imanot::AsyncTask<anyhow::Result<()>>, i64)>,
-    pending_on_load: Vec<Box<dyn FnOnce(&mut ImageStateLoaded) + Send>>,
+    pending_on_load: Vec<OnLoadCallback>,
     active_layer: Option<SignalSetter<Option<usize>>>,
     last_active_subgroup: Option<usize>,
     on_frame: Option<OnFrameCallback>,
@@ -294,10 +296,10 @@ impl eframe::App for App {
         };
         if current_active != self.last_active_subgroup && inner.is_some() {
             self.last_active_subgroup = current_active;
-            if let Some(setter) = &self.active_layer {
-                if let Some(x) = setter.try_set(current_active) {
-                    leptos::logging::log!("Couldn't set active as signal vanished: {x:?}");
-                };
+            if let Some(setter) = &self.active_layer
+                && let Some(x) = setter.try_set(current_active)
+            {
+                leptos::logging::log!("Couldn't set active as signal vanished: {x:?}");
             }
         }
     }

@@ -88,6 +88,13 @@ where
     T: InputNumberValue,
     V: Get<Value = T> + Set<Value = T> + Clone + Send + Sync + 'static,
 {
+    // Hide the browser's native number-input spinners (the reference uses
+    // a plain text input for the same reason). `textfield` covers Firefox,
+    // the `::-webkit-*` selectors cover Chromium/Safari.
+    const NO_NATIVE_SPINNERS: &str = "[-moz-appearance:textfield] [appearance:textfield] \
+        [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none \
+        [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none";
+
     let min_attr = min.map(T::format);
     let max_attr = max.map(T::format);
     let step_attr = step.map(T::format);
@@ -101,13 +108,6 @@ where
         .filter(|r| r.start() <= r.end())
         .map(RangeInclusive::into_inner);
     let has_slider = travel.is_some();
-
-    // Hide the browser's native number-input spinners (the reference uses
-    // a plain text input for the same reason). `textfield` covers Firefox,
-    // the `::-webkit-*` selectors cover Chromium/Safari.
-    const NO_NATIVE_SPINNERS: &str = "[-moz-appearance:textfield] [appearance:textfield] \
-        [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none \
-        [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none";
 
     let card_class = if has_slider {
         tw_merge!("inr-card", class)
@@ -151,17 +151,17 @@ where
         let revert = || {
             if let Some(input) = node_ref.get() {
                 // Non-numeric text: fall back to the last valid value.
-                let _ = input.set_value(&value_for_commit.get().format());
+                input.set_value(&value_for_commit.get().format());
             }
         };
         match T::parse_input(&text, number_from_dom()) {
             Some(parsed) => {
                 let clamped = clamp(parsed);
-                if clamped != value_for_commit.get() {
-                    value_for_commit.set(clamped);
-                } else {
+                if clamped == value_for_commit.get() {
                     // Normalize display (e.g. "1.50" -> "1.5").
                     revert();
+                } else {
+                    value_for_commit.set(clamped);
                 }
             }
             None => revert(),

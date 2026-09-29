@@ -69,17 +69,17 @@ fn RangeField<T>(
 where
     T: InputNumberValue,
 {
-    let node_ref = NodeRef::<html::Input>::new();
-
-    let min_attr = min.format();
-    let max_attr = max.format();
-    let step_attr = step.format();
-
     // Hide the browser's native number-input spinners (we render our own
     // `-`/`+` steppers). Same as [`crate::InputNumber`].
     const NO_NATIVE_SPINNERS: &str = "[-moz-appearance:textfield] [appearance:textfield] \
         [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none \
         [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none";
+
+    let node_ref = NodeRef::<html::Input>::new();
+
+    let min_attr = min.format();
+    let max_attr = max.format();
+    let step_attr = step.format();
 
     // Verbatim [`crate::InputNumber`] field paint; the strip geometry comes
     // from the parent's `.inr-range-top` grid, so no rounding joins here.
@@ -108,17 +108,17 @@ where
         let revert = || {
             if let Some(input) = node_ref.get() {
                 // Non-numeric text: fall back to the last valid value.
-                let _ = input.set_value(&value_for_commit.get().format());
+                input.set_value(&value_for_commit.get().format());
             }
         };
         match T::parse_input(&text, number_from_dom()) {
             Some(parsed) => {
                 let clamped = clamp(parsed);
-                if clamped != value_for_commit.get() {
-                    commit_for_commit.run(clamped);
-                } else {
+                if clamped == value_for_commit.get() {
                     // Normalize display (e.g. "1.50" -> "1.5").
                     revert();
+                } else {
+                    commit_for_commit.run(clamped);
                 }
             }
             None => revert(),
@@ -143,7 +143,7 @@ where
         commit_for_nudge.run(clamp(next));
     };
 
-    let nudge_down = nudge.clone();
+    let nudge_down = nudge;
     let step_down = move |_| nudge_down(-1.0);
     let step_up = move |_| nudge(1.0);
 
@@ -212,6 +212,7 @@ where
 /// <InputRange value=my_range min=0.0 max=255.0 step=1.0 min_label="Weak" max_label="Strong"/>
 /// ```
 #[component]
+#[allow(clippy::too_many_lines, reason = "Leptos component: view logic inline")]
 pub fn InputRange<T, R, V>(
     // Controlled range value: anything readable and writable (`RwSignal`,
     // `MapRwSignal`, …) holding a range-like value.
@@ -245,6 +246,12 @@ where
     R: Into<RangeInclusive<T>> + From<RangeInclusive<T>> + Clone + Send + Sync + 'static,
     V: Get<Value = R> + Set<Value = R> + Clone + Send + Sync + 'static,
 {
+    // Same handle paint as every `Slider` (see `style.scss`); both tracks
+    // stay transparent so no input can paint over the other's thumb — the
+    // single visible track is the shared `.inr-track` div below.
+    const INPUT_CLASS: &str =
+        "w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 slider-no-track";
+
     let min_f = min.to_f64();
     let max_f = max.to_f64();
     let min_attr = min.format();
@@ -255,12 +262,6 @@ where
     let step_value = step.or_else(|| T::from_f64(1.0)).unwrap_or(min);
 
     let wrap_class = tw_merge!("flex min-w-0 flex-1 flex-col gap-1", class);
-
-    // Same handle paint as every `Slider` (see `style.scss`); both tracks
-    // stay transparent so no input can paint over the other's thumb — the
-    // single visible track is the shared `.inr-track` div below.
-    const INPUT_CLASS: &str =
-        "w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 slider-no-track";
 
     let bounds_of = move |source: &V| -> (T, T) {
         source.get().into().into_inner()
@@ -347,8 +348,8 @@ where
         }
     };
 
-    let min_label = (!min_label.is_empty()).then(|| min_label);
-    let max_label = (!max_label.is_empty()).then(|| max_label);
+    let min_label = (!min_label.is_empty()).then_some(min_label);
+    let max_label = (!max_label.is_empty()).then_some(max_label);
     let has_bound_labels = min_label.is_some() || max_label.is_some();
 
     view! {

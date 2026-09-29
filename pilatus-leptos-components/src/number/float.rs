@@ -26,9 +26,9 @@ impl InputNumberValue for f32 {
     fn from_f64(value: f64) -> Option<Self> {
         // Caller guarantees a finite value; saturate instead of failing
         // (`as f32` of a huge-but-finite `f64` would overflow to infinity).
-        if value >= f32::MAX as f64 {
+        if value >= f64::from(f32::MAX) {
             Some(f32::MAX)
-        } else if value <= f32::MIN as f64 {
+        } else if value <= f64::from(f32::MIN) {
             Some(f32::MIN)
         } else {
             Some(value as f32)

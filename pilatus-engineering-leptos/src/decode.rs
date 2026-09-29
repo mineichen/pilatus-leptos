@@ -35,7 +35,7 @@ pub fn extract_imanot_with_stack(
 ) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>> {
     let mut meta_image = extract_imanot_or_fallback(decoded)?;
     let image = meta_image.image;
-    let stack = imanot::PixelAreaStack::from_iter(extract_from_extensions(
+    let stack = imanot::PixelAreaStack::from_sparse_layers(extract_from_extensions(
         &mut meta_image.extensions,
         [0, 0, 255, 128],
     ));
@@ -109,5 +109,4 @@ pub fn extract_from_extensions(
         .map(move |ranges| PixelArea::from_ranges(ranges, rgba))
         .chain(extensions.iter_extract::<PixelArea>())
         .enumerate()
-        .map(|(layer, pixel_area)| (layer, pixel_area))
 }

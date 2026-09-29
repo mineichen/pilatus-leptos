@@ -3,6 +3,10 @@ use leptos::prelude::*;
 use tw_merge::tw_merge;
 
 #[component]
+#[allow(
+    clippy::fn_params_excessive_bools,
+    reason = "HTML textarea attributes are naturally boolean"
+)]
 pub fn Textarea<V>(
     // Controlled value: anything readable and writable (`RwSignal`,
     // `LeafRwSignal`, `MapRwSignal`, `FrozenSignal`, ...). No local

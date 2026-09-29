@@ -99,20 +99,20 @@ impl MaskSignal {
             let mask = value
                 .as_ref()
                 .map_err(Clone::clone)
-                .and_then(|x| {
+                .map(|x| {
                     let mut buf = Vec::<u8>::new();
 
                     SyncRangeWriter::new(&mut buf, x.iter_roi::<NonZeroRange<u32>>())
                         .write()
                         .expect("Writing SortedRanges to Vec cannot fail");
-                    Ok(buf)
+                    buf
                 })
                 .map(Some)
                 .or_else(|e| e.allow_empty());
-            let map_fut = mask.map(|x| store(x));
+            let map_fut = mask.map(&store);
             async move {
-                let x = map_fut?.await?;
-                Ok(x)
+                map_fut?.await?;
+                Ok(())
             }
         });
 
@@ -208,25 +208,23 @@ impl From<MaskSignal> for SignalSetter<StoredMaskValue, LocalStorage> {
 mod tests {
     use super::*;
     use any_spawner::Executor;
-    use imask::{ImaskSet, PipelineError, Rect};
+    use imask::{ImaskSet, NonZeroRange, PipelineError, Roi};
     use leptos::prelude::{Get, Set};
     use reactive_graph::owner::Owner;
     use std::cell::RefCell;
-    use std::num::NonZero;
+    use std::iter::once;
     use std::rc::Rc;
 
-    const TEST_BOUNDS: Rect<u32> = Rect::new(
-        0,
-        0,
-        NonZero::new(1000u32).unwrap(),
-        NonZero::new(1000u32).unwrap(),
-    );
+    const TEST_BOUNDS: Roi<u32> = Roi {
+        x: NonZeroRange::<u32>::new_const(0..1000),
+        y: NonZeroRange::<u32>::new_const(0..1000),
+    };
 
-    fn mask_ranges(ranges: Vec<std::ops::Range<u32>>) -> SortedRanges<u32> {
+    fn mask_ranges(ranges: impl IntoIterator<Item = std::ops::Range<u32>>) -> SortedRanges<u32> {
         SortedRanges::try_from_ordered_iter(ranges.with_roi(TEST_BOUNDS))
             .expect("Sorted, non-empty ranges")
     }
-    fn mask_bytes(ranges: Vec<std::ops::Range<u32>>) -> Vec<u8> {
+    fn mask_bytes(ranges: impl IntoIterator<Item = std::ops::Range<u32>>) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
         SyncRangeWriter::new(
             &mut buf,
@@ -248,7 +246,7 @@ mod tests {
 
                 let stored = MaskSignal::new_with_vec(
                     "test mask",
-                    || async { Ok(mask_bytes(vec![0..10])) },
+                    || async { Ok(mask_bytes(once(0..10))) },
                     move |value| {
                         let store_values = store_values.clone();
                         async move {
@@ -261,17 +259,17 @@ mod tests {
 
                 await_loaded(
                     &stored,
-                    |v| matches!(v, Ok(m) if m == &mask_ranges(vec![0..10])),
+                    |v| matches!(v, Ok(m) if m == &mask_ranges(once(0..10))),
                 )
                 .await;
                 assert!(stored_values.borrow().is_empty());
 
-                let written = mask_ranges(vec![5..20]);
+                let written = mask_ranges(once(5..20));
                 stored.set(Ok(written.clone()));
                 Executor::tick().await;
 
                 assert!(matches!(stored.get(), Ok(ref m) if m == &written));
-                assert_eq!(vec![Some(mask_bytes(vec![5..20]))], *stored_values.borrow());
+                assert_eq!(vec![Some(mask_bytes(once(5..20)))], *stored_values.borrow());
             }))
             .await;
     }
@@ -284,7 +282,7 @@ mod tests {
             .run_until(owner.with(|| async move {
                 let stored = MaskSignal::new_with_vec(
                     "test mask",
-                    || async { Ok(mask_bytes(vec![0..7])) },
+                    || async { Ok(mask_bytes(once(0..7))) },
                     |_value| async { Ok(()) },
                 );
 
@@ -296,7 +294,7 @@ mod tests {
 
                 await_loaded(
                     &stored,
-                    |v| matches!(v, Ok(m) if m == &mask_ranges(vec![0..7])),
+                    |v| matches!(v, Ok(m) if m == &mask_ranges(once(0..7))),
                 )
                 .await;
             }))

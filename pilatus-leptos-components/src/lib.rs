@@ -1,11 +1,11 @@
 //! RustUI-based UI primitives for industrial HMI panels built with Leptos.
 //!
-//! This crate re-exports the RustUI (`leptos_ui` + `tw_merge`) components with minor modifications
+//! This crate re-exports the `RustUI` (`leptos_ui` + `tw_merge`) components with minor modifications
 //!
 //! # Adding missing components
 //!
 //! Missing primitives (badge, card, dialog, …) can be downloaded from the
-//! RustUI component registry:
+//! `RustUI` component registry:
 //!
 //! <https://github.com/rust-ui/leptos-ui/tree/main/app_crates/registry/src/ui>
 //!

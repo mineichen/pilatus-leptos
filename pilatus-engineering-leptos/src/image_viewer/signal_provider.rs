@@ -20,10 +20,10 @@ impl SignalImageProvider {
         let (mut send, recv) = futures_channel::mpsc::channel(2);
         let effect = Effect::new(move || {
             leptos::logging::log!("SignalImageProvider effect");
-            if let Some(Ok(x)) = &*data.read() {
-                if send.try_send(Ok(x.clone())).is_err() {
-                    leptos::logging::warn!("Channel is full, cannot send more images");
-                }
+            if let Some(Ok(x)) = &*data.read()
+                && send.try_send(Ok(x.clone())).is_err()
+            {
+                leptos::logging::warn!("Channel is full, cannot send more images");
             }
         });
         leptos::logging::log!("SignalImageProvider::new_single");

@@ -10,14 +10,15 @@ const LOCALSTORAGE_KEY: &str = "darkmode";
 
 /// Hook to access the dark mode context
 ///
-/// Returns the ThemeMode instance from context for easy access
+/// Returns the `ThemeMode` instance from context for easy access
+#[must_use]
 pub fn use_theme_mode() -> ThemeMode {
     expect_context::<ThemeMode>()
 }
 
 impl ThemeMode {
     #[must_use]
-    /// Initializes a new ThemeMode instance.
+    /// Initializes a new `ThemeMode` instance.
     pub fn init() -> Self {
         let theme_mode = Self {
             state: RwSignal::new(false),
@@ -89,8 +90,7 @@ impl ThemeMode {
             .match_media("(prefers-color-scheme: dark)")
             .ok()
             .flatten()
-            .map(|media| media.matches())
-            .unwrap_or_default()
+            .is_some_and(|media| media.matches())
     }
 
     /// Stores the dark mode state in local storage.

@@ -34,7 +34,7 @@ impl Log for ErrorOnlyLog {
         #[cfg(not(debug_assertions))]
         let record = {
             let meta = record.metadata();
-            Record::builder()
+            &Record::builder()
                 .metadata(
                     Metadata::builder()
                         .level(meta.level())
@@ -46,7 +46,7 @@ impl Log for ErrorOnlyLog {
                 .build()
         };
         if self.enabled(record.metadata()) {
-            self.0.log(&record);
+            self.0.log(record);
         }
     }
     fn flush(&self) {

@@ -17,12 +17,12 @@ macro_rules! impl_input_number_value_for_int {
                 fn from_f64(value: f64) -> Option<Self> {
                     // Caller guarantees a finite value; saturate instead of failing.
                     let rounded = value.round();
-                    if rounded <= <$ty>::MIN as f64 {
+                    let (min_f, max_f) = (<$ty>::MIN as f64, <$ty>::MAX as f64);
+                    if rounded <= min_f {
                         Some(<$ty>::MIN)
-                    } else if rounded >= <$ty>::MAX as f64 {
+                    } else if rounded >= max_f {
                         Some(<$ty>::MAX)
                     } else {
-                        #[allow(clippy::cast_possible_truncation)]
                         Some(rounded as Self)
                     }
                 }

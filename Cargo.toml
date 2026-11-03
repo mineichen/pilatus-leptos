@@ -37,7 +37,7 @@ gloo-net = "0.7"
 gloo-timers = "0.4"
 gloo-utils = "0.3"
 image = { version = "0.25", default-features = false }
-imbuf = "0.3"
+imbuf = "0.4"
 imanot = { git = "https://github.com/mineichen/imanot.git" }
 imask = { git = "https://github.com/mineichen/imask.git" }
 impex = { version = "0.1", features = ["visitor"] }
@@ -97,17 +97,19 @@ pilatus-emulation-camera = { path = "../pilatus/pilatus-emulation-camera" }
 pilatus-emulation-camera-rt = { path = "../pilatus/pilatus-emulation-camera-rt" }
 pilatus-tick = { path = "../pilatus/examples/tick" }
 
-# [patch."https://github.com/mineichen/pilatus-aravis.git"]
-# pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
-# pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
+[patch."https://github.com/mineichen/pilatus-aravis.git"]
+pilatus-aravis.path = "../pilatus-aravis/pilatus-aravis"
+pilatus-aravis-rt.path = "../pilatus-aravis/pilatus-aravis-rt"
 
-#[patch."https://github.com/mineichen/imask.git"]
-#imask.path = "../imask"
+[patch."https://github.com/mineichen/imask.git"]
+imask.path = "../imask"
 
-#[patch."https://github.com/mineichen/imanot.git"]
-#imanot.path = "../imanot/imanot"
+[patch."https://github.com/mineichen/imanot.git"]
+imanot.path = "../imanot/imanot"
 
 
-# [patch.crates-io]
-# imbuf.path = "../imbuf"
+[patch.crates-io]
+imbuf = { path = "../imbuf/imbuf" }
+imbuf-image = { path = "../imbuf/imbuf-image" }
+imbuf-opencv = { path = "../imbuf/imbuf-opencv" }
 # impex.path = "../impex/impex"

@@ -4,7 +4,7 @@ use futures_channel::{mpsc, oneshot};
 use futures_util::future::LocalBoxFuture;
 use imanot::{
     AsyncTask, HistoryStrategy, ImageData, ImageId, ImageLoadOk, ImageState, ImageStateLoaded,
-    ImageViewerInteraction, PixelAreaStack, ToolFactory, Tools,
+    ImageViewerInteraction, PendingImage, PixelAreaStack, Tool, Tools,
 };
 use imbuf::Image;
 use leptos::logging::{debug_log, warn};
@@ -37,21 +37,33 @@ pub struct ViewerHandle {
 }
 
 impl ViewerHandle {
-    pub fn set_primary(&self, factory: ToolFactory) {
+    /// Replaces the primary tool. It keeps its state and configuration when images change.
+    pub fn set_primary(&self, tool: Box<dyn Tool>) {
         let enqueue = self
             .command_send
             .clone()
-            .try_send(Box::new(move |app, _ctx| {
-                let ImageState::Loaded(loaded) = &app.state.image_state else {
-                    return;
+            .try_send(Box::new(move |app, ctx| {
+                let imanot::State {
+                    image_state, tools, ..
+                } = &mut app.state;
+                // Without a shown image, the tool gets it as soon as there is one
+                let image = match image_state {
+                    ImageState::Loaded(loaded) => Some(&loaded.image),
+                    _ => None,
                 };
-                app.state
-                    .tools
-                    .primary()
-                    .set_factory(factory, &loaded.image);
+                debug_log!(
+                    "[viewer] set_primary executed, image shown: {}",
+                    image.is_some()
+                );
+                tools.primary().set(tool, image);
+                ctx.request_repaint();
             }));
+        debug_log!("[viewer] set_primary queued: {}", enqueue.is_ok());
         if enqueue.is_err() {
             leptos::logging::error!("Unable to queue set_primary");
+        } else {
+            // The command is executed by the next frame, which egui only runs on request
+            self.ctx.request_repaint();
         }
     }
 
@@ -60,6 +72,7 @@ impl ViewerHandle {
         adjust: Image<[u8; 3], 1>,
         masks: PixelAreaStack,
         history_strategy: HistoryStrategy,
+        callback: Option<crate::ShownCallback>,
     ) {
         let (r_send, r_recv) = oneshot::channel();
         let set_result = self
@@ -75,7 +88,11 @@ impl ViewerHandle {
                     masks,
                     history_strategy,
                 );
-                app.state.set_image(data);
+                let mut pending = PendingImage::new(data);
+                if let Some(callback) = callback {
+                    pending = pending.with_callback(callback);
+                }
+                app.state.set_image(pending);
                 ctx.request_repaint();
                 debug_log!("Replaced image state");
                 r_send.send(()).ok();

@@ -5,11 +5,11 @@ use futures_util::{FutureExt, TryStreamExt};
 use imanot::Tools;
 use leptos::html::Canvas;
 use leptos::prelude::*;
-use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant};
 use pilatus::device::DeviceId;
+use pilatus_leptos_components::{Button, ButtonSize, ButtonVariant};
 use wasm_bindgen::JsCast;
 
-use crate::decode::ExtractImage;
+use crate::decode::{ExtractImage, ExtractedImage};
 use crate::image_viewer::app::ChangeListener;
 
 use super::{ImageProvider, OnFrameCallback, app::EframeImageViewer, app::ViewerHandle};
@@ -157,14 +157,21 @@ where
                 let now = js_sys::Date::now();
                 leptos::logging::log!(
                     "Forward next image to viewer {:?} after {:?}ms (History: {strategy:?}, processing_time: {:?}ms)",
-                    imanot_image.as_ref().map(|x| &x.0),
+                    imanot_image.as_ref().map(|x| &x.image),
                     now - last,
                     now - processing_start
                 );
                 last = now;
             }
-            if let Some((image, stack)) = imanot_image {
-                viewer_ref.replace_image(image, stack, strategy).await;
+            if let Some(ExtractedImage {
+                image,
+                stack,
+                callback,
+            }) = imanot_image
+            {
+                viewer_ref
+                    .replace_image(image, stack, strategy, callback)
+                    .await;
             }
         }
 

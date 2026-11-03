@@ -11,8 +11,12 @@
   outputs = inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
-      perSystem = { system, pkgs, ... }:
+      perSystem = { system, ... }:
         let
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfreePredicate = pkg: builtins.elem (inputs.nixpkgs.lib.getName pkg) [ "claude-code" ];
+          };
           rust = with inputs.fenix.packages.${system}; combine [
             stable.toolchain
             targets.wasm32-unknown-unknown.stable.rust-std
@@ -50,26 +54,41 @@
             echo "===================================="
             rustc --version && cargo --version && trunk --version
           '';
+          # Mirrors rust-analyzer-lsp@claude-plugins-official, which only declares the server.
+          # Built into the image, because /root/.claude isn't persisted between runs.
+          rustAnalyzerLspPlugin = pkgs.writeTextDir "rust-analyzer-lsp/.claude-plugin/plugin.json"
+            (builtins.toJSON {
+              name = "rust-analyzer-lsp";
+              description = "Rust language server for code intelligence and analysis";
+              version = "1.0.0";
+              lspServers.rust-analyzer = {
+                command = "${rust}/bin/rust-analyzer";
+                extensionToLanguage.".rs" = "rust";
+              };
+            });
+          claudeCodeWithLsp = pkgs.writeShellScriptBin "claude" ''
+            exec ${pkgs.claude-code}/bin/claude --plugin-dir ${rustAnalyzerLspPlugin}/rust-analyzer-lsp "$@"
+          '';
           policy = pkgs.writeText "policy.json" ''{"default":[{"type":"insecureAcceptAnything"}]}'';
           containername = "pilatus-leptos-isolated-dev";
           podmanRuntimePath = pkgs.lib.makeBinPath [
-            pkgs.slirp4netns
+            pkgs.passt
 	  ];
-	  podmanRun = "${pkgs.podman}/bin/podman run --rm -it "
-            + "--network=slirp4netns "
-            + "--tmpfs /tmp "
-            + "-v ../pilatus:/workspace/pilatus:z "
-            + "-v ../pilatus-leptos:/workspace/pilatus-leptos:z "
-            + "-v ../pilatus-opencv:/workspace/pilatus-opencv:z "
-            + "-v ../pilatus-aravis:/workspace/pilatus-aravis:z "
-            + "-v ../imask:/workspace/imask:z "
-            + "-v ../imbuf:/workspace/imbuf:z "
-            + "-v ../impex:/workspace/impex:z "
-            + "-v ../shape-based-matching-rs:/workspace/shape-based-matching-rs:z "
-            + "-v ../sealedstruct:/workspace/sealedstruct:z "
-            + "-v ../imanot:/workspace/imanot:z "
-            + "-e HOME=/root "
-            + "${containername}:latest /bin/entrypoint.sh";
+	  podmanRun = ''
+	    workspace="$(realpath "''${1:-.}")"
+	    exec ${pkgs.podman}/bin/podman run --rm -it \
+	      --network=pasta \
+	      --tmpfs /tmp \
+	      -v "$workspace:/workspace/pilatus-leptos:z" \
+	      -v "../imbuf:/workspace/imbuf:z" \
+	      -v "../imask:/workspace/imask:z" \
+	      -v "../pilatus:/workspace/pilatus:z" \
+	      -v "../pilatus-aravis:/workspace/pilatus-aravis:z" \
+	      -v "../imanot:/workspace/imanot:z" \
+	      -w "/workspace/pilatus-leptos" \
+	      -e HOME=/root \
+	      ${containername}:latest /bin/entrypoint.sh
+	  '';
         in
         {
           devShells.default = pkgs.mkShell({
@@ -87,6 +106,7 @@
                 pkgs.git
                 pkgs.cargo-shear
                 pkgs.opencode
+                claudeCodeWithLsp
                 pkgs.coreutils
                 (pkgs.writeScriptBin "entrypoint.sh" ''
                   #!${pkgs.bashInteractive}/bin/bash

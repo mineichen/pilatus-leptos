@@ -1,17 +1,47 @@
 use anyhow::Context;
-use imanot::{PixelArea, PixelAreaStack};
+use imanot::{ImageStateLoaded, PixelArea, PixelAreaStack};
 use imask::SortedRanges;
-use imbuf::{DynamicImage, DynamicImageChannel, Image, ImageChannel};
+use imbuf::{DynamicImage, Image};
 use pilatus_engineering::image::{AnyMultiMap, ImageWithMeta, MetaImageDecoder, StreamImageError};
 
 type RgbImage = imbuf::Image<[u8; 3], 1>;
+
+/// Runs once the image is shown, see [`imanot::PendingImage::with_callback`]
+pub type ShownCallback = Box<dyn FnOnce(&mut ImageStateLoaded)>;
+
+/// An image as displayed by the viewer, with what comes along with it.
+pub struct ExtractedImage {
+    pub image: RgbImage,
+    /// The overlays drawn on the image, see [`PixelAreaStack`]
+    pub stack: PixelAreaStack,
+    /// Runs when the image is shown, and is dropped unrun if it never makes
+    /// it. It can compute things from the shown image (e.g. add a layer)
+    /// instead of doing that for every frame of the stream.
+    pub callback: Option<ShownCallback>,
+}
+
+impl ExtractedImage {
+    pub fn new(image: RgbImage, stack: PixelAreaStack) -> Self {
+        Self {
+            image,
+            stack,
+            callback: None,
+        }
+    }
+
+    #[must_use]
+    pub fn with_callback(mut self, callback: impl FnOnce(&mut ImageStateLoaded) + 'static) -> Self {
+        self.callback = Some(Box::new(callback));
+        self
+    }
+}
 
 /// Callback that converts a streamed image into the rgb image displayed by
 /// the viewer together with the [`PixelAreaStack`] it draws as overlays.
 pub type ExtractImage = Box<
     dyn FnMut(
         Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
-    ) -> anyhow::Result<Option<(RgbImage, PixelAreaStack)>>,
+    ) -> anyhow::Result<Option<ExtractedImage>>,
 >;
 
 /// Returns `Ok(None)` for MissingFrame error
@@ -32,14 +62,14 @@ pub fn parse(
 
 pub fn extract_imanot_with_stack(
     decoded: Result<ImageWithMeta<DynamicImage>, StreamImageError<DynamicImage>>,
-) -> anyhow::Result<Option<(Image<[u8; 3], 1>, PixelAreaStack)>> {
+) -> anyhow::Result<Option<ExtractedImage>> {
     let mut meta_image = extract_imanot_or_fallback(decoded)?;
     let image = meta_image.image;
     let stack = imanot::PixelAreaStack::from_sparse_layers(extract_from_extensions(
         &mut meta_image.extensions,
         [0, 0, 255, 128],
     ));
-    Ok(Some((image, stack)))
+    Ok(Some(ExtractedImage::new(image, stack)))
 }
 
 /// Converts the image to rgb, falling back to the plain [`ImageWithMeta`]
@@ -81,20 +111,25 @@ pub fn extract_imanot(
     }
 }
 
-fn extract_rgb(
-    img: imbuf::DynamicImage,
-) -> anyhow::Result<imbuf::ImageChannels<[ImageChannel<[u8; 3]>; 1]>> {
+fn extract_rgb(img: imbuf::DynamicImage) -> anyhow::Result<RgbImage> {
     let first = img.first();
-    let image = match (first, first.pixel_elements().get(), img.len()) {
-        (DynamicImageChannel::U8(ch), 1, 1) => imbuf::Image::<[u8; 3], 1>::new_arc(
-            ch.buffer_flat().iter().map(|&c| [c; 3]).collect(),
-            ch.width(),
-            ch.height(),
-        ),
-        (DynamicImageChannel::U8(_), 3, 1) => {
+    let image = match (
+        first.primitive_size().get(),
+        first.pixel_elements().get(),
+        img.len(),
+    ) {
+        (1, 1, 1) => {
+            let buffer = first.buffer_flat::<u8>()?;
+            imbuf::Image::<[u8; 3], 1>::new_arc(
+                buffer.iter().map(|&c| [c; 3]).collect(),
+                first.width(),
+                first.height(),
+            )?
+        }
+        (1, 3, 1) => {
             imbuf::Image::<[u8; 3], 1>::try_from(img).expect("Checked dimensions in match")
         }
-        x => return Err(anyhow::anyhow!("Unkonwn image format {x:?}")),
+        x => return Err(anyhow::anyhow!("Unknown image format {x:?}")),
     };
     Ok(image)
 }

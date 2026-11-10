@@ -7,6 +7,7 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    devtools.url = "github:mineichen/nix-devtools";
   };
   outputs = inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -54,98 +55,31 @@
             echo "===================================="
             rustc --version && cargo --version && trunk --version
           '';
-          # Mirrors rust-analyzer-lsp@claude-plugins-official, which only declares the server.
-          # Built into the image, because /root/.claude isn't persisted between runs.
-          rustAnalyzerLspPlugin = pkgs.writeTextDir "rust-analyzer-lsp/.claude-plugin/plugin.json"
-            (builtins.toJSON {
-              name = "rust-analyzer-lsp";
-              description = "Rust language server for code intelligence and analysis";
-              version = "1.0.0";
-              lspServers.rust-analyzer = {
-                command = "${rust}/bin/rust-analyzer";
-                extensionToLanguage.".rs" = "rust";
-              };
-            });
-          claudeCodeWithLsp = pkgs.writeShellScriptBin "claude" ''
-            exec ${pkgs.claude-code}/bin/claude --plugin-dir ${rustAnalyzerLspPlugin}/rust-analyzer-lsp "$@"
-          '';
-          policy = pkgs.writeText "policy.json" ''{"default":[{"type":"insecureAcceptAnything"}]}'';
-          containername = "pilatus-leptos-isolated-dev";
-          podmanRuntimePath = pkgs.lib.makeBinPath [
-            pkgs.passt
-	  ];
-	  podmanRun = ''
-	    workspace="$(realpath "''${1:-.}")"
-	    exec ${pkgs.podman}/bin/podman run --rm -it \
-	      --network=pasta \
-	      --tmpfs /tmp \
-	      -v "$workspace:/workspace/pilatus-leptos:z" \
-	      -v "../imbuf:/workspace/imbuf:z" \
-	      -v "../imask:/workspace/imask:z" \
-	      -v "../pilatus:/workspace/pilatus:z" \
-	      -v "../pilatus-aravis:/workspace/pilatus-aravis:z" \
-	      -v "../imanot:/workspace/imanot:z" \
-	      -w "/workspace/pilatus-leptos" \
-	      -e HOME=/root \
-	      ${containername}:latest /bin/entrypoint.sh
-	  '';
+          isolated = inputs.devtools.lib.isolated {
+            inherit pkgs inputs;
+            extraMounts = [ "../imbuf" "../imask" "../pilatus" "../pilatus-aravis" "../imanot" ];
+            name = "pilatus-leptos-isolated-dev";
+            packages = commonBuildInputs ++ [
+              pkgs.busybox
+              pkgs.ripgrep
+              pkgs.cargo-shear
+              pkgs.opencode
+            ];
+            claude.pluginDirs = [
+              (inputs.devtools.lib.claudeRustAnalyzer { inherit pkgs; rust-analyzer = rust; })
+            ];
+            env = envVars;
+            shellHook = greet;
+          };
         in
         {
           devShells.default = pkgs.mkShell({
             buildInputs = commonBuildInputs;
             shellHook = greet;
           } // envVars);
-          packages.isolated-build = pkgs.dockerTools.buildImage {
-            name = containername;
-            tag = "latest";
-            copyToRoot = pkgs.buildEnv {
-              name = containername;
-              paths = commonBuildInputs ++ [
-                pkgs.bashInteractive
-                pkgs.ripgrep
-                pkgs.git
-                pkgs.cargo-shear
-                pkgs.opencode
-                claudeCodeWithLsp
-                pkgs.coreutils
-                (pkgs.writeScriptBin "entrypoint.sh" ''
-                  #!${pkgs.bashInteractive}/bin/bash
-                  ${greet}
-                  exec ${pkgs.bashInteractive}/bin/bash
-                '')
-              ];
-              pathsToLink = [ "/bin" "/lib" "/include" "/share" ];
-            };
-            config = {
-              Env = pkgs.lib.mapAttrsToList (k: v: "${k}=${v}") envVars ++ [ "HOME=/root" ];
-              Cmd = [ "/bin/entrypoint.sh" ];
-              WorkingDir = "/workspace/pilatus-leptos";
-            };
-          };
-          apps.isolated-build = {
+          apps.isolated = {
             type = "app";
-            program = toString (pkgs.writeShellScript containername ''
-              export PATH="${podmanRuntimePath}:$PATH"
-	      ${pkgs.podman}/bin/podman rmi ${containername} || true
-              ${pkgs.podman}/bin/podman load \
-                --signature-policy ${policy} \
-                --input ${inputs.self.packages.${system}.isolated-build}
-              ${podmanRun}
-            '');
-          };
-          apps.isolated-nobuild = {
-            type = "app";
-            program = toString (pkgs.writeShellScript "run-isolated" ''
-              set -euo pipefail
-              export PATH="${podmanRuntimePath}:$PATH"
-	      #if ! ${pkgs.podman}/bin/podman image exists ${containername}:latest 2>/dev/null; then
-              #  echo "Image ${containername}:latest not found."
-              #  echo "Please build and load it first with:"
-              #  echo "  nix run .#isolated-build"
-              #  exit 1
-              #fi
-              ${podmanRun}
-            '');
+            program = pkgs.lib.getExe isolated;
           };
         };
     };

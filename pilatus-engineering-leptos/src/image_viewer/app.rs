@@ -213,7 +213,7 @@ impl App {
         on_frame: Option<OnFrameCallback>,
     ) -> Self {
         Self {
-            state: imanot::State::new(tools),
+            state: imanot::State::new::<imanot::gpu::Glow>(tools),
             receiver,
             change_listener,
             change_listener_task: None,

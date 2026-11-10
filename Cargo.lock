@@ -2484,7 +2484,9 @@ checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
 name = "imanot"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "egui",
+ "egui_glow",
  "euclid",
  "fixed",
  "futures",
@@ -2494,7 +2496,6 @@ dependencies = [
  "log",
  "nalgebra",
  "num-traits",
- "pulp",
  "thiserror 2.0.21",
  "web-sys",
 ]

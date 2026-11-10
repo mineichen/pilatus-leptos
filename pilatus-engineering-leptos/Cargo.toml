@@ -13,7 +13,7 @@ futures-channel.workspace = true
 gloo-events.workspace = true
 gloo-net.workspace = true
 gloo-timers.workspace = true
-imanot.workspace = true
+imanot = { workspace = true, features = ["glow"] }
 imask = { workspace = true, features = ["async-io"] }
 imbuf.workspace = true
 js-sys.workspace = true

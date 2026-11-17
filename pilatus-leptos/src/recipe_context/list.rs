@@ -1,6 +1,9 @@
-use crate::{DeviceInfos, FetchApi, RecipeContext};
+use crate::{DeviceInfos, FetchApi, FetchError, RecipeContext};
 use leptos::prelude::*;
-use pilatus::{Name, Recipe, RecipeId, RecipeMetadataRaw, Recipes};
+use pilatus::{
+    Name, PendingChangesStrategy, Recipe, RecipeId, RecipeMetadataRaw, Recipes,
+    UncommittedChangesError,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RecipeInfo {
@@ -156,12 +159,38 @@ impl RecipeContext {
         Ok(())
     }
 
-    /// Activate a recipe
-    /// This sends a PUT request to start the recipe and refreshes the recipe list
-    pub async fn activate_recipe(&self, recipe_id: RecipeId) -> Result<(), anyhow::Error> {
-        let url = format!("/api/recipe/start/{}", recipe_id);
-        self.fetch.put(&url).await?;
-        leptos::logging::log!("Recipe activated successfully: {:?}", recipe_id);
+    /// Start a recipe
+    /// This sends a PUT request to start the recipe and refreshes the recipe list.
+    ///
+    /// The server stops all devices before pending changes are resolved according to `strategy`.
+    /// Discarding is only possible this way, as device files must not change while a device is running.
+    ///
+    /// Fails with `UncommittedChangesError` (detectable with `anyhow::Error::is`), if the server denied
+    /// uncommitted changes (`409 Conflict`): The request can be sent again with another `strategy`.
+    /// Errors are not notified, callers have to show them.
+    pub async fn start_recipe(
+        &self,
+        recipe_id: RecipeId,
+        strategy: PendingChangesStrategy,
+    ) -> Result<(), anyhow::Error> {
+        let strategy_param = match strategy {
+            PendingChangesStrategy::Deny => "deny",
+            PendingChangesStrategy::Discard => "discard",
+            PendingChangesStrategy::Commit => "commit",
+        };
+        let url = format!(
+            "/api/recipe/start/{}?pending_changes={strategy_param}",
+            recipe_id
+        );
+        if strategy == PendingChangesStrategy::Discard {
+            // Unsent local edits are obsolete
+            self.unsaved_changes_writer.update(|x| x.clear());
+        }
+        match self.fetch.put_silent(&url).await {
+            Err(FetchError::StatusCode(409, _)) => return Err(UncommittedChangesError.into()),
+            result => result?,
+        };
+        leptos::logging::log!("Recipe started successfully: {:?}", recipe_id);
         Ok(())
     }
 

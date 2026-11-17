@@ -1,22 +1,39 @@
 use leptos::prelude::*;
-use pilatus_leptos_components::{Button, ButtonClass, ButtonSize, ButtonVariant, IntoTailwindClass};
+use pilatus::{PendingChangesStrategy, RecipeId, UncommittedChangesError};
 use pilatus_leptos::{RecipeContext, RecipeInfo};
+use pilatus_leptos_components::{
+    Button, ButtonClass, ButtonSize, ButtonVariant, IntoTailwindClass,
+};
 
 use super::recipe_tags::RecipeTags;
 
 #[component]
-pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
+pub fn RecipeRow(
+    recipe: Memo<RecipeInfo>,
+    ask_switch: Callback<RecipeId>,
+) -> impl IntoView {
     let ctx: RecipeContext = expect_context();
-    let ctx_activate = ctx.clone();
+    let ctx_start = ctx.clone();
     let ctx_duplicate = ctx.clone();
     let ctx_delete = ctx.clone();
     let is_active = Signal::derive(move || recipe.read().is_active);
     let recipe_id_signal = move || recipe.read().id.clone();
 
-    let activate_action = Action::new_local(move |_: &()| {
-        let ctx = ctx_activate.clone();
+    let start_action = Action::new_local(move |_: &()| {
+        let ctx = ctx_start.clone();
         let recipe_id = recipe_id_signal();
-        async move { ctx.activate_recipe(recipe_id).await }
+        async move {
+            match ctx
+                .start_recipe(recipe_id.clone(), PendingChangesStrategy::Deny)
+                .await
+            {
+                Err(e) if e.is::<UncommittedChangesError>() => {
+                    ask_switch.run(recipe_id);
+                    Ok(())
+                }
+                result => result,
+            }
+        }
     });
 
     let duplicate_action = Action::new_local(move |_: &()| {
@@ -67,14 +84,14 @@ pub fn RecipeRow(recipe: Memo<RecipeInfo>) -> impl IntoView {
                             <Button
                                 size=ButtonSize::Sm
                                 on:click=move |_| {
-                                    activate_action.dispatch(());
+                                    start_action.dispatch(());
                                 }
                             >
-                                "Activate"
+                                "Start"
                             </Button>
                         </span>
                         {move || {
-                            activate_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
+                            start_action.value().read().as_ref().and_then(|result| result.as_ref().err()).map(|e| {
                                 view! { <span class="text-red-400 text-xs">{format!("Error: {}", e)}</span> }
                             })
                         }}

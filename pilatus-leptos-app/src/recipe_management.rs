@@ -1,13 +1,16 @@
 mod recipe_import;
 mod recipe_row;
 mod recipe_tags;
+mod switch_dialog;
 
 use leptos::prelude::*;
-use pilatus_leptos_components::{Button, ButtonVariant};
+use pilatus::RecipeId;
 use pilatus_leptos::RecipeContext;
+use pilatus_leptos_components::{Button, ButtonVariant, Dialog, DialogContent};
 
 use self::recipe_import::RecipeImport;
 use self::recipe_row::{RecipeRow, RecipeRowProps};
+use self::switch_dialog::SwitchDialogContent;
 
 #[component]
 pub fn RecipeManagement() -> impl IntoView {
@@ -30,7 +33,23 @@ pub fn RecipeManagement() -> impl IntoView {
         async move { ctx.commit_changes().await }
     });
 
+    let show_switch = RwSignal::new(false);
+    let switch_target = RwSignal::new(None::<RecipeId>);
+    let ask_switch = Callback::new(move |target| {
+        switch_target.set(Some(target));
+        show_switch.set(true);
+    });
+
     view! {
+        <Dialog show=show_switch>
+            <DialogContent class="sm:max-w-md">
+                {move || {
+                    switch_target.get().map(|target| {
+                        view! { <SwitchDialogContent target show=show_switch /> }
+                    })
+                }}
+            </DialogContent>
+        </Dialog>
         <div class="space-y-6">
             <div>
                 <h1 class="text-2xl font-bold text-foreground mb-1">"Recipe Management"</h1>
@@ -111,7 +130,8 @@ pub fn RecipeManagement() -> impl IntoView {
 
                                     move || {
                                         RecipeRow(RecipeRowProps {
-                                            recipe
+                                            recipe,
+                                            ask_switch,
                                         })
                                     }
                                 }
